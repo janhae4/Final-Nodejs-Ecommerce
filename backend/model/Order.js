@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const orderConnection = require('../database/orderConnection');
 
 const orderSchema = new mongoose.Schema({
   userId: {
@@ -76,6 +77,6 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-const Order = mongoose.model('Order', orderSchema);
+const Order = orderConnection.model('Order', orderSchema);
 
 module.exports = Order;
