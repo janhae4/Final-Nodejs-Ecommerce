@@ -1,38 +1,32 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const pathToSwaggerUi = require('swagger-ui-dist').absolutePath()
+const swaggerUi = require('swagger-ui-express');
 const cors = require('cors');
-const orderRoutes = require('./order.routes');
+const orderRoutes = require('./routes/orderRoute');
 const discountCodeRoutes = require('./routes/discountRoute');
-const userRoutes = require('./user.routes');
-const productRoutes = require('./product.routes');
+const swaggerJSDoc = require('swagger-jsdoc');
 
 const app = express();
 const port = 3000;
 
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'E-commerce API',
+      version: '1.0.0',
+      description: 'API documentation for the E-commerce application'
+    },
+  },
+  apis: ['./routes/*.js']
+}
+
+const swaggerSpec = swaggerJSDoc(options);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(cors());
 app.use(express.json());
-app.use(express.static(pathToSwaggerUi))
-
-// MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/ecommerce')
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1); // Exit process with failure
-  });
 app.use('/api/orders', orderRoutes);
 app.use('/api/discount-codes', discountCodeRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB');
-});
 
 app.get('/', (req, res) => {
   res.send('Hello from Express!');

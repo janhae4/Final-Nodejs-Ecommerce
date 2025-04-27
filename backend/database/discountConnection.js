@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
+require('dotenv').config()
 
-const discountConnection = mongoose.createConnection(process.env.DISCOUNT_DB_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-module.exports = discountConnection;
+const orderConnection = mongoose.createConnection(process.env.ORDER_DB_URI);
+module.exports = orderConnection;
