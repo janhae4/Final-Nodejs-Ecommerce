@@ -6,14 +6,15 @@ const generateOrderNumber = () => {
     return `ORDER${timestamp}${random}`;
 };
   
-exports.createOrder = async (orderData, user) => {
+exports.createOrder = async (orderData) => {
   const order = new Order({
     ...orderData,
-    userId: user._id,
     orderNumber: generateOrderNumber(),
     loyaltyPointsEarned: Math.floor(orderData.totalAmount * 0.1)
   });
   // Send user an email
+  // const user = await User.findById(orderData.userId);
+  // const email = user.email;
   // emailService.sendOrderConfirmation(email, order);
   await order.save();
   return order;
