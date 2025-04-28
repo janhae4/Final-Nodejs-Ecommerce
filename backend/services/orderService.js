@@ -45,5 +45,5 @@ exports.patchOrder = async (orderId, orderData) => {
 
 
 exports.getOrderById = async (orderId) => {
-  return Order.findById(orderId).sort({purchaseDate: -1});
+  return Order.findById(orderId);
 };
