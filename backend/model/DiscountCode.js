@@ -13,12 +13,17 @@ const discountCodeSchema = new mongoose.Schema({
   },
   usageLimit: {
     type: Number,
-    required: true,
+    default: 10,
   },
   usedCount: {
     type: Number,
     default: 0,
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active',
+  }
 });
 
 const DiscountCode = discountConnection.model('DiscountCode', discountCodeSchema);
