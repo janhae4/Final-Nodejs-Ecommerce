@@ -1,4 +1,4 @@
-const DiscountCode = require('../model/DiscountCode');
+const DiscountCode = require('../models/DiscountCode');
 
 exports.createDiscountCode = async (discountData) => {
     try {
@@ -63,7 +63,7 @@ exports.deleteDiscountCode = async (id) => {
             throw new Error('Discount code not found');
         }
 
-        await discountCode.remove();
+        await DiscountCode.deleteOne({ _id: id });
         return { message: 'Discount code deleted successfully' };
     } catch (error) {
         throw new Error('Error deleting discount code: ' + error.message);

@@ -1,6 +1,7 @@
 const discountService = require('../services/discountService');
 
 exports.getAllDiscount = async (req, res) => {
+    console.log(2)
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -49,6 +50,19 @@ exports.getDiscountActive = async (req, res) => {
             return res.status(404).json({ message: 'Discount not found' });
         }
         res.status(200).json(discount);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteDiscount = async (req, res) => {
+    try {
+        const discountId = req.params.discountId;
+        const discount = await discountService.deleteDiscountCode(discountId);
+        if (!discount) {
+            return res.status(404).json({ message: 'Discount not found' });
+        }
+        res.json({ message: 'Discount deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

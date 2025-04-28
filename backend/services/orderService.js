@@ -48,3 +48,7 @@ exports.patchOrder = async (orderId, orderData) => {
 exports.getOrderById = async (orderId) => {
   return Order.findById(orderId);
 };
+
+exports.deleteOrderById = async (orderId) => {
+  return Order.findByIdAndDelete(orderId);
+};

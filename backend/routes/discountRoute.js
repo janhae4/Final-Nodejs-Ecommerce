@@ -6,4 +6,5 @@ router.get('/', discountController.getAllDiscount)
 router.get('/active', discountController.getDiscountActive)
 router.post('/', discountController.createDiscount)
 router.patch('/:discountId', discountController.patchDiscount)
+router.delete('/:discountId', discountController.deleteDiscount)
 module.exports = router;

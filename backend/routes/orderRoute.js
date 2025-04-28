@@ -7,5 +7,5 @@ router.get('/all', orderCotroller.getAllOrders);
 router.post('/', orderCotroller.createOrder);
 router.get('/:orderId', orderCotroller.getOrderById);
 router.patch('/:orderId', orderCotroller.patchOrder);
-
+router.delete('/:orderId', orderCotroller.deleteOrderById)
 module.exports = router;
