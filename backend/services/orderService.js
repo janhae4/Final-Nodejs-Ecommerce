@@ -13,10 +13,37 @@ exports.createOrder = async (orderData, user) => {
     orderNumber: generateOrderNumber(),
     loyaltyPointsEarned: Math.floor(orderData.totalAmount * 0.1)
   });
+  // Send user an email
+  // emailService.sendOrderConfirmation(email, order);
   await order.save();
   return order;
 };
 
+exports.patchOrder = async (orderId, orderData) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  if (orderData.status && orderData.status !== order.status) {
+    order.statusHistory.unshift({
+      status: orderData.status,
+      timestamp: new Date()
+    });
+    order.status = orderData.status;
+  }
+
+  for (const key of Object.keys(orderData)) {
+    if (key !== 'status') {
+      order[key] = orderData[key];
+    }
+  }
+
+  await order.save();
+  return order;
+};
+
+
 exports.getOrderById = async (orderId) => {
-  return Order.findById(orderId);
+  return Order.findById(orderId).sort({purchaseDate: -1});
 };
