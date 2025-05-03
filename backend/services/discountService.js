@@ -14,9 +14,14 @@ exports.createDiscountCode = async (discountData) => {
     }
 };
 
-exports.getAllDiscountCodes = async (skip, limit) => {
+exports.getAllDiscountCodes = async (skip, limit, search) => {
     try {
-        const discountCodes = await DiscountCode.find()
+        const discountCodes = await DiscountCode.find({
+            $or: [
+                { code: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ]
+        })
             .skip(skip)
             .limit(limit);
         return discountCodes;
@@ -25,9 +30,14 @@ exports.getAllDiscountCodes = async (skip, limit) => {
     }
 };
 
-exports.getDiscountCount = async () => {
+exports.getDiscountCount = async (search) => {
     try {
-        const count = await DiscountCode.countDocuments();
+        const count = await DiscountCode.countDocuments({
+            $or: [
+                { code: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+            ]
+        });
         return count;
     } catch (error) {
         throw new Error('Error fetching discount count: ' + error.message);
@@ -51,6 +61,30 @@ exports.getAllActiveDiscountCodes = async () => {
         throw new Error('Error fetching active discount codes: ' + error.message);
     }
 };
+exports.getMostUsedDiscount = async () => {
+    try {
+        console.log(2323)
+        return await DiscountCode.findOne().sort({ usedCount: -1 });
+    } catch (error) {
+        throw new Error('Error fetching active discount codes: ' + error.message);
+    }
+}
+
+exports.getActiveDiscountLength = async () => {
+    try {
+        return await DiscountCode.countDocuments({ status: 'active' });
+    } catch (error) {
+        throw new Error('Error fetching active discount codes: ' + error.message);
+    }
+}
+
+exports.getInactiveDiscountLength = async () => {
+    try {
+        return await DiscountCode.countDocuments({ status: 'inactive' });
+    } catch (error) {
+        throw new Error('Error fetching active discount codes: ' + error.message);
+    }
+}
 
 exports.patchDiscount = async (id, updateData) => {
     try {

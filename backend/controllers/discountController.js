@@ -3,11 +3,12 @@ const discountService = require('../services/discountService');
 exports.getAllDiscount = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 5;
+        const search = req.query.search || '';
         const skip = (page - 1) * limit;
-        const totalCount = await discountService.getDiscountCount();
+        const totalCount = await discountService.getDiscountCount(search);
         const totalPages = Math.ceil(totalCount / limit);
-        const discounts = await discountService.getAllDiscountCodes(skip, limit);
+        const discounts = await discountService.getAllDiscountCodes(skip, limit, search);
         res.status(200).json({
             discounts,
             totalPages,
@@ -26,6 +27,39 @@ exports.getDiscountById = async (req, res) => {
         if (!discount) {
             return res.status(404).json({ message: 'Discount not found' });
         }
+        res.status(200).json(discount);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+exports.getMostUsedDiscount = async (req, res) => {
+    try {
+        const discount = await discountService.getMostUsedDiscount();
+        if (!discount) {
+            return res.status(404).json({ message: 'Discount not found' });
+        }
+        res.status(200).json(discount);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+exports.getActiveDiscountLength = async (req, res) => {
+    try {
+        const discount = await discountService.getActiveDiscountLength();
+        if (!discount) {
+            return res.status(404).json({ message: 'Discount not found' });
+        }
+        res.status(200).json(discount);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+exports.getInactiveDiscountLength = async (req, res) => {
+    try {
+        const discount = await discountService.getInactiveDiscountLength();
         res.status(200).json(discount);
     } catch (error) {
         res.status(500).json({ message: error.message });

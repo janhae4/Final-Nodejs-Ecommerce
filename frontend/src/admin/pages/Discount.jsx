@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Layout,
     Table,
@@ -34,6 +34,7 @@ import {
 } from '@ant-design/icons';
 import ModalDiscount from '../../../components/admin/discount/ModalDiscount';
 import axios from 'axios';
+import debounce from 'debounce';
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -45,6 +46,8 @@ const DiscountCodeAdmin = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
     const [messageApi, contextHolder] = message.useMessage();
     const [form] = Form.useForm();
     const [stats, setStats] = useState({
@@ -60,43 +63,60 @@ const DiscountCodeAdmin = () => {
     });
     const API_URL = import.meta.env.VITE_API_URL
 
-    const fetchDiscountCodes = async (page = 1, pageSize = 5) => {
+    const fetchAllData = async (page = 1, pageSize = 5) => {
         try {
-            console.log(312312312)
-            console.log(page)
             setLoading(true);
-            const response = await axios.get(`${API_URL}/discount-codes?page=${page}&limit=${pageSize}`);
-            console.log(response)
-            const discountCodes = response.data.discounts;
+            const [discountCodesResponse, mostUsedResponse, activeLengthResponse, inactiveLengthResponse] = await Promise.all([
+                axios.get(`${API_URL}/discount-codes?page=${page}&limit=${pageSize}`),
+                axios.get(`${API_URL}/discount-codes/most-used`),
+                axios.get(`${API_URL}/discount-codes/active-length`),
+                axios.get(`${API_URL}/discount-codes/inactive-length`)
+            ]);
+
+            const discountCodes = discountCodesResponse.data.discounts;
             setDiscountCodes(discountCodes);
-            console.log(response.data)
             setPagination({
-                current: response.data.currentPage,
-                pageSize,
-                total: response.data.totalCount,
+                current: discountCodesResponse.data.currentPage,
+                pageSize: 5,
+                total: discountCodesResponse.data.totalCount,
             });
-            const total = discountCodes.length;
-            const active = discountCodes.filter(code => code.status === 'active').length;
-            const inactive = total - active;
-            const mostUsed = [...discountCodes].sort((a, b) => b.usedCount - a.usedCount)[0];
 
             setStats({
-                total,
-                active,
-                inactive,
-                mostUsed
+                total: discountCodes.length,
+                active: activeLengthResponse.data || 0,
+                inactive: inactiveLengthResponse.data || 0,
+                mostUsed: mostUsedResponse.data,
             });
 
             setLoading(false);
         } catch (error) {
-            console.error('Error fetching discount codes:', error);
-            messageApi.error('Failed to fetch discount codes');
+            console.error('Error fetching data:', error);
+            messageApi.error('Failed to fetch data');
             setLoading(false);
         }
     };
 
+    const fetchDiscountCodes = async (page = 1, pageSize = 5, search = '') => {
+        try {
+            setLoading(true);
+            const discountCodesResponse = await axios.get(`${API_URL}/discount-codes?page=${page}&limit=${pageSize}&search=${search}`);
+            const discountCodes = discountCodesResponse.data.discounts;
+            setDiscountCodes(discountCodes);
+            setPagination({
+                current: discountCodesResponse.data.currentPage,
+                pageSize: 5,
+                total: discountCodesResponse.data.totalCount,
+            });
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            messageApi.error('Failed to fetch data');
+            setLoading(false);
+        }
+    }
+
     useEffect(() => {
-        fetchDiscountCodes();
+        fetchAllData();
     }, []);
 
     const showModal = (record = null) => {
@@ -135,25 +155,9 @@ const DiscountCodeAdmin = () => {
                 setDiscountCodes(prev => [...prev, newCode]);
                 messageApi.success('Discount code created successfully');
             }
-
             setIsModalVisible(false);
             form.resetFields();
 
-            const updatedCodes = editingId
-                ? discountCodes.map(item => item._id === editingId ? { ...item, ...values } : item)
-                : [...discountCodes, { _id: String(discountCodes.length + 1), ...values, usedCount: 0 }];
-
-            const total = updatedCodes.length;
-            const active = updatedCodes.filter(code => code.status === 'active').length;
-            const inactive = total - active;
-            const mostUsed = [...updatedCodes].sort((a, b) => b.usedCount - a.usedCount)[0];
-
-            setStats({
-                total,
-                active,
-                inactive,
-                mostUsed
-            });
         } catch (error) {
             console.error('Error submitting form:', error);
             messageApi.error(error.response.data.message || 'Failed to submit form');
@@ -188,9 +192,17 @@ const DiscountCodeAdmin = () => {
         }
     };
 
-    const filteredData = discountCodes.filter(item =>
-        item.code.toLowerCase().includes(searchText.toLowerCase())
+    const debouncedFetchRef = useRef(
+        debounce((value, page, pageSize) => {
+            fetchDiscountCodes(page, pageSize, value);
+        }, 500)
     );
+
+    const handleSearchChange = e => {
+        const value = e.target.value;
+        setSearchText(value);
+        debouncedFetchRef.current(value, page, pageSize);
+    }
 
     const columns = [
         {
@@ -262,7 +274,6 @@ const DiscountCodeAdmin = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
-                    {console.log(record._id)}
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
@@ -354,7 +365,7 @@ const DiscountCodeAdmin = () => {
                             <Input
                                 placeholder="Search by code"
                                 value={searchText}
-                                onChange={e => setSearchText(e.target.value)}
+                                onChange={handleSearchChange}
                                 prefix={<SearchOutlined />}
                                 className="w-full md:w-64"
                             />
@@ -362,7 +373,7 @@ const DiscountCodeAdmin = () => {
                                 <Button
                                     type="primary"
                                     icon={<ReloadOutlined />}
-                                    onClick={fetchDiscountCodes}
+                                    onClick={fetchAllData}
                                     className="bg-blue-500"
                                 >
                                     Refresh
@@ -381,17 +392,22 @@ const DiscountCodeAdmin = () => {
 
                     <Table
                         columns={columns}
-                        dataSource={filteredData}
+                        dataSource={discountCodes}
                         rowKey="_id"
                         loading={loading}
                         pagination={{
                             current: pagination.current,
-                            pageSize: pagination.pageSize, 
-                            total: pagination.total,                           
+                            pageSize: pagination.pageSize,
+                            total: pagination.total,
                             showSizeChanger: true,
                             showTotal: (total) => `Total ${total} items`,
+                            onChange: (page, pageSize) => {
+                                setPage(page);
+                                setPageSize(pageSize);
+                                fetchDiscountCodes(page, pageSize, searchText);
+                            },
+                            showTotal: (total) => `Total ${total} items`,
                         }}
-                        onChange={(pagination) => fetchDiscountCodes(pagination.current, pagination.pageSize)}
                         scroll={{ x: 'max-content' }}
                         className="overflow-x-auto"
                     />
