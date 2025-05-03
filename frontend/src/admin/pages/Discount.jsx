@@ -29,10 +29,11 @@ import {
     TagOutlined,
     CodeOutlined,
     PercentageOutlined,
-    DashboardOutlined
+    DashboardOutlined,
+    DollarOutlined
 } from '@ant-design/icons';
+import ModalDiscount from '../../../components/admin/discount/ModalDiscount';
 import axios from 'axios';
-
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,6 +45,7 @@ const DiscountCodeAdmin = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const [messageApi, contextHolder] = message.useMessage();
     const [form] = Form.useForm();
     const [stats, setStats] = useState({
         total: 0,
@@ -51,31 +53,32 @@ const DiscountCodeAdmin = () => {
         inactive: 0,
         mostUsed: null
     });
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 5,
+        total: 0
+    });
+    const API_URL = import.meta.env.VITE_API_URL
 
-    // Mock function to fetch discount codes (would be replaced with actual API call)
-    const fetchDiscountCodes = async () => {
+    const fetchDiscountCodes = async (page = 1, pageSize = 5) => {
         try {
+            console.log(312312312)
+            console.log(page)
             setLoading(true);
-            // In a real app, this would be an API call
-            // const response = await axios.get('/api/discount-codes');
-            // setDiscountCodes(response.data);
-
-            // Mock data for demo
-            const mockData = [
-                { _id: '1', code: 'SUMMER25', value: 25, usageLimit: 100, usedCount: 45, status: 'active' },
-                { _id: '2', code: 'WELCOME10', value: 10, usageLimit: 50, usedCount: 30, status: 'active' },
-                { _id: '3', code: 'FLASH50', value: 50, usageLimit: 25, usedCount: 25, status: 'inactive' },
-                { _id: '4', code: 'WINTER20', value: 20, usageLimit: 75, usedCount: 12, status: 'active' },
-                { _id: '5', code: 'SALE15', value: 15, usageLimit: 200, usedCount: 78, status: 'active' },
-            ];
-
-            setDiscountCodes(mockData);
-
-            // Calculate stats
-            const total = mockData.length;
-            const active = mockData.filter(code => code.status === 'active').length;
+            const response = await axios.get(`${API_URL}/discount-codes?page=${page}&limit=${pageSize}`);
+            console.log(response)
+            const discountCodes = response.data.discounts;
+            setDiscountCodes(discountCodes);
+            console.log(response.data)
+            setPagination({
+                current: response.data.currentPage,
+                pageSize,
+                total: response.data.totalCount,
+            });
+            const total = discountCodes.length;
+            const active = discountCodes.filter(code => code.status === 'active').length;
             const inactive = total - active;
-            const mostUsed = [...mockData].sort((a, b) => b.usedCount - a.usedCount)[0];
+            const mostUsed = [...discountCodes].sort((a, b) => b.usedCount - a.usedCount)[0];
 
             setStats({
                 total,
@@ -87,17 +90,15 @@ const DiscountCodeAdmin = () => {
             setLoading(false);
         } catch (error) {
             console.error('Error fetching discount codes:', error);
-            message.error('Failed to fetch discount codes');
+            messageApi.error('Failed to fetch discount codes');
             setLoading(false);
         }
     };
 
-    // Initial data load
     useEffect(() => {
         fetchDiscountCodes();
     }, []);
 
-    // Handle modal visibility
     const showModal = (record = null) => {
         if (record) {
             setEditingId(record._id);
@@ -114,34 +115,30 @@ const DiscountCodeAdmin = () => {
         form.resetFields();
     };
 
-    // Handle form submission
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
 
             if (editingId) {
-                // Update existing code
-                // In a real app: await axios.put(`/api/discount-codes/${editingId}`, values);
+                await axios.patch(`${API_URL}/discount-codes/${editingId}`, values);
                 setDiscountCodes(prev =>
                     prev.map(item => item._id === editingId ? { ...item, ...values } : item)
                 );
-                message.success('Discount code updated successfully');
+                messageApi.success('Discount code updated successfully');
             } else {
-                // Create new code
-                // In a real app: const response = await axios.post('/api/discount-codes', values);
+                await axios.post(`${API_URL}/discount-codes`, values);
                 const newCode = {
                     _id: String(discountCodes.length + 1),
                     ...values,
                     usedCount: 0
                 };
                 setDiscountCodes(prev => [...prev, newCode]);
-                message.success('Discount code created successfully');
+                messageApi.success('Discount code created successfully');
             }
 
             setIsModalVisible(false);
             form.resetFields();
 
-            // Update stats
             const updatedCodes = editingId
                 ? discountCodes.map(item => item._id === editingId ? { ...item, ...values } : item)
                 : [...discountCodes, { _id: String(discountCodes.length + 1), ...values, usedCount: 0 }];
@@ -159,18 +156,18 @@ const DiscountCodeAdmin = () => {
             });
         } catch (error) {
             console.error('Error submitting form:', error);
-            message.error('Failed to save discount code');
+            messageApi.error(error.response.data.message || 'Failed to submit form');
         }
     };
 
     // Handle code deletion
     const handleDelete = async (id) => {
         try {
-            // In a real app: await axios.delete(`/api/discount-codes/${id}`);
+            console.log(id)
+            await axios.delete(`${API_URL}/discount-codes/${id}`);
             setDiscountCodes(prev => prev.filter(item => item._id !== id));
-            message.success('Discount code deleted successfully');
+            messageApi.success('Discount code deleted successfully');
 
-            // Update stats after deletion
             const updatedCodes = discountCodes.filter(item => item._id !== id);
             const total = updatedCodes.length;
             const active = updatedCodes.filter(code => code.status === 'active').length;
@@ -187,16 +184,14 @@ const DiscountCodeAdmin = () => {
             });
         } catch (error) {
             console.error('Error deleting discount code:', error);
-            message.error('Failed to delete discount code');
+            messageApi.error(error.response.data.message || 'Failed to delete discount code');
         }
     };
 
-    // Filter data based on search
     const filteredData = discountCodes.filter(item =>
         item.code.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    // Table columns configuration
     const columns = [
         {
             title: 'Code',
@@ -206,11 +201,23 @@ const DiscountCodeAdmin = () => {
             sorter: (a, b) => a.code.localeCompare(b.code),
         },
         {
-            title: 'Value (%)',
+            title: 'Value',
             dataIndex: 'value',
             key: 'value',
-            render: (value) => <span><PercentageOutlined /> {value}%</span>,
+            render: (value, record) => {
+                const type = record.type;
+                if (type === 'percentage') {
+                    return <Text strong><PercentageOutlined /> {value}</Text>
+                } else {
+                    return <Text strong><DollarOutlined /> {value}</Text>
+                }
+            },
             sorter: (a, b) => a.value - b.value,
+            filters: [
+                { text: '%', value: 'percentage' },
+                { text: 'vnđ', value: 'fixed' },
+            ],
+            onFilter: (value, record) => record.type === value,
         },
         {
             title: 'Usage Limit',
@@ -255,6 +262,7 @@ const DiscountCodeAdmin = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
+                    {console.log(record._id)}
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
@@ -283,13 +291,9 @@ const DiscountCodeAdmin = () => {
         },
     ];
 
-    // Responsive layout configuration
-    const getResponsiveLayout = () => {
-        return window.innerWidth < 768 ? 24 : 6;
-    };
-
     return (
         <Layout className="min-h-screen">
+            {contextHolder}
             <Content className="p-4 md:p-6 bg-white">
                 <Breadcrumb className="mb-4">
                     <Breadcrumb.Item href="#"><DashboardOutlined /> Dashboard</Breadcrumb.Item>
@@ -301,7 +305,7 @@ const DiscountCodeAdmin = () => {
                 {/* Statistics Cards */}
                 <Row gutter={[16, 16]} className="mb-6">
                     <Col xs={24} sm={12} md={6}>
-                        <Card bordered={false} className="hover:shadow-md transition-shadow">
+                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
                             <Statistic
                                 title="Total Discount Codes"
                                 value={stats.total}
@@ -311,7 +315,7 @@ const DiscountCodeAdmin = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card bordered={false} className="hover:shadow-md transition-shadow">
+                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
                             <Statistic
                                 title="Active Codes"
                                 value={stats.active}
@@ -321,7 +325,7 @@ const DiscountCodeAdmin = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card bordered={false} className="hover:shadow-md transition-shadow">
+                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
                             <Statistic
                                 title="Inactive Codes"
                                 value={stats.inactive}
@@ -331,7 +335,7 @@ const DiscountCodeAdmin = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card bordered={false} className="hover:shadow-md transition-shadow">
+                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
                             <Statistic
                                 title="Most Used Code"
                                 value={stats.mostUsed ? stats.mostUsed.code : 'N/A'}
@@ -381,85 +385,20 @@ const DiscountCodeAdmin = () => {
                         rowKey="_id"
                         loading={loading}
                         pagination={{
-                            pageSize: 10,
+                            current: pagination.current,
+                            pageSize: pagination.pageSize, 
+                            total: pagination.total,                           
                             showSizeChanger: true,
                             showTotal: (total) => `Total ${total} items`,
                         }}
+                        onChange={(pagination) => fetchDiscountCodes(pagination.current, pagination.pageSize)}
                         scroll={{ x: 'max-content' }}
                         className="overflow-x-auto"
                     />
                 </Card>
             </Content>
+            <ModalDiscount editingId={editingId} isModalVisible={isModalVisible} handleCancel={handleCancel} form={form} handleSubmit={handleSubmit} />
 
-            <Modal
-                title={editingId ? 'Edit Discount Code' : 'Create New Discount Code'}
-                open={isModalVisible}
-                onCancel={handleCancel}
-                footer={[
-                    <Button key="back" onClick={handleCancel}>
-                        Cancel
-                    </Button>,
-                    <Button key="submit" type="primary" onClick={handleSubmit} className="bg-blue-500">
-                        {editingId ? 'Update' : 'Create'}
-                    </Button>,
-                ]}
-            >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={{ status: 'active' }}
-                >
-                    <Form.Item
-                        name="code"
-                        label="Discount Code"
-                        rules={[
-                            { required: true, message: 'Please input the discount code!' },
-                            { min: 3, message: 'Code must be at least 3 characters' },
-                        ]}
-                    >
-                        <Input placeholder="e.g. SUMMER25" prefix={<CodeOutlined />} />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="value"
-                        label="Discount Value (%)"
-                        rules={[
-                            { required: true, message: 'Please input the discount value!' },
-                            { type: 'number', min: 1, max: 100, message: 'Value must be between 1-100%' },
-                        ]}
-                    >
-                        <InputNumber
-                            min={1}
-                            max={100}
-                            formatter={value => `${value}%`}
-                            parser={value => value.replace('%', '')}
-                            className="w-full"
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="usageLimit"
-                        label="Usage Limit"
-                        rules={[
-                            { required: true, message: 'Please input the usage limit!' },
-                            { type: 'number', min: 1, message: 'Limit must be at least 1' },
-                        ]}
-                    >
-                        <InputNumber min={1} className="w-full" />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="status"
-                        label="Status"
-                        rules={[{ required: true, message: 'Please select a status!' }]}
-                    >
-                        <Select>
-                            <Option value="active">Active</Option>
-                            <Option value="inactive">Inactive</Option>
-                        </Select>
-                    </Form.Item>
-                </Form>
-            </Modal>
         </Layout>
     );
 };

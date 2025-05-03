@@ -34,6 +34,15 @@ exports.getDiscountCount = async () => {
     }
 };
 
+exports.getDiscountById = async (id) => {
+    try {
+        const discountCode = await DiscountCode.findById(id);
+        return discountCode;
+    } catch (error) {
+        throw new Error('Error fetching discount code by ID: ' + error.message);
+    }
+}
+
 exports.getAllActiveDiscountCodes = async () => {
     try {
         const activeDiscountCodes = await DiscountCode.find({ status: 'active' });

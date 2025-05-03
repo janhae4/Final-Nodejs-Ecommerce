@@ -11,6 +11,11 @@ const discountCodeSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  type: {
+    type: String,
+    enum: ['percentage', 'fixed'],
+    default: 'percentage',
+  },
   usageLimit: {
     type: Number,
     default: 10,
