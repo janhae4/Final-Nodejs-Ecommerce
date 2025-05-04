@@ -32,9 +32,12 @@ import {
     DashboardOutlined,
     DollarOutlined
 } from '@ant-design/icons';
-import ModalDiscount from '../../../components/admin/discount/ModalDiscount';
+import ModalDiscount from '../../../../components/admin/discount/ModalDiscount';
 import axios from 'axios';
 import debounce from 'debounce';
+import dayjs from 'dayjs';
+import CardStatistic from '../../../../components/admin/discount/CardStatistic';
+import ModalOderDiscount from '../../../../components/admin/discount/ModalOderDiscount';
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,6 +47,8 @@ const DiscountCodeAdmin = () => {
     const [discountCodes, setDiscountCodes] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [orderModalVisible, setOrderModalVisible] = useState(false);
+    const [selectedDiscount, setSelectedDiscount] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [searchText, setSearchText] = useState('');
     const [page, setPage] = useState(1);
@@ -130,6 +135,11 @@ const DiscountCodeAdmin = () => {
         setIsModalVisible(true);
     };
 
+    const handleRowClick = (record) => {
+        setSelectedDiscount(record);
+        setOrderModalVisible(true);
+    };
+
     const handleCancel = () => {
         setIsModalVisible(false);
         form.resetFields();
@@ -164,7 +174,6 @@ const DiscountCodeAdmin = () => {
         }
     };
 
-    // Handle code deletion
     const handleDelete = async (id) => {
         try {
             console.log(id)
@@ -255,9 +264,17 @@ const DiscountCodeAdmin = () => {
             ),
         },
         {
+            title: 'Created At',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+            render: (text) => dayjs(text).format('DD/MM/YYYY - HH:mm:ss'),
+        },
+        {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
+
             render: (status) => (
                 <Tag color={status === 'active' ? 'green' : 'red'}>
                     {status.toUpperCase()}
@@ -314,49 +331,7 @@ const DiscountCodeAdmin = () => {
                 <Title level={2} className="mb-6">Discount Codes Management</Title>
 
                 {/* Statistics Cards */}
-                <Row gutter={[16, 16]} className="mb-6">
-                    <Col xs={24} sm={12} md={6}>
-                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
-                            <Statistic
-                                title="Total Discount Codes"
-                                value={stats.total}
-                                prefix={<TagOutlined />}
-                                valueStyle={{ color: '#1890ff' }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
-                            <Statistic
-                                title="Active Codes"
-                                value={stats.active}
-                                valueStyle={{ color: '#3f8600' }}
-                                prefix={<TagOutlined />}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
-                            <Statistic
-                                title="Inactive Codes"
-                                value={stats.inactive}
-                                valueStyle={{ color: '#cf1322' }}
-                                prefix={<TagOutlined />}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <Card variant='borderless' className="hover:shadow-md transition-shadow">
-                            <Statistic
-                                title="Most Used Code"
-                                value={stats.mostUsed ? stats.mostUsed.code : 'N/A'}
-                                suffix={stats.mostUsed ? `(${stats.mostUsed.usedCount} uses)` : ''}
-                                valueStyle={{ color: '#722ed1' }}
-                                prefix={<CodeOutlined />}
-                            />
-                        </Card>
-                    </Col>
-                </Row>
+                <CardStatistic stats={stats} />
 
                 <Card className="mb-6">
                     <div className="flex flex-col md:flex-row justify-between items-start mb-4">
@@ -410,11 +385,24 @@ const DiscountCodeAdmin = () => {
                         }}
                         scroll={{ x: 'max-content' }}
                         className="overflow-x-auto"
+                        onRow={(record) => ({
+                            onClick: () => handleRowClick(record),
+                        })}
                     />
                 </Card>
             </Content>
-            <ModalDiscount editingId={editingId} isModalVisible={isModalVisible} handleCancel={handleCancel} form={form} handleSubmit={handleSubmit} />
-
+            <ModalDiscount
+                editingId={editingId}
+                isModalVisible={isModalVisible}
+                handleCancel={handleCancel}
+                form={form}
+                handleSubmit={handleSubmit}
+            />
+            <ModalOderDiscount
+                orderModalVisible={orderModalVisible}
+                setOrderModalVisible={setOrderModalVisible}
+                selectedDiscount={selectedDiscount}
+            />
         </Layout>
     );
 };

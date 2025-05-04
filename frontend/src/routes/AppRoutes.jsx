@@ -1,9 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
 // Admin pages
-import Dashboard from '../admin/pages/Dashboard.jsx'
-import AdminLayout from '../admin/AdminLayout'
-import DiscountCodeAdmin from '../admin/pages/Discount'
+
 import '../App.css'
+import AdminLayout from '../pages/admin/AdminLayout'
+import Dashboard from '../pages/admin/Dashboard'
+import DiscountCodeAdmin from '../pages/admin/discount/Discount'
 
 export default function AppRoutes() {
     return (

@@ -16,6 +16,10 @@ const discountCodeSchema = new mongoose.Schema({
     enum: ['percentage', 'fixed'],
     default: 'percentage',
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
   usageLimit: {
     type: Number,
     default: 10,
