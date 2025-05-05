@@ -150,7 +150,18 @@ const AdminLayout = () => {
             key: 'products',
             icon: <ShopOutlined />,
             label: 'Products',
-            path: '/admin/products'
+            children: [
+                {
+                    key: 'create',
+                    label: 'Create Product',
+                    path: '/admin/products/create'
+                },
+                {
+                    key: 'catalog',
+                    label: 'Product Catalog',
+                    path: '/admin/products'
+                }
+            ]
         },
         {
             key: 'orders',
