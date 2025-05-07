@@ -144,7 +144,7 @@ const AdminLayout = () => {
             key: 'discount',
             icon: <TagOutlined />,
             label: 'Discount Codes',
-            path: '/admin/discount'
+            path: '/admin/discounts'
         },
         {
             key: 'products',

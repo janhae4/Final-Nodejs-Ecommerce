@@ -8,9 +8,9 @@ exports.getAllOrders = async (req, res) => {
     const skip = (page - 1) * limit;
     const totalCount = await orderService.getOrderCount(search);
     const totalPages = Math.ceil(totalCount / limit);
-    const discounts = await orderService.getAllOrders(skip, limit, search);
+    const data = await orderService.getAllOrders(skip, limit, search);
     res.status(200).json({
-      discounts,
+      data,
       totalPages,
       currentPage: page,
       totalCount,
