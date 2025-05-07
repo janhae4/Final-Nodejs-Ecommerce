@@ -1,0 +1,22 @@
+const router = require('express').Router();
+const ProductController = require('../controllers/productController');
+const upload = require('../middlewares/multer');
+
+//Create and find products
+router.get('/', ProductController.searchProducts);
+router.get('/searchByName', ProductController.searchProductByName);
+router.get('/searchByBrand', ProductController.searchProductByBrand);
+router.get('/searchByCategory', ProductController.searchByCategory);
+router.get('/searchByPrice', ProductController.searchByPrice);
+router.get('/:id', ProductController.getProductByIdWithVariants);
+router.post('/create', upload.array('images'), ProductController.createProduct);
+
+//Update product
+// PATCH/products/:id
+router.patch('/:id', upload.array('images'), ProductController.updateProduct);
+
+// Delete product
+// DELETE/products/:id
+router.delete('/:id', ProductController.deleteProduct);
+
+module.exports = router;
