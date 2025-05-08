@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const orderCotroller = require("../controllers/orderController");
-const validateDiscountCode = require("../middleware/validateDiscountCode");
+const validateDiscountCode = require("../middlewares/validateDiscountCode");
 
 router.get("/", orderCotroller.getOrders);
 router.get("/all", orderCotroller.getAllOrders);
