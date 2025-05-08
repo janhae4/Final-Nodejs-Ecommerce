@@ -144,24 +144,13 @@ const AdminLayout = () => {
             key: 'discount',
             icon: <TagOutlined />,
             label: 'Discount Codes',
-            path: '/admin/discount'
+            path: '/admin/discounts'
         },
         {
             key: 'products',
             icon: <ShopOutlined />,
             label: 'Products',
-            children: [
-                {
-                    key: 'create',
-                    label: 'Create Product',
-                    path: '/admin/products/create'
-                },
-                {
-                    key: 'catalog',
-                    label: 'Product Catalog',
-                    path: '/admin/products'
-                }
-            ]
+            path: '/admin/products'
         },
         {
             key: 'orders',
@@ -174,71 +163,6 @@ const AdminLayout = () => {
             icon: <UserOutlined />,
             label: 'Customers',
             path: '/admin/customers'
-        },
-        {
-            key: 'analytics',
-            icon: <LineChartOutlined />,
-            label: 'Analytics',
-            path: '/admin/analytics'
-        },
-        {
-            type: 'divider'
-        },
-        {
-            key: 'catalog',
-            icon: <AppstoreOutlined />,
-            label: 'Catalog',
-            children: [
-                {
-                    key: 'categories',
-                    label: 'Categories',
-                    path: '/admin/categories'
-                },
-                {
-                    key: 'brands',
-                    label: 'Brands',
-                    path: '/admin/brands'
-                },
-                {
-                    key: 'inventory',
-                    label: 'Inventory',
-                    path: '/admin/inventory'
-                }
-            ]
-        },
-        {
-            key: 'marketing',
-            icon: <GiftOutlined />,
-            label: 'Marketing',
-            children: [
-                {
-                    key: 'campaigns',
-                    label: 'Campaigns',
-                    path: '/admin/campaigns'
-                },
-                {
-                    key: 'promotions',
-                    label: 'Promotions',
-                    path: '/admin/promotions'
-                }
-            ]
-        },
-        {
-            key: 'content',
-            icon: <FileTextOutlined />,
-            label: 'Content',
-            children: [
-                {
-                    key: 'pages',
-                    label: 'Pages',
-                    path: '/admin/pages'
-                },
-                {
-                    key: 'blogs',
-                    label: 'Blog Posts',
-                    path: '/admin/blogs'
-                }
-            ]
         },
         {
             key: 'settings',

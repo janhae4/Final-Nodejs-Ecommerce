@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Input, Select, Pagination, Row, Col, Card, Tag } from 'antd';
+import { Table, Input, Select, Pagination, Row, Col, Card, Tag, Button } from 'antd';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -13,7 +14,8 @@ const ProductCatalog = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8; 
+  const pageSize = 8;
+  const navigate = useNavigate();
 
   const fetchProducts = async () => {
     try {
@@ -60,14 +62,18 @@ const ProductCatalog = () => {
     }
 
     setFilteredProducts(filtered);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div style={{ padding: 20 }}>
-
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <Button type="primary" onClick={() => navigate('/admin/products/create')} style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}> 
+          +Add Product
+        </Button>
+      </div>
       {/* Search and Filter */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         <Col span={6}>
