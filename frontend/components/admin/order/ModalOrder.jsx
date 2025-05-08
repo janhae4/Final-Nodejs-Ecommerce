@@ -43,6 +43,7 @@ const ModalOrder = ({
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [availableProducts, setAvailableProducts] = useState([]);
+  const [variantsProduct, setVariantsProduct] = useState([]);
   const [maxQuantity, setMaxQuantity] = useState(100);
   const [messageApi, contextHolder] = message.useMessage();
   const [error, setError] = useState("");
@@ -77,10 +78,21 @@ const ModalOrder = ({
     setShowProductSelector(true);
   };
 
+  const getVariantsProduct = async (id) => {
+    try {
+      const res = await axios.get(`${API_URL}/products/variants/${id}`);
+      setVariantsProduct(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleProductSelect = (productId) => {
     const selectedProductData = availableProducts.find(
       (p) => p._id === productId
     );
+
+    getVariantsProduct(selectedProductData._id);
 
     if (selectedProductData) {
       const newProduct = {
@@ -89,7 +101,6 @@ const ModalOrder = ({
         productName: selectedProductData.nameProduct,
         quantity: 1,
         price: selectedProductData.price,
-        variants: selectedProductData.variants,
       }
       const updatedProducts = [...products, newProduct];
       setProducts(updatedProducts);
@@ -115,6 +126,13 @@ const ModalOrder = ({
     });
     setProducts(updatedProducts);
     form.setFieldsValue({ products: updatedProducts });
+  };
+
+  const handleSelectVariant = (id, value) => {
+    const selectedVariant = variantsProduct.find((v) => v._id === value);
+    setMaxQuantity(selectedVariant.inventory);
+    handleProductChange(id, "variantName", selectedVariant.name);
+    handleProductChange(id, "variantId", selectedVariant._id);
   };
 
   const _handleSubmit = (e) => {
@@ -168,18 +186,10 @@ const ModalOrder = ({
           style={{ width: 250 }}
           value={record.variantId}
           onChange={(value) => {
-            console.log(record.variant)
-            const selectedVariant = record.variants.find(
-              (v) => v._id === value
-            );
-            setMaxQuantity(selectedVariant.inventory);
-            console.log(selectedVariant)
-            handleProductChange(record._id, "variantName", selectedVariant.name);
-            handleProductChange(record._id, "variantId", selectedVariant._id);
-            console.log(form.getFieldsValue());
+            handleSelectVariant(record._id, value);
           }}
         >
-          {record.variants?.map((v) => (
+          {variantsProduct.map((v) => (
             <Option key={v._id} value={v._id}>
               {v.name}
             </Option>

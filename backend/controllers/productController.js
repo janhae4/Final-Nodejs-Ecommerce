@@ -328,3 +328,13 @@ exports.decreaseInventory = async (req, res) => {
 };
 
 
+exports.getProductVariants = async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const variants = await ProductService.getProductVariants(productId);
+        res.status(200).json(variants);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const userConnection = require('../database/userConnection');
 
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
@@ -22,5 +23,5 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-const User = mongoose.model('User', userSchema);
+const User = userConnection.model('User', userSchema);
 module.exports = User;

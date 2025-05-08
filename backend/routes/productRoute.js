@@ -10,6 +10,7 @@ router.get('/searchByCategory', ProductController.searchByCategory);
 router.get('/searchByPrice', ProductController.searchByPrice);
 router.get('/:id', ProductController.getProductByIdWithVariants);
 router.post('/create', upload.array('images'), ProductController.createProduct);
+router.get("/variants/:id", ProductController.getProductVariants);
 
 //Update product
 // PATCH/products/:id

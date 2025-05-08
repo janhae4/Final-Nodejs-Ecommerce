@@ -206,3 +206,13 @@ exports.decreaseInventory = async (productId, quantity, variantId = null) => {
         throw new Error('Error decreasing inventory: ' + err.message);
     }
 };
+
+exports.getProductVariants = async (productId) => {
+    try {
+        const product = await Product.findById(productId).populate('variants');
+        if (!product) throw new Error('Product not found');
+        return product.variants;
+    } catch (err) {
+        throw new Error('Error fetching product variants: ' + err.message);
+    }
+};

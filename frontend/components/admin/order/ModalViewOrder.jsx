@@ -11,14 +11,17 @@ import {
   Descriptions,
   Tag,
   Card,
+  Timeline,
 } from "antd";
 import {
   DollarOutlined,
   TagOutlined,
   CloseCircleOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import axios from "axios";
+import RenderStatusHistory from "./RenderStatusHistory";
 
 const { Text, Title } = Typography;
 
@@ -88,7 +91,6 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
     getDiscount();
   }, [orderData]);
 
-  // Định nghĩa cột cho bảng sản phẩm
   const columns = [
     {
       title: "Product",
@@ -133,7 +135,7 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
       title="Order Details"
       open={isModalVisible}
       onCancel={handleCancel}
-      width={900}
+      width={1000}
       styles={{
         body: {
           maxHeight: "calc(100vh - 200px)",
@@ -201,61 +203,78 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
             </Descriptions.Item>
           </Descriptions>
 
-          <Divider orientation="left">Products</Divider>
-
-          <Table
-            columns={columns}
-            dataSource={orderData.products || []}
-            rowKey={(record) => record.productId + (record.variantId || "")}
-            pagination={false}
-            scroll={{ x: "max-content" }}
-            size="small"
-            footer={() => (
-              <div className="p-5 flex justify-end">
-                <Row justify="space-between" align="middle" gutter={[16, 16]}>
-                  <div style={{ textAlign: "right" }}>
-                    <Space
-                      direction="vertical"
-                      size="small"
-                      style={{ width: "100%" }}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={16}>
+              <Divider orientation="left">Products</Divider>
+              <Table
+                columns={columns}
+                dataSource={orderData.products || []}
+                rowKey={(record) => record.productId + (record.variantId || "")}
+                pagination={false}
+                scroll={{ x: "max-content" }}
+                size="small"
+                footer={() => (
+                  <div className="p-5 flex justify-end">
+                    <Row
+                      justify="space-between"
+                      align="middle"
+                      gutter={[16, 16]}
                     >
-                      <div className="flex justify-between gap-3">
-                        <Text>Subtotal: </Text>
-                        <Text>{formatCurrency(calculateTotal())}</Text>
+                      <div style={{ textAlign: "right" }}>
+                        <Space
+                          direction="vertical"
+                          size="small"
+                          style={{ width: "100%" }}
+                        >
+                          <div className="flex justify-between gap-3">
+                            <Text>Subtotal: </Text>
+                            <Text>{formatCurrency(calculateTotal())}</Text>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Text>Discount:</Text>
+                            <Text
+                              style={{ color: discount ? "#52c41a" : "#999" }}
+                            >
+                              {discount
+                                ? discount.type === "fixed"
+                                  ? `- ${formatCurrency(discount.value)}`
+                                  : `- ${discount.value || 0}%`
+                                : "N/A"}
+                            </Text>
+                          </div>
+                          <Divider style={{ margin: "8px 0" }} />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Text strong>Total: </Text>
+                            <Text strong>
+                              {formatCurrency(calculateFinalTotal())}
+                            </Text>
+                          </div>
+                        </Space>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text>Discount:</Text>
-                        <Text style={{ color: discount ? "#52c41a" : "#999" }}>
-                          {discount
-                            ? discount.type === "fixed"
-                              ? `- ${formatCurrency(discount.value)}`
-                              : `- ${discount.value || 0}%`
-                            : "N/A"}
-                        </Text>
-                      </div>
-                      <Divider style={{ margin: "8px 0" }} />
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text strong>Total: </Text>
-                        <Text strong>
-                          {formatCurrency(calculateFinalTotal())}
-                        </Text>
-                      </div>
-                    </Space>
+                    </Row>
                   </div>
-                </Row>
-              </div>
-            )}
-          />
+                )}
+              />
+            </Col>
+
+            <Col xs={24} md={8}>
+            <RenderStatusHistory 
+                statusHistory={orderData.statusHistory} 
+                currentStatus={orderData.status}
+                getStatusColor={getStatusColor}
+              />
+            </Col>
+          </Row>
         </>
       )}
     </Modal>

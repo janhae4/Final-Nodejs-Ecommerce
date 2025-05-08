@@ -65,22 +65,31 @@ const OrderAdmin = () => {
   const [form] = Form.useForm();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const fetchAllData = async (page = 1, pageSize = 20, search = "", timeFrame = "all", startDate = null, endDate = null) => {
+  const fetchAllData = async (
+    page = 1,
+    pageSize = 20,
+    search = "",
+    timeFrame = "all",
+    startDate = null,
+    endDate = null
+  ) => {
     try {
       setLoading(true);
 
       let url = `${API_URL}/orders/all?page=${page}&limit=${pageSize}`;
-      
+
       if (search && search.trim() !== "") {
         url += `&search=${encodeURIComponent(search)}`;
       }
-      
+
       if (timeFrame && timeFrame !== "all") {
         url += `&timeFilter=${timeFrame}`;
       }
-      
+
       if (startDate && endDate) {
-        url += `&startDate=${startDate.format("YYYY-MM-DD")}&endDate=${endDate.format("YYYY-MM-DD")}`;
+        url += `&startDate=${startDate.format(
+          "YYYY-MM-DD"
+        )}&endDate=${endDate.format("YYYY-MM-DD")}`;
       }
 
       const response = await axios.get(url);
@@ -100,21 +109,26 @@ const OrderAdmin = () => {
   };
 
   useEffect(() => {
-    fetchAllData(page, pageSize, searchText, timeFilter, 
+    fetchAllData(
+      page,
+      pageSize,
+      searchText,
+      timeFilter,
       dateRange ? dateRange[0] : null,
-      dateRange ? dateRange[1] : null);
+      dateRange ? dateRange[1] : null
+    );
   }, [page, pageSize, timeFilter, dateRange]);
 
   const handleTimeFilterChange = (value) => {
     setTimeFilter(value);
-    setDateRange(null); // Reset date range when changing time filter
-    setPage(1); // Reset to first page when filter changes
+    setDateRange(null);
+    setPage(1);
   };
 
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
-    setTimeFilter("all"); // Reset time filter when custom range is selected
-    setPage(1); // Reset to first page when filter changes
+    setTimeFilter("all");
+    setPage(1);
   };
 
   const showModal = (record = null) => {
@@ -152,14 +166,45 @@ const OrderAdmin = () => {
 
       setIsModalVisible(false);
       form.resetFields();
-      
+
       // Refresh data after update
-      fetchAllData(page, pageSize, searchText, timeFilter, 
+      fetchAllData(
+        page,
+        pageSize,
+        searchText,
+        timeFilter,
         dateRange ? dateRange[0] : null,
-        dateRange ? dateRange[1] : null);
+        dateRange ? dateRange[1] : null
+      );
     } catch (error) {
       console.error("Error submitting form:", error);
-      messageApi.error(error.response?.data?.message || "Failed to submit form");
+      messageApi.error(
+        error.response?.data?.message || "Failed to submit form"
+      );
+    }
+  };
+
+  // Function to update order status directly from the table
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      setLoading(true);
+      await axios.patch(`${API_URL}/orders/${orderId}/status`, { status: newStatus });
+
+      // Update local state to reflect the change
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
+      messageApi.success("Order status updated successfully");
+      setLoading(false);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      messageApi.error(
+        error.response?.data?.message || "Failed to update status"
+      );
+      setLoading(false);
     }
   };
 
@@ -173,9 +218,9 @@ const OrderAdmin = () => {
     const value = e.target.value;
     setSearchText(value);
     debouncedFetchRef.current(
-      value, 
-      page, 
-      pageSize, 
+      value,
+      page,
+      pageSize,
       timeFilter,
       dateRange ? dateRange[0] : null,
       dateRange ? dateRange[1] : null
@@ -191,12 +236,6 @@ const OrderAdmin = () => {
     setIsViewModalVisible(false);
   };
 
-  const handleRowClick = (record) => {
-    // You can define what happens when a row is clicked
-    // For example, you might want to show the view modal
-    // showViewModal(record);
-  };
-
   const columns = [
     {
       title: "Code",
@@ -209,7 +248,7 @@ const OrderAdmin = () => {
       title: "Amount",
       dataIndex: "totalAmount",
       key: "totalAmount",
-      render: (value, record) => <Text strong>${value}</Text>,
+      render: (value, record) => <Text>${value}</Text>,
       sorter: (a, b) => a.totalAmount - b.totalAmount,
     },
     {
@@ -217,7 +256,7 @@ const OrderAdmin = () => {
       dataIndex: "shippingAddress",
       key: "shippingAddress",
       sorter: (a, b) => a.shippingAddress.localeCompare(b.shippingAddress),
-      render: (text) => <Text strong>{text}</Text>,
+      render: (text) => <Text>{text}</Text>,
     },
     {
       title: "Purchase date",
@@ -230,21 +269,62 @@ const OrderAdmin = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => {
-        switch (status) {
-          case "pending":
-            return <Tag color="processing">Pending</Tag>;
-          case "confirmed":
-            return <Tag color="processing">Confirmed</Tag>;
-          case "shipping":
-            return <Tag color="processing">Shipping</Tag>;
-          case "delivered":
-            return <Tag color="success">Delivered</Tag>;
-          case "cancelled":
-            return <Tag color="error">Cancelled</Tag>;
-          default:
-            return null;
+      render: (status, record) => {
+        const statusColors = {
+          pending: "orange",
+          confirmed: "blue",
+          shipping: "purple",
+          delivered: "green",
+          cancelled: "red",
+        };
+      
+        const statusOptions = {
+          pending: [
+            { value: "confirmed", label: "confirmed" },
+            { value: "cancelled", label: "cancelled" },
+          ],
+          confirmed: [
+            { value: "shipping", label: "shipping" },
+            { value: "cancelled", label: "cancelled" },
+          ],
+          shipping: [
+            { value: "delivered", label: "delivered" },
+            { value: "cancelled", label: "cancelled" },
+          ],
+          delivered: [],
+          cancelled: [],
+        };
+      
+        const options = statusOptions[status];
+      
+        if (!options || options.length === 0) {
+          return <Tag color={statusColors[status]}>{status}</Tag>;
         }
+      
+        return (
+          <Select
+            value={status}
+            style={{ width: 150 }}
+            onChange={(value) => handleStatusChange(record._id, value)}
+            disabled={loading}
+            options={[
+              {
+                value: status,
+                label: <Tag color={statusColors[status]}>{status}</Tag>,
+                disabled: true,
+              },
+              ...options.map((option) => ({
+                value: option.value,
+                label: (
+                  <Tag color={statusColors[option.value]}>
+                    {option.label}
+                  </Tag>
+                ),
+              })),
+            ]}
+            variant="borderless"
+          />
+        );
       },
       filters: [
         { text: "Pending", value: "pending" },
@@ -298,8 +378,6 @@ const OrderAdmin = () => {
           Orders Management
         </Title>
 
-        {/* Statistics Cards */}
-
         <Card className="mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-start mb-4">
             <Title level={4} className="mb-4 md:mb-0">
@@ -341,14 +419,16 @@ const OrderAdmin = () => {
                 <Button
                   type="primary"
                   icon={<ReloadOutlined />}
-                  onClick={() => fetchAllData(
-                    page, 
-                    pageSize, 
-                    searchText,
-                    timeFilter,
-                    dateRange ? dateRange[0] : null,
-                    dateRange ? dateRange[1] : null
-                  )}
+                  onClick={() =>
+                    fetchAllData(
+                      page,
+                      pageSize,
+                      searchText,
+                      timeFilter,
+                      dateRange ? dateRange[0] : null,
+                      dateRange ? dateRange[1] : null
+                    )
+                  }
                   className="bg-blue-500"
                 >
                   Refresh
@@ -372,8 +452,8 @@ const OrderAdmin = () => {
                 setPage(page);
                 setPageSize(pageSize);
                 fetchAllData(
-                  page, 
-                  pageSize, 
+                  page,
+                  pageSize,
                   searchText,
                   timeFilter,
                   dateRange ? dateRange[0] : null,
@@ -383,9 +463,6 @@ const OrderAdmin = () => {
             }}
             scroll={{ x: "max-content" }}
             className="overflow-x-auto"
-            onRow={(record) => ({
-              onClick: () => handleRowClick(record),
-            })}
           />
         </Card>
       </Content>

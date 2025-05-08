@@ -6,7 +6,7 @@ const variantSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   inventory: { type: Number, required: true },
-  use: { type: Number },
+  used: { type: Number,default: 0 },
 });
 
 const commentSchema = new mongoose.Schema({

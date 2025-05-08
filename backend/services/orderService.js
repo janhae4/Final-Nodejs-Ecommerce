@@ -8,15 +8,47 @@ const generateOrderCode = () => {
 };
 
 exports.createOrder = async (orderData) => {
-  const order = new Order({
-    ...orderData,
-    orderCode: generateOrderCode(),
-    loyaltyPointsEarned: Math.floor(orderData.totalAmount || 0 * 0.1),
-  });
-  orderData.products.forEach(async (product) => {
-    const productData = await Product.findById(product._id);
-  });
-  return await order.save();
+  const session = await Order.startSession();
+  session.startTransaction();
+
+  try {
+    const order = new Order({
+      ...orderData,
+      orderCode: generateOrderCode(),
+      loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
+    });
+
+    for (const product of orderData.products) {
+      const productData = await Product.findById(product._id).session(session);
+      if (!productData) {
+        throw new Error("Product not found");
+      }
+
+      const variant = productData.variants.id(product.variantId);
+      if (!variant) {
+        throw new Error("Product variant not found");
+      }
+
+      if (variant.inventory < product.quantity) {
+        throw new Error("Not enough inventory for product");
+      }
+
+      variant.inventory -= product.quantity;
+
+      await productData.save({ session });
+    }
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return order;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 exports.getOrders = async (user, discountCode) => {
@@ -67,7 +99,7 @@ exports.patchStatusOrder = async (orderId, orderData) => {
         `Cannot transition from ${currentStatus} to ${newStatus}`
       );
     }
-
+    
     order.status = orderData.status;
     order.statusHistory.push({ status: orderData.status });
 
@@ -78,8 +110,16 @@ exports.patchStatusOrder = async (orderId, orderData) => {
 };
 
 exports.updateOrder = async (orderId, orderData) => {
-  console.log(orderData);
-  return await Order.findByIdAndUpdate(orderId, orderData, { new: true });
+  const order = await Order.findById(orderId);
+  const updatePayload = { ...orderData };
+
+  if (order.status !== orderData.status) {
+    updatePayload.$push = {
+      statusHistory: { status: orderData.status },
+    };
+  }
+
+  return await Order.findByIdAndUpdate(orderId, updatePayload, { new: true });
 };
 
 exports.getOrderById = async (orderId) => {
