@@ -81,12 +81,12 @@ exports.findProductsByCategory = async (category) => {
     }
 };
 
-exports.searchProducts = async ({ nameProduct, catrgory, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
+exports.searchProducts = async ({ nameProduct, category, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
     try {
         const query = {};
 
         if (nameProduct) query.nameProduct = { $regex: nameProduct, $options: 'i' };
-        if (catrgory) query.catrgory = catrgory;
+        if (category) query.category = category;
         if (minPrice !== undefined || maxPrice !== undefined) {
             query.price = {};
             if (minPrice !== undefined) query.price.$gte = minPrice;

@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 
 const generateOrderCode = () => {
   const timestamp = Date.now();
@@ -11,6 +12,9 @@ exports.createOrder = async (orderData) => {
     ...orderData,
     orderCode: generateOrderCode(),
     loyaltyPointsEarned: Math.floor(orderData.totalAmount || 0 * 0.1),
+  });
+  orderData.products.forEach(async (product) => {
+    const productData = await Product.findById(product._id);
   });
   return await order.save();
 };
@@ -48,23 +52,25 @@ exports.patchStatusOrder = async (orderId, orderData) => {
     }
 
     const validStatusTransitions = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['shipping', 'cancelled'],
-      shipping: ['delivered', 'cancelled'],
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["shipping", "cancelled"],
+      shipping: ["delivered", "cancelled"],
       delivered: [],
-      cancelled: []
+      cancelled: [],
     };
 
     const currentStatus = order.status;
     const newStatus = orderData.status;
 
     if (!validStatusTransitions[currentStatus].includes(newStatus)) {
-      throw new Error(`Cannot transition from ${currentStatus} to ${newStatus}`);
+      throw new Error(
+        `Cannot transition from ${currentStatus} to ${newStatus}`
+      );
     }
 
     order.status = orderData.status;
     order.statusHistory.push({ status: orderData.status });
-    
+
     return await order.save();
   } catch (error) {
     throw new Error("Error updating order: " + error.message);
@@ -72,6 +78,7 @@ exports.patchStatusOrder = async (orderId, orderData) => {
 };
 
 exports.updateOrder = async (orderId, orderData) => {
+  console.log(orderData);
   return await Order.findByIdAndUpdate(orderId, orderData, { new: true });
 };
 
@@ -92,22 +99,110 @@ exports.deleteOrderById = async (orderId) => {
     const order = await Order.findByIdAndDelete(orderId);
     return { message: "Order deleted successfully" };
   } catch (error) {
-    throw new Error("Oder not found");
+    throw new Error("Order not found");
   }
 };
 
-exports.getOrderCount = async (search) => {
-  return await Order.countDocuments({
-    $or: [{ orderCode: { $regex: search, $options: "i" } }],
-  });
+const getDateRangeQuery = (timeFilter, startDate, endDate) => {
+  const dateQuery = {};
+  const now = new Date();
+
+  if (startDate && endDate) {
+    dateQuery.purchaseDate = {
+      $gte: startDate,
+      $lte: endDate,
+    };
+  } else if (timeFilter && timeFilter !== "all") {
+    dateQuery.purchaseDate = {};
+
+    switch (timeFilter) {
+      case "today":
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dateQuery.purchaseDate = {
+          $gte: today,
+          $lte: now,
+        };
+        break;
+
+      case "yesterday":
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+
+        const yesterdayEnd = new Date();
+        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+        yesterdayEnd.setHours(23, 59, 59, 999);
+
+        dateQuery.purchaseDate = {
+          $gte: yesterday,
+          $lte: yesterdayEnd,
+        };
+        break;
+
+      case "week":
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+
+        dateQuery.purchaseDate = {
+          $gte: weekStart,
+          $lte: now,
+        };
+        break;
+
+      case "month":
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+
+        dateQuery.purchaseDate = {
+          $gte: monthStart,
+          $lte: now,
+        };
+        break;
+    }
+  }
+
+  return dateQuery;
 };
 
-exports.getAllOrders = async (skip, limit, search) => {
+exports.getOrderCount = async (search, timeFilter, startDate, endDate) => {
+  const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
+
+  const query = {
+    $and: [{ $or: [{ orderCode: { $regex: search, $options: "i" } }] }],
+  };
+
+  if (Object.keys(dateQuery).length > 0) {
+    query.$and.push(dateQuery);
+  }
+
+  return await Order.countDocuments(query);
+};
+
+exports.getAllOrders = async (
+  skip,
+  limit,
+  search,
+  timeFilter,
+  startDate,
+  endDate
+) => {
   try {
-    await Order.collection.dropIndexes();
-    return await Order.find({
-      $or: [{ orderCode: { $regex: search, $options: "i" } }],
-    })
+    const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
+
+    const query = {
+      $and: [{ $or: [{ orderCode: { $regex: search, $options: "i" } }] }],
+    };
+
+    if (Object.keys(dateQuery).length > 0) {
+      query.$and.push(dateQuery);
+    }
+
+    await Order.collection.createIndex({ orderCode: 1 });
+    return await Order.find(query)
+      .sort({ purchaseDate: -1 }) // Sort by purchase date (newest first)
       .skip(skip)
       .limit(limit);
   } catch (error) {

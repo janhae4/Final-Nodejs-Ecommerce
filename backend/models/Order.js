@@ -51,6 +51,25 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      productName: {
+        type: String,
+      },
+      variantId: {
+        type: String,
+      },
+      variantName: {
+        type: String,
+      },
+      variants: {
+        type: [
+          {
+            name: { type: String, required: true },
+            price: { type: Number, required: true },
+            inventory: { type: Number, required: true },
+            use: { type: Number },
+          },
+        ],
+      },
       quantity: {
         type: Number,
         required: true,

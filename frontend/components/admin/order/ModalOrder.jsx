@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   Button,
@@ -13,11 +13,13 @@ import {
   Typography,
   Row,
   Col,
+  message,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import axios from "axios";
+import debounce from "debounce";
 
-// CSS for ensuring modal scrolling works properly
 const modalStyles = {
   modalBody: {
     maxHeight: "calc(100vh - 200px)",
@@ -38,7 +40,14 @@ const ModalOrder = ({
   editingId,
 }) => {
   const [products, setProducts] = useState([]);
-
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [availableProducts, setAvailableProducts] = useState([]);
+  const [maxQuantity, setMaxQuantity] = useState(100);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [error, setError] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
+  const currentStatus = Form.useWatch("status", form);
   useEffect(() => {
     if (form && form.getFieldValue("products")) {
       setProducts(form.getFieldValue("products") || []);
@@ -47,35 +56,71 @@ const ModalOrder = ({
     }
   }, [form, isModalVisible]);
 
-  const handleAddProduct = () => {
-    const newProduct = {
-      productId: "",
-      quantity: 1,
-      price: 0,
-      key: Date.now(), // Unique key for rendering
-    };
+  const debounceFetchRef = useRef(null);
 
-    const updatedProducts = [...products, newProduct];
-    setProducts(updatedProducts);
-    form.setFieldsValue({ products: updatedProducts });
+  useEffect(() => {
+    debounceFetchRef.current = debounce(async (input) => {
+      try {
+        const res = await axios.get(`${API_URL}/products?nameProduct=${input}`);
+        setAvailableProducts(res.data.products);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+  }, []);
+
+  const handleSearch = (input) => {
+    debounceFetchRef.current(input);
   };
 
-  const handleRemoveProduct = (key) => {
-    const updatedProducts = products.filter((product) => product.key !== key);
+  const handleAddProduct = () => {
+    setShowProductSelector(true);
+  };
+
+  const handleProductSelect = (productId) => {
+    const selectedProductData = availableProducts.find(
+      (p) => p._id === productId
+    );
+
+    if (selectedProductData) {
+      const newProduct = {
+        key: selectedProductData._id,
+        productId: selectedProductData._id,
+        productName: selectedProductData.nameProduct,
+        quantity: 1,
+        price: selectedProductData.price,
+        variants: selectedProductData.variants,
+      }
+      const updatedProducts = [...products, newProduct];
+      setProducts(updatedProducts);
+      form.setFieldsValue({ products: updatedProducts });
+      setShowProductSelector(false);
+      setSelectedProduct(null);
+    }
+  };
+
+  const handleRemoveProduct = (productId) => {
+    const updatedProducts = products.filter((product) => product._id !== productId);
     setProducts(updatedProducts);
     form.setFieldsValue({ products: updatedProducts });
   };
 
   const handleProductChange = (key, field, value) => {
     const updatedProducts = products.map((product) => {
-      if (product.key === key) {
+      if (product._id === key) {
+        console.log(true, field, value)
         return { ...product, [field]: value };
       }
       return product;
     });
-
     setProducts(updatedProducts);
     form.setFieldsValue({ products: updatedProducts });
+  };
+
+  const _handleSubmit = (e) => {
+    e.preventDefault();
+    if (error) return;
+    handleSubmit(e);
   };
 
   const calculateTotal = () => {
@@ -86,46 +131,89 @@ const ModalOrder = ({
   };
 
   useEffect(() => {
-    // Update total amount whenever products change
     form.setFieldsValue({ totalAmount: calculateTotal() });
   }, [products]);
 
-  const orderStatusOptions = [
-    "pending",
-    "confirmed",
-    "shipping",
-    "delivered",
-    "cancelled",
-  ];
+  const orderStatusOptions = {
+    "pending": ["confirmed", "cancelled"],
+    "confirmed": ["shipping", "cancelled"],
+    "shipping": ["delivered", "cancelled"],
+    "delivered": [],
+    "cancelled": []
+  };
 
   const columns = [
     {
-      title: "Product ID",
-      dataIndex: "productId",
-      key: "productId",
+      title: "Product",
+      dataIndex: "_id",
+      key: "_id",
       render: (text, record) => (
-        <Input
-          value={text}
-          onChange={(e) =>
-            handleProductChange(record.key, "productId", e.target.value)
-          }
-          placeholder="Enter product ID"
-        />
+        <div>
+          <div className="break-words whitespace-normal max-w-[200px]">
+            <strong>{record.productName}</strong>
+          </div>
+          <div>
+            <small>ID: {record.productId}</small>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Variant",
+      dataIndex: "variants",
+      key: "variants",
+      render: (_, record) => (
+        <Select
+          placeholder="Select a variant"
+          style={{ width: 250 }}
+          value={record.variantId}
+          onChange={(value) => {
+            console.log(record.variant)
+            const selectedVariant = record.variants.find(
+              (v) => v._id === value
+            );
+            setMaxQuantity(selectedVariant.inventory);
+            console.log(selectedVariant)
+            handleProductChange(record._id, "variantName", selectedVariant.name);
+            handleProductChange(record._id, "variantId", selectedVariant._id);
+            console.log(form.getFieldsValue());
+          }}
+        >
+          {record.variants?.map((v) => (
+            <Option key={v._id} value={v._id}>
+              {v.name}
+            </Option>
+          ))}
+        </Select>
       ),
     },
     {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
-      render: (text, record) => (
-        <InputNumber
-          min={1}
-          value={text}
-          onChange={(value) =>
-            handleProductChange(record.key, "quantity", value)
-          }
-        />
-      ),
+      render: (text, record) => {
+        const selectedVariant = record.variants?.find(
+          (v) => v._id === record.variant
+        );
+        const max = selectedVariant?.inventory || 100;
+        return (
+          <InputNumber
+            min={1}
+            max={max}
+            value={record?.quantity}
+            onInput={(value) => {
+              if (value > maxQuantity) {
+                messageApi.warning(`Maximum is ${maxQuantity}`);
+                setError(`Maximum is ${maxQuantity}`);
+                return;
+              } else {
+                setError(null);
+                handleProductChange(record._id, "quantity", value);
+              }
+            }}
+          />
+        );
+      },
     },
     {
       title: "Price",
@@ -136,7 +224,7 @@ const ModalOrder = ({
           min={0}
           step={0.01}
           value={text}
-          onChange={(value) => handleProductChange(record.key, "price", value)}
+          onChange={(value) => handleProductChange(record._id, "price", value)}
           formatter={(value) => `$${value}`}
           parser={(value) => value.replace("$", "")}
         />
@@ -156,7 +244,7 @@ const ModalOrder = ({
         <Button
           danger
           icon={<DeleteOutlined />}
-          onClick={() => handleRemoveProduct(record.key)}
+          onClick={() => handleRemoveProduct(record._id)}
         />
       ),
     },
@@ -166,13 +254,34 @@ const ModalOrder = ({
     <Space direction="vertical" style={{ width: "100%" }}>
       <Row justify="space-between">
         <Col>
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            onClick={handleAddProduct}
-          >
-            Add Product
-          </Button>
+          {showProductSelector ? (
+            <Select
+              placeholder="Select a product"
+              style={{ width: 250 }}
+              key={"default"}
+              value={selectedProduct}
+              onChange={handleProductSelect}
+              onSearch={handleSearch}
+              onBlur={() => setShowProductSelector(false)}
+              optionFilterProp="children"
+              autoFocus
+              showSearch
+            >
+              {availableProducts.map((product) => (
+                <Option key={product._id} value={product._id}>
+                  {product.nameProduct}
+                </Option>
+              ))}
+            </Select>
+          ) : (
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={handleAddProduct}
+            >
+              Add Product
+            </Button>
+          )}
         </Col>
         <Col>
           <Text strong>Total: ${calculateTotal().toFixed(2)}</Text>
@@ -187,7 +296,7 @@ const ModalOrder = ({
       open={isModalVisible}
       onCancel={handleCancel}
       width={900}
-      bodyStyle={modalStyles.modalBody}
+      styles={{ body: modalStyles.modalBody }}
       className="modal-with-internal-scroll"
       footer={[
         <Button key="back" onClick={handleCancel}>
@@ -196,7 +305,7 @@ const ModalOrder = ({
         <Button
           key="submit"
           type="primary"
-          onClick={handleSubmit}
+          onClick={_handleSubmit}
           className="bg-blue-500"
         >
           {editingId ? "Update" : "Create"}
@@ -204,6 +313,7 @@ const ModalOrder = ({
       ]}
       centered
     >
+      {contextHolder}
       <Form
         form={form}
         layout="vertical"
@@ -255,7 +365,7 @@ const ModalOrder = ({
               rules={[{ required: true, message: "Please select status" }]}
             >
               <Select placeholder="Select status">
-                {orderStatusOptions.map((status) => (
+                {(orderStatusOptions[currentStatus] || []).map((status) => (
                   <Option key={status} value={status}>
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                   </Option>

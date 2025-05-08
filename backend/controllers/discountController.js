@@ -33,6 +33,18 @@ exports.getDiscountById = async (req, res) => {
     }
 }
 
+exports.getDiscountByCode = async (req, res) => {
+    try {
+        const discount = await discountService.getDiscountByCode(req.params.code);
+        if (!discount) {
+            return res.status(404).json({ message: 'Discount not found' });
+        }
+        res.status(200).json(discount);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 exports.getMostUsedDiscount = async (req, res) => {
     try {
         const discount = await discountService.getMostUsedDiscount();

@@ -19,6 +19,7 @@ import {
   Col,
   Divider,
   Breadcrumb,
+  DatePicker,
 } from "antd";
 import {
   PlusOutlined,
@@ -31,12 +32,14 @@ import {
   PercentageOutlined,
   DashboardOutlined,
   DollarOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import debounce from "debounce";
 import dayjs from "dayjs";
 
 import ModalOrder from "../../../../components/admin/order/ModalOrder";
+import ModalViewOrder from "../../../../components/admin/order/ModalViewOrder";
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -45,33 +48,48 @@ const OrderAdmin = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
   });
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [dateRange, setDateRange] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const fetchAllData = async (page = 1, pageSize = 20) => {
+  const fetchAllData = async (page = 1, pageSize = 20, search = "", timeFrame = "all", startDate = null, endDate = null) => {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        `${API_URL}/orders/all?page=${page}&limit=${pageSize}`
-      );
+      let url = `${API_URL}/orders/all?page=${page}&limit=${pageSize}`;
+      
+      if (search && search.trim() !== "") {
+        url += `&search=${encodeURIComponent(search)}`;
+      }
+      
+      if (timeFrame && timeFrame !== "all") {
+        url += `&timeFilter=${timeFrame}`;
+      }
+      
+      if (startDate && endDate) {
+        url += `&startDate=${startDate.format("YYYY-MM-DD")}&endDate=${endDate.format("YYYY-MM-DD")}`;
+      }
+
+      const response = await axios.get(url);
       setOrders(response.data.data);
-      console.log(response.data.data)
+      console.log(response.data.data);
       setPagination({
-        current: orders.currentPage,
-        pageSize: 20,
-        total: orders.totalCount,
+        current: page,
+        pageSize: pageSize,
+        total: response.data.totalCount || 0,
       });
       setLoading(false);
     } catch (error) {
@@ -82,8 +100,22 @@ const OrderAdmin = () => {
   };
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    fetchAllData(page, pageSize, searchText, timeFilter, 
+      dateRange ? dateRange[0] : null,
+      dateRange ? dateRange[1] : null);
+  }, [page, pageSize, timeFilter, dateRange]);
+
+  const handleTimeFilterChange = (value) => {
+    setTimeFilter(value);
+    setDateRange(null); // Reset date range when changing time filter
+    setPage(1); // Reset to first page when filter changes
+  };
+
+  const handleDateRangeChange = (dates) => {
+    setDateRange(dates);
+    setTimeFilter("all"); // Reset time filter when custom range is selected
+    setPage(1); // Reset to first page when filter changes
+  };
 
   const showModal = (record = null) => {
     if (record) {
@@ -102,11 +134,6 @@ const OrderAdmin = () => {
     setIsModalVisible(true);
   };
 
-  const handleRowClick = (record) => {
-    setSelectedDiscount(record);
-    setOrderModalVisible(true);
-  };
-
   const handleCancel = () => {
     setIsModalVisible(false);
     form.resetFields();
@@ -115,75 +142,59 @@ const OrderAdmin = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      await axios.put(`${API_URL}/orders/${editingId}`, values);
+      setOrders((prev) =>
+        prev.map((item) =>
+          item._id === editingId ? { ...item, ...values } : item
+        )
+      );
+      messageApi.success("Order updated successfully");
 
-      if (editingId) {
-        await axios.patch(`${API_URL}/orders/${editingId}`, values);
-        setOrders((prev) =>
-          prev.map((item) =>
-            item._id === editingId ? { ...item, ...values } : item
-          )
-        );
-        messageApi.success("Order updated successfully");
-      } else {
-        await axios.post(`${API_URL}/orders`, values);
-        const newCode = {
-          _id: String(discountCodes.length + 1),
-          ...values,
-          usedCount: 0,
-        };
-        setOrders((prev) => [...prev, newCode]);
-        messageApi.success("Order created successfully");
-      }
       setIsModalVisible(false);
       form.resetFields();
+      
+      // Refresh data after update
+      fetchAllData(page, pageSize, searchText, timeFilter, 
+        dateRange ? dateRange[0] : null,
+        dateRange ? dateRange[1] : null);
     } catch (error) {
       console.error("Error submitting form:", error);
-      messageApi.error(error.response.data.message || "Failed to submit form");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      console.log(id);
-      await axios.delete(`${API_URL}/orders/${id}`);
-      setOrders((prev) => prev.filter((item) => item._id !== id));
-      messageApi.success("Order deleted successfully");
-
-      const updatedCodes = discountCodes.filter((item) => item._id !== id);
-      const total = updatedCodes.length;
-      const active = updatedCodes.filter(
-        (code) => code.status === "active"
-      ).length;
-      const inactive = total - active;
-      const mostUsed =
-        updatedCodes.length > 0
-          ? [...updatedCodes].sort((a, b) => b.usedCount - a.usedCount)[0]
-          : null;
-
-      setStats({
-        total,
-        active,
-        inactive,
-        mostUsed,
-      });
-    } catch (error) {
-      console.error("Error deleting Order:", error);
-      messageApi.error(
-        error.response.data.message || "Failed to delete Order"
-      );
+      messageApi.error(error.response?.data?.message || "Failed to submit form");
     }
   };
 
   const debouncedFetchRef = useRef(
-    debounce((value, page, pageSize) => {
-      fetchDiscountCodes(page, pageSize, value);
+    debounce((value, page, pageSize, timeFrame, startDate, endDate) => {
+      fetchAllData(page, pageSize, value, timeFrame, startDate, endDate);
     }, 500)
   );
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchText(value);
-    debouncedFetchRef.current(value, page, pageSize);
+    debouncedFetchRef.current(
+      value, 
+      page, 
+      pageSize, 
+      timeFilter,
+      dateRange ? dateRange[0] : null,
+      dateRange ? dateRange[1] : null
+    );
+  };
+
+  const showViewModal = (record) => {
+    setSelectedOrder(record);
+    setIsViewModalVisible(true);
+  };
+
+  const handleViewModalCancel = () => {
+    setIsViewModalVisible(false);
+  };
+
+  const handleRowClick = (record) => {
+    // You can define what happens when a row is clicked
+    // For example, you might want to show the view modal
+    // showViewModal(record);
   };
 
   const columns = [
@@ -192,14 +203,14 @@ const OrderAdmin = () => {
       dataIndex: "orderCode",
       key: "orderCode",
       render: (text) => <Text strong># {text}</Text>,
-      sorter: (a, b) => a.code.localeCompare(b.code),
+      sorter: (a, b) => a.orderCode.localeCompare(b.orderCode),
     },
     {
       title: "Amount",
       dataIndex: "totalAmount",
       key: "totalAmount",
       render: (value, record) => <Text strong>${value}</Text>,
-      sorter: (a, b) => a.value - b.value,
+      sorter: (a, b) => a.totalAmount - b.totalAmount,
     },
     {
       title: "Shipping address",
@@ -250,6 +261,15 @@ const OrderAdmin = () => {
       render: (_, record) => (
         <Space>
           <Button
+            type="default"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => showViewModal(record)}
+            className="bg-blue-500"
+          >
+            View
+          </Button>
+          <Button
             type="primary"
             icon={<EditOutlined />}
             size="small"
@@ -258,16 +278,6 @@ const OrderAdmin = () => {
           >
             Edit
           </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this code?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              Delete
-            </Button>
-          </Popconfirm>
         </Space>
       ),
     },
@@ -291,11 +301,35 @@ const OrderAdmin = () => {
         {/* Statistics Cards */}
 
         <Card className="mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start mb-4">
             <Title level={4} className="mb-4 md:mb-0">
               Orders List
             </Title>
-            <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 items-start">
+
+            <div className="flex flex-col md:flex-row gap-4 items-start">
+              <Select
+                className="w-full lg:w-48"
+                defaultValue="all"
+                value={timeFilter}
+                onChange={handleTimeFilterChange}
+                options={[
+                  { label: "All Time", value: "all" },
+                  { label: "Today", value: "today" },
+                  { label: "Yesterday", value: "yesterday" },
+                  { label: "This Week", value: "week" },
+                  { label: "This Month", value: "month" },
+                ]}
+              />
+
+              <DatePicker.RangePicker
+                value={dateRange}
+                onChange={handleDateRangeChange}
+                className="w-full md:w-auto"
+                allowClear
+              />
+            </div>
+
+            <div className="w-full md:w-auto flex flex-col mt-4 md:mt-0 md:flex-row gap-4 items-start">
               <Input
                 placeholder="Search by code"
                 value={searchText}
@@ -307,18 +341,17 @@ const OrderAdmin = () => {
                 <Button
                   type="primary"
                   icon={<ReloadOutlined />}
-                  onClick={fetchAllData}
+                  onClick={() => fetchAllData(
+                    page, 
+                    pageSize, 
+                    searchText,
+                    timeFilter,
+                    dateRange ? dateRange[0] : null,
+                    dateRange ? dateRange[1] : null
+                  )}
                   className="bg-blue-500"
                 >
                   Refresh
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => showModal()}
-                  className="bg-green-500"
-                >
-                  Add New
                 </Button>
               </div>
             </div>
@@ -338,9 +371,15 @@ const OrderAdmin = () => {
               onChange: (page, pageSize) => {
                 setPage(page);
                 setPageSize(pageSize);
-                fetchDiscountCodes(page, pageSize, searchText);
+                fetchAllData(
+                  page, 
+                  pageSize, 
+                  searchText,
+                  timeFilter,
+                  dateRange ? dateRange[0] : null,
+                  dateRange ? dateRange[1] : null
+                );
               },
-              showTotal: (total) => `Total ${total} items`,
             }}
             scroll={{ x: "max-content" }}
             className="overflow-x-auto"
@@ -356,6 +395,11 @@ const OrderAdmin = () => {
         handleCancel={handleCancel}
         form={form}
         handleSubmit={handleSubmit}
+      />
+      <ModalViewOrder
+        isModalVisible={isViewModalVisible}
+        handleCancel={handleViewModalCancel}
+        orderData={selectedOrder}
       />
     </Layout>
   );

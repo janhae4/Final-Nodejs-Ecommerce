@@ -3,17 +3,40 @@ const orderService = require("../services/orderService");
 exports.getAllOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 20;
     const search = req.query.search || "";
     const skip = (page - 1) * limit;
-    const totalCount = await orderService.getOrderCount(search);
-    const totalPages = Math.ceil(totalCount / limit);
-    const data = await orderService.getAllOrders(skip, limit, search);
+
+    const timeFilter = req.query.timeFilter || "all";
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate)
+      : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const orders = await orderService.getAllOrders(
+      skip,
+      limit,
+      search,
+      timeFilter,
+      startDate,
+      endDate
+    );
+    const count = await orderService.getOrderCount(
+      search,
+      timeFilter,
+      startDate,
+      endDate
+    );
+
     res.status(200).json({
-      data,
-      totalPages,
       currentPage: page,
-      totalCount,
+      totalPages: Math.ceil(count / limit),
+      totalCount: count,
+      data: orders,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
