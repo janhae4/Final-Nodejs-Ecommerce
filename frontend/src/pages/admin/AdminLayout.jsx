@@ -101,6 +101,7 @@ const AdminLayout = () => {
             label: 'Logout',
             danger: true,
         },
+
     ];
 
     // Notification dropdown content
@@ -147,6 +148,12 @@ const AdminLayout = () => {
             path: '/admin/discounts'
         },
         {
+            key: 'users',
+            icon: <UserOutlined />,
+            label: 'User',
+            path: '/admin/users'
+          },
+        {
             key: 'products',
             icon: <ShopOutlined />,
             label: 'Products',
@@ -168,12 +175,6 @@ const AdminLayout = () => {
             icon: <ShoppingCartOutlined />,
             label: 'Orders',
             path: '/admin/orders'
-        },
-        {
-            key: 'customers',
-            icon: <UserOutlined />,
-            label: 'Customers',
-            path: '/admin/customers'
         },
         {
             key: 'settings',
