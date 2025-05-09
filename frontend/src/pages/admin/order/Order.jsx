@@ -38,8 +38,8 @@ import axios from "axios";
 import debounce from "debounce";
 import dayjs from "dayjs";
 
-import ModalOrder from "../../../../components/admin/order/ModalOrder";
-import ModalViewOrder from "../../../../components/admin/order/ModalViewOrder";
+import ModalOrder from "../../../components/admin/order/ModalOrder";
+import ModalViewOrder from "../../../components/admin/order/ModalViewOrder";
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;

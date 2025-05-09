@@ -15,15 +15,26 @@ import AdminLayout from "../pages/admin/AdminLayout";
 import Dashboard from "../pages/admin/Dashboard";
 
 import "../App.css";
+import LoginPage from "../pages/user/auth/LoginPage";
+import ProfilePage from "../pages/user/auth/ProfilePage";
+import HomePage from "../pages/user/HomePage";
+import ProductCatalogPage from "../pages/user/products/ProductCatalogPage";
+import ProductDetailPage from "../pages/user/products/ProductDetailPage";
+import CartPage from "../pages/user/cart/CartPage";
+import CheckoutPage from "../pages/user/checkout/CheckoutPage";
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* User layout */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/products" element={<ProductCatalogPage />} />
+      <Route path="/products/detail/:productId" element={<ProductDetailPage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
       {/* Admin layout */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />

@@ -32,12 +32,11 @@ import {
   DashboardOutlined,
   DollarOutlined,
 } from "@ant-design/icons";
-import ModalDiscount from "../../../../components/admin/discount/ModalDiscount";
+import ModalDiscount from "../../../components/admin/discount/ModalDiscount";
+import ModalOderDiscount from "../../../components/admin/discount/ModalOderDiscount";
 import axios from "axios";
 import debounce from "debounce";
 import dayjs from "dayjs";
-import CardStatistic from "../../../../components/admin/discount/CardStatistic";
-import ModalOderDiscount from "../../../../components/admin/discount/ModalOderDiscount";
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
