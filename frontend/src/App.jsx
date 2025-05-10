@@ -1,12 +1,16 @@
 import "./App.css";
 import { CartProvider } from "./context/CartContext";
+import { StyleProvider } from "@ant-design/cssinjs";
+
 import AppRoutes from "./routes/AppRoutes";
 
 function App() {
   return (
-    <CartProvider>
-      <AppRoutes />
-    </CartProvider>
+    <StyleProvider layer>
+      <CartProvider>
+        <AppRoutes />
+      </CartProvider>
+    </StyleProvider>
   );
 }
 

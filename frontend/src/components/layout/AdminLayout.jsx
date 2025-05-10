@@ -404,7 +404,6 @@ const AdminLayout = () => {
 
           {/* Main content */}
           <Content className="p-4 md:p-6 min-h-[calc(100vh-130px)]">
-            {/* Page content will be rendered here */}
             <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm min-h-[calc(100vh-200px)]">
               <Outlet />
             </div>

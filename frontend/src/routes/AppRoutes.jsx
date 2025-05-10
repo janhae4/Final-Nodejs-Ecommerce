@@ -11,8 +11,8 @@ import Register from "../pages/user/auth/Register";
 import Home from "../pages/user/HomePage";
 import Profile from "../pages/user/auth/Profile";
 import ManageUsers from "../pages/admin/user/ManageUser";
-import AdminLayout from "../pages/admin/AdminLayout";
-import Dashboard from "../pages/admin/Dashboard";
+import AdminLayout from "../components/layout/AdminLayout";
+import Dashboard from "../pages/admin/dashboard/Dashboard";
 
 import "../App.css";
 import LoginPage from "../pages/user/auth/LoginPage";
@@ -22,19 +22,18 @@ import ProductCatalogPage from "../pages/user/products/ProductCatalogPage";
 import ProductDetailPage from "../pages/user/products/ProductDetailPage";
 import CartPage from "../pages/user/cart/CartPage";
 import CheckoutPage from "../pages/user/checkout/CheckoutPage";
+import MainLayout from "../components/layout/MainLayout";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* User layout */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/products" element={<ProductCatalogPage />} />
-      <Route path="/products/detail/:productId" element={<ProductDetailPage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+      {/* Auth */}
+      <Route path="/auth">
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<Register />} />
+        <Route path="profile" element={<ProfilePage />} />
+      </Route>
+
       {/* Admin layout */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
@@ -46,6 +45,16 @@ export default function AppRoutes() {
         <Route path="products/edit/:id" element={<EditProduct />} />
         <Route path="users" element={<ManageUsers />} />
       </Route>
+
+      {/* User layout */}
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="/products" element={<ProductCatalogPage />} />
+        <Route path="/products/detail/:productId" element={<ProductDetailPage />}/>
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+      </Route>
+
     </Routes>
   );
 }
