@@ -21,7 +21,7 @@ const CartItem = ({ item }) => {
       <Col xs={24} sm={4} md={3}>
         <Image 
             width="100%" 
-            src={item.product.images[0]?.url || 'https://via.placeholder.com/100?text=No+Image'} 
+            src={item.product?.image?.url || 'https://via.placeholder.com/100?text=No+Image'} 
             alt={item.product.name}
             className="rounded" 
         />

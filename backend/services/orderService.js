@@ -99,7 +99,7 @@ exports.patchStatusOrder = async (orderId, orderData) => {
         `Cannot transition from ${currentStatus} to ${newStatus}`
       );
     }
-    
+
     order.status = orderData.status;
     order.statusHistory.push({ status: orderData.status });
 
@@ -207,19 +207,28 @@ const getDateRangeQuery = (timeFilter, startDate, endDate) => {
   return dateQuery;
 };
 
-exports.getOrderCount = async (search, timeFilter, startDate, endDate) => {
+exports.getOrderCount = async (
+  search,
+  timeFilter,
+  startDate,
+  endDate,
+  user,
+  discountCode
+) => {
   const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
 
   const query = {
-    $and: [{ $or: [{ orderCode: { $regex: search, $options: "i" } }] }],
+    $and: [
+      search && { orderCode: { $regex: search, $options: "i" } },
+      ...dateQuery,
+      user && { user },
+      discountCode && { discountCode },
+    ].filter(Boolean),
   };
-
-  if (Object.keys(dateQuery).length > 0) {
-    query.$and.push(dateQuery);
-  }
 
   return await Order.countDocuments(query);
 };
+
 
 exports.getAllOrders = async (
   skip,
@@ -227,22 +236,26 @@ exports.getAllOrders = async (
   search,
   timeFilter,
   startDate,
-  endDate
+  endDate,
+  user,
+  discountCode
 ) => {
   try {
     const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
 
     const query = {
-      $and: [{ $or: [{ orderCode: { $regex: search, $options: "i" } }] }],
+      $and: [
+        search && { orderCode: { $regex: search, $options: "i" } },
+        ...dateQuery,
+        user && { user },
+        discountCode && { discountCode },
+      ].filter(Boolean),
     };
 
-    if (Object.keys(dateQuery).length > 0) {
-      query.$and.push(dateQuery);
-    }
-
     await Order.collection.createIndex({ orderCode: 1 });
+
     return await Order.find(query)
-      .sort({ purchaseDate: -1 }) // Sort by purchase date (newest first)
+      .sort({ purchaseDate: -1 })
       .skip(skip)
       .limit(limit);
   } catch (error) {

@@ -1,5 +1,14 @@
 const Product = require('../models/Product');
 
+exports.getAllProducts = async () => {
+    try {
+        const products = await Product.find();
+        return products;
+    } catch (err) {
+        throw new Error('Error fetching products: ' + err.message);
+    }
+}
+
 exports.createProduct = async ({
     nameProduct,
     price,

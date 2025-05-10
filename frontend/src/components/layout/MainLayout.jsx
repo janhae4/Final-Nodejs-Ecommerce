@@ -33,10 +33,13 @@ import debounce from "debounce";
 import SearchResult from "./main/SearchResult";
 import SearchResultRender from "./main/SearchResult";
 import MobileSearchDrawer from "./main/MobileSearchDrawer";
+import axios from "axios";
+import { useCart } from "../../context/CartContext";
+import AIChatbot from "./main/AIChatbotComponent";
 const { Text } = Typography;
 
 const MainLayout = () => {
-  const cartItemCount = 0;
+  const { cartItemCount } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -46,6 +49,7 @@ const MainLayout = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   // Handle click outside search results to close
   useEffect(() => {
@@ -67,20 +71,28 @@ const MainLayout = () => {
     }
   }, []);
 
+  const getSearchResults = async (query) => {
+    try {
+      const res = await axios.get(`${API_URL}/products/?nameProduct=${query}`);
+      console.log(res.data);
+      setSearchResults(res.data.products);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const debounceSearch = useCallback(
-    debounce((query) => {
+    debounce(async (query) => {
       if (query.trim()) {
+        await getSearchResults(query);
         setIsSearching(true);
-        setTimeout(() => {
-          setSearchResults([]);
-          setShowSearchResults(true);
-          setIsSearching(false);
-        }, 500);
+        setShowSearchResults(true);
+        setIsSearching(false);
       } else {
         setShowSearchResults(false);
         setSearchResults([]);
       }
-    }),
+    }, 500),
     []
   );
 
@@ -287,6 +299,8 @@ const MainLayout = () => {
           </div>
         </div>
       </Footer>
+
+      <AIChatbot />
     </Layout>
   );
 };

@@ -9,23 +9,17 @@ import {
   Row,
   Col,
   Typography,
-  Badge,
-  Space,
-  Avatar,
-  Dropdown,
 } from "antd";
 import {
-  SearchOutlined,
   ShoppingCartOutlined,
-  UserOutlined,
   LaptopOutlined,
   DesktopOutlined,
   HddOutlined,
   RocketOutlined,
   FireOutlined,
   HomeOutlined,
-  DownOutlined,
 } from "@ant-design/icons";
+import { useCart } from "../../context/CartContext";
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Link } = Typography;
@@ -219,7 +213,7 @@ const filterProducts = (categoryKey) => {
   return allProducts.filter((p) => p.category === categoryKey).slice(0, 4);
 };
 
-const ProductCard = ({ product }) => (
+const ProductCard = ({action, product }) => (
   <Col xs={24} sm={12} md={8} lg={6} className="p-2">
     <Card
       hoverable
@@ -237,8 +231,9 @@ const ProductCard = ({ product }) => (
           danger
           icon={<ShoppingCartOutlined />}
           className="bg-brand-primary hover:bg-red-700 border-brand-primary"
+          onClick={() => action(product)}
         >
-          Thêm vào giỏ
+          Add to cart
         </Button>,
       ]}
     >
@@ -262,7 +257,7 @@ const ProductCard = ({ product }) => (
   </Col>
 );
 
-const ProductSection = ({ title, products, icon }) => (
+const ProductSection = ({action, title, products, icon }) => (
   <div className="mb-12">
     <div className="flex items-center mb-6">
       {icon &&
@@ -281,7 +276,7 @@ const ProductSection = ({ title, products, icon }) => (
     </div>
     <Row gutter={[16, 16]}>
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} action={action} />
       ))}
     </Row>
   </div>
@@ -290,7 +285,7 @@ const ProductSection = ({ title, products, icon }) => (
 const HomePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock login state
   const [cartItemCount, setCartItemCount] = useState(0); // Mock cart count
-
+  const {addItemToCart} = useCart();
   // In a real app, these would come from API / context
   const newProducts = filterProducts("new");
   const bestSellers = filterProducts("bestseller");
@@ -328,34 +323,41 @@ const HomePage = () => {
 
       {/* Product Sections */}
       <ProductSection
+      action={addItemToCart}
         title="Sản Phẩm Mới"
         products={newProducts}
         icon={<RocketOutlined />}
       />
       <ProductSection
+      action={addItemToCart}
         title="Bán Chạy Nhất"
         products={bestSellers}
         icon={<FireOutlined />}
       />
       <ProductSection
+      action={addItemToCart}
         title="Laptop Tuyển Chọn"
         products={laptops}
         icon={<LaptopOutlined />}
       />
       <ProductSection
+      action={addItemToCart}
         title="Màn Hình Chất Lượng"
         products={monitors}
         icon={<DesktopOutlined />}
       />
       <ProductSection
+      action={addItemToCart}
         title="Ổ Cứng & Lưu Trữ"
         products={hardDrives}
         icon={<HddOutlined />}
       />
       <ProductSection
+      action={addItemToCart}
         title="Linh Kiện PC"
         products={components}
         icon={<HomeOutlined />}
+
       />
       {/* Added HomeOutlined as a placeholder for PC Components */}
     </Content>

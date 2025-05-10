@@ -1,4 +1,4 @@
-import { Button, List, Spin, Typography } from "antd";
+import { Avatar, Button, List, Spin, Typography } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
 import { Divider } from "antd";
 const { Text } = Typography;
@@ -20,8 +20,7 @@ const SearchResultRender = ({
           <>
             <div className="flex justify-between items-center mb-2">
               <Text className="font-medium">
-                Result for:{" "}
-                <span className="font-bold">{searchQuery}</span>
+                Result for: <span className="font-bold">{searchQuery}</span>
               </Text>
               <Button
                 type="text"
@@ -44,10 +43,10 @@ const SearchResultRender = ({
                   >
                     <List.Item.Meta
                       avatar={
-                        <Avatar shape="square" size={40} src={item.image} />
+                        <Avatar shape="square" size={50} src={item.image} />
                       }
-                      title={item.name}
-                      description={`${item.price.toLocaleString("vi-VN")}đ`}
+                      title={item.nameProduct}
+                      description={`$${item.price}`}
                     />
                   </List.Item>
                 )}
@@ -55,7 +54,8 @@ const SearchResultRender = ({
             ) : (
               <div className="py-8 text-center">
                 <Text className="text-gray-500">
-                  Cannot find any results for: <span className="font-bold">{searchQuery}</span>
+                  Cannot find any results for:{" "}
+                  <span className="font-bold">{searchQuery}</span>
                 </Text>
                 <div className="mt-2">
                   <Button type="primary">See all results</Button>

@@ -1,4 +1,4 @@
-import { Drawer, Input, List, Spin, Button, Typography} from "antd";
+import { Drawer, Input, List, Spin, Button, Typography, Avatar } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 const { Text } = Typography;
@@ -58,8 +58,8 @@ const MobileSearchDrawer = ({
                     avatar={
                       <Avatar shape="square" size={50} src={item.image} />
                     }
-                    title={item.name}
-                    description={`${item.price.toLocaleString("vi-VN")}đ`}
+                    title={item.nameProduct}
+                    description={`$${item.price}`}
                   />
                 </List.Item>
               )}
