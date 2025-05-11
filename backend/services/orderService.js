@@ -229,7 +229,6 @@ exports.getOrderCount = async (
   return await Order.countDocuments(query);
 };
 
-
 exports.getAllOrders = async (
   skip,
   limit,
@@ -265,7 +264,7 @@ exports.getAllOrders = async (
 
 exports.getOrderByUser = async (userId) => {
   try {
-    const orders = await Order.find({ user: userId });
+    const orders = await Order.find({ "userInfo.userId": userId });
     if (!orders) {
       throw new Error("Orders not found");
     }
@@ -277,7 +276,7 @@ exports.getOrderByUser = async (userId) => {
 
 exports.getOrderByDiscountCode = async (discountCode) => {
   try {
-    const orders = await Order.find({ discountCode: discountCode });
+    const orders = await Order.find({ "discountInfo.code": discountCode });
     if (!orders) {
       throw new Error("Orders not found");
     }

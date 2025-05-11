@@ -6,7 +6,7 @@ const variantSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   inventory: { type: Number, required: true },
-  used: { type: Number,default: 0 },
+  used: { type: Number, default: 0 },
 });
 
 const commentSchema = new mongoose.Schema({
@@ -17,7 +17,7 @@ const commentSchema = new mongoose.Schema({
 
 const productSchema = new mongoose.Schema(
   {
-    nameProduct: { type: String, required: true, trim: true },
+    nameProduct: { type: String, required: true, trim: true, index: true },
     brand: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     category: { type: String, required: true, trim: true },
@@ -28,6 +28,7 @@ const productSchema = new mongoose.Schema(
     comments: [commentSchema],
     ratingAverage: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    soldQuantity: { type: Number, default: 0, min: 0, index: true },
   },
   {
     timestamps: true,

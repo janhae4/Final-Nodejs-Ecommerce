@@ -5,3 +5,12 @@
 .ant-input-number {
     width: 100%;
 }
+
+.ant-message {
+  @apply z-[1010];
+}
+
+.ant-message-notice-content {
+  @apply bg-white dark:bg-gray-800;
+  color: inherit !important;
+}

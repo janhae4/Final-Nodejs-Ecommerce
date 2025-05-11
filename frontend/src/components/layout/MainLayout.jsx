@@ -25,9 +25,11 @@ import {
   MenuOutlined,
   ShoppingOutlined,
   LogoutOutlined,
+  ShopOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { data, Link, Outlet, useNavigate } from "react-router-dom";
 import Title from "antd/es/skeleton/Title";
 import debounce from "debounce";
 import SearchResult from "./main/SearchResult";
@@ -46,12 +48,12 @@ const MainLayout = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Handle click outside search results to close
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -113,34 +115,34 @@ const MainLayout = () => {
     navigate("/");
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile">
-        <UserOutlined /> My Profile
-      </Menu.Item>
-      <Menu.Item key="orders">
-        <ShoppingOutlined /> My Orders
-      </Menu.Item>
-      <Menu.Item key="logout" danger onClick={handleLogout}>
-        <LogoutOutlined /> Logout
-      </Menu.Item>
-    </Menu>
-  );
+  const userMenu = [
+    {
+      key: "1",
+      label: <Link to="/profile">My profile</Link>,
+      icon: <UserOutlined />,
+    },
+    {
+      key: "2",
+      label: <Link to="/order">My order</Link>,
+      icon: <ShoppingCartOutlined />,
+    },
+    {
+      key: "3",
+      label: (
+        <Link to="/" onClick={handleLogout}>
+          Logout
+        </Link>
+      ),
+      icon: <LogoutOutlined />,
+      danger: true,
+    },
+  ];
 
   return (
     <Layout>
       <Header className="bg-white h-auto shadow-md sticky top-0 z-40 px-2 md:px-4 py-0">
         <div className="container mx-auto">
           <div className="flex justify-between items-center h-16">
-            {/* Mobile menu button */}
-            <div className="block md:hidden">
-              <Button
-                type="text"
-                icon={<MenuOutlined className="text-xl" />}
-                onClick={() => setMobileMenuOpen(true)}
-              />
-            </div>
-
             {/* Logo */}
             <div className="text-2xl font-bold text-blue-600">
               <Link to="/" className="hover:text-blue-700 transition-colors">
@@ -172,29 +174,45 @@ const MainLayout = () => {
               )}
             </div>
 
-            {/* Mobile Search Icon */}
-            <div className="block md:hidden">
-              <Button
-                type="text"
-                icon={<SearchOutlined className="text-xl" />}
-                onClick={() => setMobileSearchOpen(true)}
-              />
-            </div>
-
-            {/* User Actions */}
             <Space size="middle">
-              <Badge count={cartItemCount} size="small">
+              <div className="block md:hidden">
                 <Button
                   type="text"
-                  icon={
-                    <ShoppingCartOutlined className="text-xl text-gray-700 hover:text-blue-600" />
-                  }
-                  onClick={() => navigate("/cart")}
+                  icon={<SearchOutlined className="text-xl" />}
+                  onClick={() => setMobileSearchOpen(true)}
                 />
-              </Badge>
+              </div>
+              <Link to="/products" className="h-full">
+                <div className="flex text-black items-center gap-2 hover:bg-gray-200 rounded-md p-2">
+                  <ShopOutlined className="text-lg" />
+                  <Text className="hidden md:inline" strong>
+                    Products
+                  </Text>
+                </div>
+              </Link>
+
+              <Link to="/myorder">
+                <div className="flex text-black items-center gap-2 hover:bg-gray-200 rounded-md p-2">
+                  <CreditCardOutlined className="text-lg" />
+                  <Text className="hidden md:inline" strong>
+                    My Order
+                  </Text>
+                </div>
+              </Link>
+
+              <Link to="/cart">
+                <div className="flex text-black items-center p-2 gap-2 hover:bg-gray-200 rounded-md">
+                  <Badge count={cartItemCount} size="small" offset={[-3, 3]}>
+                    <ShoppingCartOutlined className="text-lg" />
+                  </Badge>
+                  <Text className="hidden md:inline" strong>
+                    Cart
+                  </Text>
+                </div>
+              </Link>
 
               {isLoggedIn ? (
-                <Dropdown menu={userMenu} trigger={["click"]}>
+                <Dropdown menu={{ items: userMenu }}>
                   <a
                     onClick={(e) => e.preventDefault()}
                     className="flex items-center text-gray-700 hover:text-blue-600"

@@ -13,7 +13,7 @@ const CartPage = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="container mx-auto p-4 md:p-8 overflow-auto">
         <Title level={2} className="mb-6">Your Shopping Cart</Title>
         {cartItemCount === 0 ? (
           <Empty
@@ -34,7 +34,7 @@ const CartPage = () => {
                     <Button type="link" danger onClick={clearCart}>Clear Cart</Button>
                 </div>
                 {cartItems.map(item => (
-                  <CartItem key={item.product.id + (item.variant ? `-${item.variant.id}` : '')} item={item} />
+                  <CartItem key={item.productId + (item.variant ? `-${item.variant.id}` : '')} item={item} />
                 ))}
               </div>
             </Col>

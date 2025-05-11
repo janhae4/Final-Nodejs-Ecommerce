@@ -82,9 +82,9 @@ exports.findProductsByPrice = async (min, max) => {
     }
 };
 
-exports.findProductsByCategory = async (category) => {
+exports.findProductsByCategory = async (category, limit = null) => {
     try {
-        return await Product.find({ category: { $regex: category, $options: 'i' } });
+        return await Product.find({ category: { $regex: category, $options: 'i' } }).limit(limit);
     } catch (err) {
         throw new Error('Error finding products by category: ' + err.message);
     }
@@ -225,3 +225,21 @@ exports.getProductVariants = async (productId) => {
         throw new Error('Error fetching product variants: ' + err.message);
     }
 };
+
+exports.getBestSellers = async () => {
+    try {
+        const bestSellers = await Product.find().sort({ soldQuantity: -1 }).limit(5);
+        return bestSellers;
+    } catch (err) {
+        throw new Error('Error fetching best sellers: ' + err.message);
+    }
+}
+
+exports.getNewArrivals = async () => {
+    try {
+        const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(5);
+        return newArrivals;
+    } catch (err) {
+        throw new Error('Error fetching new arrivals: ' + err.message);
+    }
+}

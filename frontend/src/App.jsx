@@ -3,13 +3,16 @@ import { CartProvider } from "./context/CartContext";
 import { StyleProvider } from "@ant-design/cssinjs";
 
 import AppRoutes from "./routes/AppRoutes";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <StyleProvider layer>
-      <CartProvider>
-        <AppRoutes />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppRoutes />
+        </CartProvider>
+      </AuthProvider>
     </StyleProvider>
   );
 }

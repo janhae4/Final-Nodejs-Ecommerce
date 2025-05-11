@@ -8,9 +8,10 @@ router.get('/searchByName', ProductController.searchProductByName);
 router.get('/searchByBrand', ProductController.searchProductByBrand);
 router.get('/searchByCategory', ProductController.searchByCategory);
 router.get('/searchByPrice', ProductController.searchByPrice);
+router.get('/filter', ProductController.getProductByFilter);
+router.get("/variants/:id", ProductController.getProductVariants);
 router.get('/:id', ProductController.getProductByIdWithVariants);
 router.post('/create', upload.array('images'), ProductController.createProduct);
-router.get("/variants/:id", ProductController.getProductVariants);
 
 //Update product
 // PATCH/products/:id
