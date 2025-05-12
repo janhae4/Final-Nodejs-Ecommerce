@@ -1,4 +1,3 @@
-// src/pages/CheckoutPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Steps,
@@ -14,96 +13,205 @@ import {
   Result,
   Spin,
   Layout,
+  Select,
+  Divider,
 } from "antd";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import CartSummary from "../../../components/cart/CartSummary"; // Re-use for order review
+import CartSummary from "../../../components/cart/CartSummary";
 import { useCart } from "../../../context/CartContext";
 import { useAuth } from "../../../context/AuthContext";
-
+import AddressForm from "../../../components/checkout/AddressForm";
+import AddressSelector from "../../../components/checkout/AddressSelector";
 const { Step } = Steps;
-const { Title, Text, Paragraph } = Typography;
+const { Title } = Typography;
+const { Option } = Select;
 
-// Mock payment gateways
 const paymentMethods = [
-  { id: "credit_card", name: "Credit/Debit Card" },
-  { id: "paypal", name: "PayPal (Mock)" },
-  { id: "cod", name: "Cash on Delivery (Mock)" },
+  { value: "credit_card", label: "Credit/Debit Card" },
+  { value: "paypal", label: "PayPal" },
+  { value: "cod", label: "Cash on Delivery" },
 ];
 
 const CheckoutPage = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
-  const { cartItems, total, clearCart, cartItemCount, discountInfo } =
+  const { cartItems, total, cartItemCount, discountInfo, placeOrder } =
     useCart();
-  const { isLoggedIn, getUserInfo, addUserInfo } = useAuth(); // Get user from AuthContext
+  const {
+    isLoggedIn,
+    getUserInfo,
+    updateAddress,
+    addAddress,
+    addresses,
+    deleteAddress,
+  } = useAuth();
   const navigate = useNavigate();
   const [orderProcessing, setOrderProcessing] = useState(false);
-  const [orderDetails, setOrderDetails] = useState(null); // For successful order
-  const [paymentMethod, setPaymentMethod] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [userAddresses, setUserAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [addressMode, setAddressMode] = useState("select");
+  const [editingAddress, setEditingAddress] = useState(null);
 
+  // Load cart and address data
   useEffect(() => {
     if (cartItemCount === 0 && currentStep < 2) {
-      // Don't allow checkout if cart is empty, unless on success step
-      message.info("Your cart is empty. Add items to proceed to checkout.");
+      messageApi.info("Your cart is empty. Add items to proceed to checkout.");
       navigate("/cart");
     }
-  }, [cartItemCount, navigate, currentStep]);
 
-  useEffect(() => {
     if (isLoggedIn) {
-      const user = getUserInfo();
-      shippingForm.setFieldsValue({
-        fullName: user.fullName,
-        email: user.email,
-        address: user.defaultShippingAddress.fullAddress,
-        city: user.defaultShippingAddress.city,
-        postalCode: user.defaultShippingAddress.postalCode,
-        country: user.defaultShippingAddress.country,
-      });
+      loadUserAddresses();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, cartItemCount, currentStep, navigate]);
+
+  const loadUserAddresses = () => {
+    setLoadingAddresses(true);
+    const user = getUserInfo();
+    setUserAddresses(user.addresses);
+
+    shippingForm.setFieldsValue({
+      fullName: user.fullName,
+      email: user.email,
+      address: addresses[0]?._id,
+    });
+
+    setLoadingAddresses(false);
+  };
+
+  const handleAddNewAddress = () => {
+    setAddressMode("new");
+    console.log(1);
+    shippingForm.setFieldsValue({ address: undefined });
+  };
+
+  const handleEditAddress = (address) => {
+    setEditingAddress(address);
+    setAddressMode("edit");
+    console.log(3);
+  };
+
+  const handleSaveAddress = async (newAddress) => {
+    try {
+      if (addressMode === "edit") {
+        console.log(2);
+        await updateAddress(newAddress);
+      } else {
+        console.log(4);
+        await addAddress(newAddress);
+      }
+      console.log(addressMode);
+      loadUserAddresses();
+      setAddressMode("select");
+      setEditingAddress(null);
+
+      const savedAddress = addresses.find(
+        (a) => a.fullAddress === newAddress.fullAddress
+      );
+      if (savedAddress) {
+        shippingForm.setFieldsValue({ address: savedAddress._id });
+      }
+    } catch (error) {
+      messageApi.error("Failed to save address");
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    try {
+      await deleteAddress(addressId);
+      loadUserAddresses();
+    } catch (error) {
+      messageApi.error("Failed to delete address");
+    }
+  };
+
+  const renderAddressSelector = () => {
+    if (!isLoggedIn) {
+      return <AddressForm onSubmit={handleSaveAddress} isGuest />;
+    }
+
+    switch (addressMode) {
+      case "new": {
+        return (
+          <AddressForm
+            onSubmit={handleSaveAddress}
+            onCancel={() => setAddressMode("select")}
+          />
+        );
+      }
+      case "edit": {
+        return (
+          <AddressForm
+            initialValues={editingAddress}
+            onSubmit={handleSaveAddress}
+            onCancel={() => setAddressMode("select")}
+          />
+        );
+      }
+      default:
+        return (
+          <AddressSelector
+            form={shippingForm}
+            addresses={userAddresses}
+            loading={loadingAddresses}
+            onSelect={(value) =>
+              shippingForm.setFieldsValue({ address: value })
+            }
+            onAddNew={handleAddNewAddress}
+            onEdit={handleEditAddress}
+            onDelete={handleDeleteAddress}
+          />
+        );
+    }
+  };
 
   const handleNext = async () => {
     if (currentStep === 0) {
-      // Shipping Step
-      try {
-        const values = await shippingForm.validateFields();
-        console.log("Shipping Info:", values);
-        setCurrentStep(currentStep + 1);
-      } catch (info) {
-        console.log("Validate Failed:", info);
-        message.error("Please fill in all required shipping details.");
-      }
+      setCurrentStep(currentStep + 1);
     } else if (currentStep === 1) {
-      // Payment Step
       try {
-        const values = await paymentForm.validateFields();
-        console.log("Payment Info:", values);
-        // Simulate order placement
         setOrderProcessing(true);
-        // --- MOCK API CALL for order placement ---
-        // In real app: await placeOrderService(shippingDetails, paymentDetails, cartItems, total, discountInfo);
-        setTimeout(() => {
-          const mockOrder = {
-            orderId: `ORD-${Date.now()}`,
-            items: cartItems,
-            totalAmount: total,
-            shippingAddress: shippingForm.getFieldsValue(),
-            paymentMethod: paymentForm.getFieldValue("paymentMethod"),
-            discountApplied: discountInfo,
-            date: new Date().toLocaleDateString(),
-          };
-          setOrderDetails(mockOrder);
-          clearCart(); // Clear cart on successful order
-          setOrderProcessing(false);
-          setCurrentStep(currentStep + 1); // Move to success/confirmation step
-          message.success("Order placed successfully!");
-        }, 2000);
-        // --- END MOCK API CALL ---
-      } catch (info) {
-        console.log("Validate Failed:", info);
-        message.error("Please complete the payment information.");
+
+        const shippingValues = shippingForm.getFieldsValue();
+        let shippingAddress;
+
+        if (addressMode === "select") {
+          const selectedAddress = userAddresses.find(
+            (addr) => addr.id === shippingValues.address
+          );
+          shippingAddress = selectedAddress;
+        } else {
+          shippingAddress = shippingValues;
+        }
+
+        const { _id, fullName, email, phone } = getUserInfo();
+        console.log(shippingAddress);
+        const mockOrder = {
+          userInfo: { userId: _id, fullName, email, phone },
+          products: cartItems,
+          totalAmount: total,
+          shippingAddress: shippingAddress.fullAddress,
+          paymentMethod: paymentForm.getFieldValue("paymentMethod"),
+          discountInfo: discountInfo && {
+            discountId: discountInfo._id,
+            code: discountInfo.code,
+            value: discountInfo.value,
+            type: discountInfo.type,
+          },
+          date: new Date().toLocaleDateString(),
+        };
+        const ordersData = await placeOrder(mockOrder);
+        setOrderDetails(ordersData);
+        setCurrentStep(currentStep + 1);
+      } catch (error) {
+        console.log("Validation Failed:", error);
+        messageApi.error("Please complete the payment information.");
+        setOrderProcessing(false);
+      } finally {
+        setOrderProcessing(false);
       }
     }
   };
@@ -112,138 +220,94 @@ const CheckoutPage = () => {
     setCurrentStep(currentStep - 1);
   };
 
-  const shippingFields = [
-    {
-      name: "fullName",
-      label: "Full Name",
-      rules: [{ required: true, message: "Please enter your full name" }],
-    },
-    {
-      name: "email",
-      label: "Email Address",
-      rules: [
-        {
-          required: true,
-          type: "email",
-          message: "Please enter a valid email",
-        },
-      ],
-    },
-    {
-      name: "address",
-      label: "Street Address",
-      rules: [{ required: true, message: "Please enter your address" }],
-    },
-    {
-      name: "city",
-      label: "City",
-      rules: [{ required: true, message: "Please enter your city" }],
-    },
-    {
-      name: "postalCode",
-      label: "Postal Code",
-      rules: [{ required: true, message: "Please enter your postal code" }],
-    },
-    {
-      name: "country",
-      label: "Country",
-      rules: [{ required: true, message: "Please enter your country" }],
-    },
-  ];
-
   const steps = [
     {
       title: "Shipping",
       content: (
-        <Card title="Shipping Details" className="shadow-md">
-          {!isLoggedIn && (
-            <Link
-              to="/login?redirect=/checkout"
-              className={isLoggedIn ? "text-gray-400" : "text-blue-500"}
-            >
-              Login for faster checkout
-            </Link>
-          )}
-          <Form form={shippingForm} layout="vertical">
-            {shippingFields.map((field) => (
-              <Form.Item
-                key={field.name}
-                name={field.name}
-                label={field.label}
-                rules={field.rules}
-              >
-                <Input placeholder={field.label} />
-              </Form.Item>
-            ))}
+        <Card
+          title="Shipping Details"
+          variant="borderless"
+          className="shadow-none"
+        >
+          <Form
+            form={shippingForm}
+            layout="vertical"
+            initialValues={{ address: userAddresses[0] || undefined }}
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+                <Form.Item
+                  name="fullName"
+                  label="Full Name"
+                  rules={[
+                    { required: true, message: "Please enter your full name" },
+                  ]}
+                >
+                  <Input placeholder="Your full name" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="email"
+                  label="Email"
+                  rules={[
+                    { required: true, message: "Please enter your email" },
+                    { type: "email", message: "Please enter a valid email" },
+                  ]}
+                >
+                  <Input placeholder="your.email@example.com" />
+                </Form.Item>
+              </Col>
+              {renderAddressSelector()}
+            </Row>
           </Form>
+          <Divider />
         </Card>
       ),
     },
     {
       title: "Payment",
       content: (
-        <Card title="Payment Method" className="shadow-md">
-          <Form form={paymentForm} layout="vertical">
+        <Card
+          title="Payment Method"
+          variant="borderless"
+          className="shadow-none"
+        >
+          <Form
+            form={paymentForm}
+            layout="vertical"
+            initialValues={{ paymentMethod: "credit_card" }}
+          >
             <Form.Item
               name="paymentMethod"
               label="Select Payment Method"
               rules={[
-                { required: true, message: "Please select a payment method" },
+                { required: true, message: "Please select payment method" },
               ]}
-              initialValue="credit_card"
             >
-              <Radio.Group>
+              <Radio.Group
+                value={paymentForm.getFieldValue("paymentMethod")}
+                onChange={(e) => {
+                  paymentForm.setFieldsValue({ paymentMethod: e.target.value });
+                  console.log("getFieldsValue", paymentForm.getFieldsValue());
+                  console.log(
+                    "getFieldValue",
+                    paymentForm.getFieldValue("paymentMethod")
+                  );
+                }}
+              >
                 {paymentMethods.map((method) => (
                   <Radio
-                    key={method.id}
-                    value={method.id}
-                    className="block mb-2"
+                    key={method.value}
+                    value={method.value}
+                    style={{ display: "block", marginBottom: 8 }}
                   >
-                    {method.name}
+                    {method.label}
                   </Radio>
                 ))}
               </Radio.Group>
             </Form.Item>
-            {paymentForm.getFieldValue("paymentMethod") === "credit_card" && (
-              <>
-                <Form.Item
-                  name="cardNumber"
-                  label="Card Number"
-                  rules={[
-                    { required: true, message: "Card number is required" },
-                  ]}
-                >
-                  <Input placeholder="XXXX XXXX XXXX XXXX (Mock)" />
-                </Form.Item>
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="expiryDate"
-                      label="Expiry Date (MM/YY)"
-                      rules={[
-                        { required: true, message: "Expiry date is required" },
-                      ]}
-                    >
-                      <Input placeholder="MM/YY (Mock)" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="cvv"
-                      label="CVV"
-                      rules={[{ required: true, message: "CVV is required" }]}
-                    >
-                      <Input placeholder="XXX (Mock)" />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </>
-            )}
-            <Title level={5} className="mt-6 mb-2">
-              Order Review
-            </Title>
-            <CartSummary showCheckoutButton={false} />{" "}
-            {/* Don't show checkout button here */}
+            <Divider />
           </Form>
         </Card>
       ),
@@ -257,99 +321,76 @@ const CheckoutPage = () => {
       ) : orderDetails ? (
         <Result
           status="success"
-          title="Order Successfully Placed!"
-          subTitle={`Order ID: ${orderDetails.orderId}. A confirmation email has been sent to ${orderDetails.shippingAddress.email}.`}
+          title="Order Placed Successfully!"
+          subTitle={`Order number: ${orderDetails.orderCode}. We've sent a confirmation to ${orderDetails.userInfo.email}.`}
           extra={[
-            <Link to="/products" key="buy">
+            <Link to="/products" key="continue">
               <Button type="primary">Continue Shopping</Button>
             </Link>,
-            <Link to="/profile/orders" key="orders">
-              {" "}
-              {/* Assuming an orders page in profile */}
-              <Button>View My Orders</Button>
+            <Link to="/account/orders" key="orders">
+              <Button>View Orders</Button>
             </Link>,
           ]}
         />
       ) : (
         <Result
           status="error"
-          title="Order Processing Failed"
-          subTitle="Something went wrong while processing your order. Please try again or contact support."
-          extra={[
-            <Button
-              type="primary"
-              key="console"
-              onClick={() => setCurrentStep(1)}
-            >
-              Try Again
-            </Button>,
-          ]}
+          title="Order Failed"
+          subTitle="Sorry, something went wrong during checkout. Please try again."
+          extra={
+            <Button type="primary" onClick={() => setCurrentStep(1)}>
+              Back to Payment
+            </Button>
+          }
         />
       ),
     },
   ];
 
   return (
-    <Layout>
-      <div className="container mx-auto p-4 md:p-8">
+    <Layout className="bg-gray-50 min-h-screen">
+      {contextHolder}
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Title level={2} className="text-center mb-8">
           Checkout
         </Title>
+
         <Steps current={currentStep} className="mb-8">
-          {steps.map((item) => (
-            <Step key={item.title} title={item.title} />
+          {steps.map((step) => (
+            <Step key={step.title} title={step.title} />
           ))}
         </Steps>
 
         <Row gutter={[24, 24]}>
-          <Col xs={24} md={currentStep < 2 ? 16 : 24}>
-            {" "}
-            {/* Full width for confirmation */}
-            <div className="steps-content">{steps[currentStep].content}</div>
-          </Col>
-          {currentStep < 2 &&
-            cartItemCount > 0 && ( // Only show summary for first 2 steps
-              <Col xs={24} md={8}>
-                <div className="sticky top-24">
-                  {" "}
-                  {/* Make summary sticky */}
-                  <Title level={4} className="mb-4">
-                    Your Order
-                  </Title>
-                  <CartSummary showCheckoutButton={false} />
-                </div>
-              </Col>
-            )}
-        </Row>
+          <Col xs={24} lg={currentStep < 2 ? 16 : 24}>
+            <div className="bg-white rounded-lg p-6">
+              {steps[currentStep].content}
+              <div className="flex justify-between mt-8">
+                {currentStep > 0 && currentStep < 2 && (
+                  <Button onClick={handlePrev}>Back</Button>
+                )}
 
-        <div className="steps-action mt-8 flex justify-between">
-          {currentStep > 0 && currentStep < 2 && (
-            <Button style={{ margin: "0 8px" }} onClick={handlePrev}>
-              Previous
-            </Button>
+                <div>
+                  {currentStep < steps.length - 1 && (
+                    <Button
+                      type="primary"
+                      onClick={handleNext}
+                      loading={currentStep === 1 && orderProcessing}
+                    >
+                      {currentStep === 1 ? "Place Order" : "Continue"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          {currentStep < 2 && (
+            <Col xs={24} lg={8}>
+              <CartSummary showCheckoutButton={false} />
+            </Col>
           )}
-          {currentStep < steps.length - 2 &&
-            cartItemCount > 0 && ( // Hide next on payment form, use place order
-              <Button
-                type="primary"
-                onClick={handleNext}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                Next
-              </Button>
-            )}
-          {currentStep === 1 &&
-            cartItemCount > 0 && ( // Payment step - "Place Order" button
-              <Button
-                type="primary"
-                loading={orderProcessing}
-                onClick={handleNext}
-                className="bg-green-500 hover:bg-green-600"
-              >
-                {orderProcessing ? "Processing..." : "Place Order"}
-              </Button>
-            )}
-        </div>
+        </Row>
       </div>
     </Layout>
   );

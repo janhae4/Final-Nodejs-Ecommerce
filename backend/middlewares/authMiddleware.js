@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Đường dẫn tới model User
 
 exports.authMiddleware = async (req, res, next) => {
-  const token = req.header('Authorization')?.split(' ')[1];
+  const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
 
   try {

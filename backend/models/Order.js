@@ -1,17 +1,12 @@
 const mongoose = require("mongoose");
-const orderConnection = require("../database/orderConnection");
-
-const paymentInfoSchema = new mongoose.Schema({
-  paymentMethod: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const { orderConnection } = require("../database/dbConnection");
 
 const userInfoSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true, index: true },
     fullName: { type: String, required: true },
     email: { type: String, required: true },
-    phone: { type: String, required: true },
+    phone: { type: String },
   },
   { _id: false }
 );
@@ -30,14 +25,12 @@ const productInfoSchema = new mongoose.Schema(
 
 const discountInfoSchema = new mongoose.Schema(
   {
-    discountId: { type: String, required: true, index: true },
+    discountId: { type: String, index: true },
     code: {
       type: String,
-      required: true,
     },
     value: {
       type: Number,
-      required: true,
     },
     type: {
       type: String,
@@ -102,7 +95,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    paymentInfo: paymentInfoSchema,
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "credit_card", "paypal"],
+      required: true,
+    },
     discountInfo: discountInfoSchema,
     loyaltyPointsEarned: {
       type: Number,

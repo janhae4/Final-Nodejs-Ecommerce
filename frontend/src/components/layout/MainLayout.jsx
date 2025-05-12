@@ -38,22 +38,21 @@ import MobileSearchDrawer from "./main/MobileSearchDrawer";
 import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import AIChatbot from "./main/AIChatbotComponent";
+import { useAuth } from "../../context/AuthContext";
 const { Text } = Typography;
 
 const MainLayout = () => {
   const { cartItemCount } = useCart();
+  const { isLoggedIn, getUserInfo, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [open, setOpen] = useState(true);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
-
+  const user = getUserInfo();
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -64,13 +63,6 @@ const MainLayout = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    }
   }, []);
 
   const getSearchResults = async (query) => {
@@ -109,12 +101,6 @@ const MainLayout = () => {
     navigate("/auth/login");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    navigate("/");
-  };
-
   const userMenu = [
     {
       key: "1",
@@ -129,7 +115,7 @@ const MainLayout = () => {
     {
       key: "3",
       label: (
-        <Link to="/" onClick={handleLogout}>
+        <Link to="/" onClick={logout}>
           Logout
         </Link>
       ),
@@ -202,7 +188,7 @@ const MainLayout = () => {
 
               <Link to="/cart">
                 <div className="flex text-black items-center p-2 gap-2 hover:bg-gray-200 rounded-md">
-                  <Badge count={cartItemCount} size="small" offset={[-3, 3]}>
+                  <Badge count={cartItemCount} size="small" offset={[4, -4]}>
                     <ShoppingCartOutlined className="text-lg" />
                   </Badge>
                   <Text className="hidden md:inline" strong>
@@ -222,7 +208,9 @@ const MainLayout = () => {
                       size="small"
                       className="mr-2"
                     />
-                    <span className="hidden sm:inline">Hi, User</span>{" "}
+                    <span className="hidden sm:inline">
+                      Hi {user?.fullName.split(" ")[user?.fullName.split(" ").length - 1] || "User"}
+                    </span>{" "}
                     <DownOutlined className="ml-1" />
                   </a>
                 </Dropdown>

@@ -44,7 +44,7 @@ const DiscountCodeInput = () => {
               placeholder="Enter 5-character discount code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              maxLength={10} // Allow slightly more for admin codes if needed, but validation is key
+              maxLength={5} 
               className="rounded-r-none"
               onPressEnter={handleApplyCode}
             />
@@ -62,7 +62,6 @@ const DiscountCodeInput = () => {
                 <CheckCircleOutlined className="mr-2" />
                 Discount Applied: <Tag color="green">{discountInfo.code}</Tag>
               </Text>
-              {discountInfo.description && <Text className="block text-sm text-green-600">{discountInfo.description}</Text>}
             </div>
             <Button type="link" onClick={handleRemoveCode} danger icon={<CloseCircleOutlined />} size="small">
               Remove

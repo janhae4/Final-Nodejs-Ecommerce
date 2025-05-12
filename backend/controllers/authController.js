@@ -59,9 +59,12 @@ exports.login = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
+
     res.cookie("token", token, { httpOnly: true });
     const { password: p, ...userWithoutPassword } = user._doc;
-    res.status(200).json({ message: "Login successful", user: userWithoutPassword });
+    res
+      .status(200)
+      .json({ message: "Login successful", user: userWithoutPassword });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: error.message });
@@ -84,4 +87,9 @@ exports.changePassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+exports.logout = (req, res) => {
+  res.cookie("token", "", { httpOnly: true }, { maxAge: 0 });
+  res.status(200).json({ message: "Logout successful" });
 };

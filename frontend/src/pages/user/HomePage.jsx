@@ -36,7 +36,6 @@ const { Title, Text, Link } = Typography;
 const { Meta } = Card;
 
 const HomePage = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { addItemToCart, cartItems } = useCart();
   const [newProducts, setNewProducts] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
@@ -44,7 +43,6 @@ const HomePage = () => {
   const [monitors, setMonitors] = useState([]);
   const [hardDrives, setHardDrives] = useState([]);
   const [components, setComponents] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
   const filterProducts = async (category) => {

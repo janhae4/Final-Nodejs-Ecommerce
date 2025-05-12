@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const discountConnection = require('../database/discountConnection');
+const mongoose = require("mongoose");
+const { discountConnection } = require("../database/dbConnection");
 
 const discountCodeSchema = new mongoose.Schema({
   code: {
@@ -13,8 +13,8 @@ const discountCodeSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['percentage', 'fixed'],
-    default: 'percentage',
+    enum: ["percentage", "fixed"],
+    default: "percentage",
   },
   createdAt: {
     type: Date,
@@ -30,11 +30,14 @@ const discountCodeSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive'],
-    default: 'active',
-  }
+    enum: ["active", "inactive"],
+    default: "active",
+  },
 });
 
-const DiscountCode = discountConnection.model('DiscountCode', discountCodeSchema);
+const DiscountCode = discountConnection.model(
+  "DiscountCode",
+  discountCodeSchema
+);
 
 module.exports = DiscountCode;

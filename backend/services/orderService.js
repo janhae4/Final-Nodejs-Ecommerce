@@ -1,6 +1,8 @@
+const DiscountCode = require("../models/DiscountCode");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-
+const User = require("../models/User");
+const emailService = require("./emailService");
 const generateOrderCode = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
@@ -8,18 +10,28 @@ const generateOrderCode = () => {
 };
 
 exports.createOrder = async (orderData) => {
-  const session = await Order.startSession();
-  session.startTransaction();
-
+  const orderSession = await Order.startSession();
+  const productSession = await Product.startSession();
+  const userSession = await User.startSession();
+  const discountSession = await DiscountCode.startSession();
+  orderSession.startTransaction();
+  productSession.startTransaction();
+  userSession.startTransaction();
+  discountSession.startTransaction();
   try {
+    // Order
     const order = new Order({
       ...orderData,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });
 
+    // Product
     for (const product of orderData.products) {
-      const productData = await Product.findById(product._id).session(session);
+      const productData = await Product.findById(product.productId).session(
+        productSession
+      );
+
       if (!productData) {
         throw new Error("Product not found");
       }
@@ -34,23 +46,49 @@ exports.createOrder = async (orderData) => {
       }
 
       variant.inventory -= product.quantity;
-
-      await productData.save({ session });
+      await productData.save({ session: productSession });
     }
+    await order.save({ session: orderSession });
+    await emailService.sendOrderConfirmation(order);
 
-    await order.save({ session });
+    // User
+    const user = await User.findById(orderData.userInfo.userId).session(
+      userSession
+    );
+    if (!user) {
+      throw new Error("User not found");
+    }
+    user.loyaltyPoints += (order.loyaltyPointsEarned - order.loyaltyPointsUsed);
+    await user.save({ session: userSession });
 
-    await session.commitTransaction();
-    session.endSession();
+    // Discount
+    const discountCode = await DiscountCode.findOne({
+      code: orderData.discountInfo.code,
+    }).session(discountSession);
+    if (!discountCode) {
+      throw new Error("Discount code not found");
+    }
+    discountCode.usedCount += 1;
+    await discountCode.save({ session: discountSession });
 
+    await orderSession.commitTransaction();
+    await productSession.commitTransaction();
+    await userSession.commitTransaction();
+    await discountSession.commitTransaction();
     return order;
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    await orderSession.abortTransaction();
+    await productSession.abortTransaction();
+    await userSession.abortTransaction();
+    await discountSession.abortTransaction();
     throw error;
+  } finally {
+    orderSession.endSession();
+    productSession.endSession();
+    userSession.endSession();
+    discountSession.endSession();
   }
 };
-
 exports.getOrders = async (user, discountCode) => {
   try {
     if (user) return await this.getOrderByUser(user);
@@ -144,22 +182,20 @@ exports.deleteOrderById = async (orderId) => {
 };
 
 const getDateRangeQuery = (timeFilter, startDate, endDate) => {
-  const dateQuery = {};
   const now = new Date();
+  let dateCondition = {};
 
   if (startDate && endDate) {
-    dateQuery.purchaseDate = {
+    dateCondition = {
       $gte: startDate,
       $lte: endDate,
     };
   } else if (timeFilter && timeFilter !== "all") {
-    dateQuery.purchaseDate = {};
-
     switch (timeFilter) {
       case "today":
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        dateQuery.purchaseDate = {
+        dateCondition = {
           $gte: today,
           $lte: now,
         };
@@ -174,7 +210,7 @@ const getDateRangeQuery = (timeFilter, startDate, endDate) => {
         yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
         yesterdayEnd.setHours(23, 59, 59, 999);
 
-        dateQuery.purchaseDate = {
+        dateCondition = {
           $gte: yesterday,
           $lte: yesterdayEnd,
         };
@@ -185,7 +221,7 @@ const getDateRangeQuery = (timeFilter, startDate, endDate) => {
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
         weekStart.setHours(0, 0, 0, 0);
 
-        dateQuery.purchaseDate = {
+        dateCondition = {
           $gte: weekStart,
           $lte: now,
         };
@@ -196,7 +232,7 @@ const getDateRangeQuery = (timeFilter, startDate, endDate) => {
         monthStart.setDate(1);
         monthStart.setHours(0, 0, 0, 0);
 
-        dateQuery.purchaseDate = {
+        dateCondition = {
           $gte: monthStart,
           $lte: now,
         };
@@ -204,7 +240,7 @@ const getDateRangeQuery = (timeFilter, startDate, endDate) => {
     }
   }
 
-  return dateQuery;
+  return dateCondition;
 };
 
 exports.getOrderCount = async (
@@ -215,15 +251,15 @@ exports.getOrderCount = async (
   user,
   discountCode
 ) => {
-  const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
+  const dateCondition = getDateRangeQuery(timeFilter, startDate, endDate);
 
   const query = {
-    $and: [
-      search && { orderCode: { $regex: search, $options: "i" } },
-      ...dateQuery,
-      user && { user },
-      discountCode && { discountCode },
-    ].filter(Boolean),
+    ...(search && { orderCode: { $regex: search, $options: "i" } }),
+    ...(Object.keys(dateCondition).length > 0 && {
+      purchaseDate: dateCondition,
+    }),
+    ...(user && { "userInfo.userId": user }),
+    ...(discountCode && { "discountInfo.code": discountCode }),
   };
 
   return await Order.countDocuments(query);
@@ -240,15 +276,14 @@ exports.getAllOrders = async (
   discountCode
 ) => {
   try {
-    const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
-
+    const dateCondition = getDateRangeQuery(timeFilter, startDate, endDate);
     const query = {
-      $and: [
-        search && { orderCode: { $regex: search, $options: "i" } },
-        ...dateQuery,
-        user && { user },
-        discountCode && { discountCode },
-      ].filter(Boolean),
+      ...(search && { orderCode: { $regex: search, $options: "i" } }),
+      ...(Object.keys(dateCondition).length > 0 && {
+        purchaseDate: dateCondition,
+      }),
+      ...(user && { "userInfo.userId": user }),
+      ...(discountCode && { "discountInfo.code": discountCode }),
     };
 
     await Order.collection.createIndex({ orderCode: 1 });

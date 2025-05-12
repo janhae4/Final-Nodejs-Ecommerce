@@ -3,11 +3,12 @@ const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken'); // Bạn cần import jwt nếu dùng
 
-const { register, login, changePassword } = require('../controllers/authController');
+const { register, login, changePassword, logout } = require('../controllers/authController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/logout', logout);
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 

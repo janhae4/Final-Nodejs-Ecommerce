@@ -42,7 +42,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const DiscountCodeAdmin = () => {
-  // State for discount codes data
   const [discountCodes, setDiscountCodes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -296,11 +295,11 @@ const DiscountCodeAdmin = () => {
         </Title>
 
         <Card className="mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start mb-4">
             <Title level={4} className="mb-4 md:mb-0">
               Discount Codes List
             </Title>
-            <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 items-start">
+            <div className="w-full lg:w-auto flex flex-col md:flex-row gap-4 items-start">
               <Input
                 placeholder="Search by code"
                 value={searchText}

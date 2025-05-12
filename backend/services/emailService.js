@@ -1,18 +1,18 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
-exports.sendOrderConfirmation = async (userEmail, order) => {
+exports.sendOrderConfirmation = async (order) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: userEmail,
-    subject: `Order Confirmation - ${order.orderNumber}`,
+    to: order.userInfo.email,
+    subject: `Order Confirmation - ${order.orderCode}`,
     html: `
       <!DOCTYPE html>
       <html lang="en">
@@ -61,13 +61,58 @@ exports.sendOrderConfirmation = async (userEmail, order) => {
             margin-bottom: 25px;
           }
           .product-item {
-            padding: 10px;
+            display: flex;
+            align-items: center;
+            padding: 15px;
             border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+          }
+          
+          .product-item:hover {
+            background-color: #f5f5f5;
+          }
+          
+          .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+            border: 1px solid #e0e0e0;
+          }
+          
+          .product-info {
+            flex: 1;
+          }
+          
+          .product-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+          }
+          
+          .product-variant {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+          }
+          
+          .product-meta {
             display: flex;
             justify-content: space-between;
+            align-items: center;
           }
-          .product-item:last-child {
-            border-bottom: none;
+          
+          .product-quantity {
+            background-color: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 13px;
+          }
+          
+          .product-price {
+            font-weight: bold;
+            color: #2E7D32;
           }
           .total {
             font-size: 18px;
@@ -118,27 +163,39 @@ exports.sendOrderConfirmation = async (userEmail, order) => {
         </div>
         <div class="content">
           <div class="order-details">
-            <p class="order-number">Order Number: ${order.orderNumber}</p>
+            <p class="order-number">Order Code: ${order.orderCode}</p>
             <p><strong>Purchase Date:</strong> ${order.purchaseDate.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status}</span></p>
+            <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status.toUpperCase()}</span></p>
           </div>
           
           <h3>Products:</h3>
-          <div class="product-list">
-            ${order.products.map(p => `
-              <div class="product-item">
-                <div>Product ID: ${p.productId}</div>
-                <div>Quantity: ${p.quantity}</div>
-              </div>
-            `).join('')}
+           <div class="product-list">
+              ${order.products.map(p => `
+                <div class="product-item">
+                  <img src="${p.productImage || 'https://via.placeholder.com/60?text=Product'}" 
+                      alt="${p.productName}" 
+                      class="product-image">
+                  <div class="product-info">
+                    <div class="product-name">${p.productName}</div>
+                    ${p.variantName ? `<div class="product-variant">Variant: ${p.variantName}</div>` : ''}
+                    <div class="product-meta">
+                      <span class="product-quantity">Qty: ${p.quantity}</span>
+                      <span class="product-price">$${(p.price * p.quantity).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
             
             <div class="total">
-              Total Amount: ${order.totalAmount.toLocaleString()} VND
+              Total Amount: $${order.totalAmount.toLocaleString()}
             </div>
           </div>
           
           <div class="points">
-            <span style="font-size: 18px;">🎁</span> You earned ${order.loyaltyPointsEarned} loyalty points with this order!
+            <span style="font-size: 18px;">🎁</span> You earned ${
+              order.loyaltyPointsEarned
+            } loyalty points with this order!
           </div>
           
           <div style="text-align: center; margin-top: 25px;">
@@ -147,12 +204,12 @@ exports.sendOrderConfirmation = async (userEmail, order) => {
           
           <div class="footer">
             <p>If you have any questions about your order, please contact our customer support.</p>
-            <p>© ${new Date().getFullYear()} Your Company Name. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} SHOP. All rights reserved.</p>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
   await transporter.sendMail(mailOptions);
 };

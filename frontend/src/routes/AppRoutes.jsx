@@ -6,10 +6,7 @@ import CreateProduct from "../pages/admin/product/CreateProduct";
 import ProductCatalog from "../pages/admin/product/ProductCatalog";
 import ProductDetail from "../pages/admin/product/ProductDetail";
 import EditProduct from "../pages/admin/product/ProductEdit";
-import Login from "../pages/user/auth/Login";
 import Register from "../pages/user/auth/Register";
-import Home from "../pages/user/HomePage";
-import Profile from "../pages/user/auth/Profile";
 import ManageUsers from "../pages/admin/user/ManageUser";
 import AdminLayout from "../components/layout/AdminLayout";
 import Dashboard from "../pages/admin/dashboard/Dashboard";
@@ -23,6 +20,7 @@ import ProductDetailPage from "../pages/user/products/ProductDetailPage";
 import CartPage from "../pages/user/cart/CartPage";
 import CheckoutPage from "../pages/user/checkout/CheckoutPage";
 import MainLayout from "../components/layout/MainLayout";
+import OrderPage from "../pages/user/order/OrderPage";
 
 export default function AppRoutes() {
   return (
@@ -53,6 +51,7 @@ export default function AppRoutes() {
         <Route path="/products/detail/:productId" element={<ProductDetailPage />}/>
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/myorder" element={<OrderPage />} />
       </Route>
 
     </Routes>

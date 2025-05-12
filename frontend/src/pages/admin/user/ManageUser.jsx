@@ -75,6 +75,7 @@ const ManageUsers = () => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        withCredentials: true,
       });
 
       setUsers(res.data || []);

@@ -23,5 +23,4 @@ router.put('/shipping-addresses/:addressId', profileController.updateAddress);
 router.delete('/shipping-addresses/:addressId', profileController.deleteAddress);
 
 
-
 module.exports = router;

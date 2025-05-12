@@ -18,7 +18,7 @@ exports.getAllOrders = async (req, res) => {
       endDate.setHours(23, 59, 59, 999);
     }
 
-    const user = req.query.user || "";
+    const user = req.query.userId || "";
     const discountCode = req.query.discountCode || "";
 
     const orders = await orderService.getAllOrders(
@@ -53,7 +53,7 @@ exports.getAllOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const isGuest = req.body.userId.includes("guest");
+    const isGuest = req.body.userInfo.userId.includes("guest");
     let order;
     if (isGuest) {
       order = await guestService.createGuest(req.body);

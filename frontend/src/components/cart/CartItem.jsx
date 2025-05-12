@@ -20,7 +20,7 @@ const CartItem = ({ item }) => {
   const { updateItemQuantity, removeItemFromCart, updateVariant } = useCart();
   const itemKey = item.productId + (item.variant ? `-${item.variant.id}` : "");
 
-  const basePrice = item.productPrice || 0;
+  const basePrice = item.price || 0;
   const variantPriceModifier = item.variant?.priceModifier || 0;
   const unitPrice = basePrice + variantPriceModifier;
   const itemSubtotal = unitPrice * item.quantity;

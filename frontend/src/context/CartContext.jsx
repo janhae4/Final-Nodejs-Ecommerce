@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { message } from "antd";
+import axios from "axios";
 
 const CartContext = createContext();
 
@@ -13,8 +14,8 @@ export const useCart = () => useContext(CartContext);
 
 // Helper function to calculate item subtotal
 const calculateItemSubtotal = (item) => {
-  console.log(item)
-  const price = item.productPrice;
+  console.log(item);
+  const price = item.price;
   return price * item.quantity;
 };
 
@@ -26,10 +27,16 @@ export const CartProvider = ({ children }) => {
   const [discountInfo, setDiscountInfo] = useState(null); // { discountId: string, code: string, type: 'percentage' | 'fixed', value: number }
   const [shippingCost, setShippingCost] = useState(5.0);
   const [taxRate, setTaxRate] = useState(0.07);
+  const [orders, setOrders] = useState([]);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
+
+  useEffect(() => {
+    getOrderFromUser();
+  }, [orders]);
 
   const addItemToCart = (product, variant = null, quantity = 1) => {
     setCartItems((prevItems) => {
@@ -77,10 +84,11 @@ export const CartProvider = ({ children }) => {
             productId: product._id,
             productName: product.nameProduct,
             variants: product.variants,
-            productPrice: product.price,
             variantId: variant?._id ? variant._id : product.variants[0]._id,
-            variantName: variant?.name ? variant.name : product.variants[0].name,
-            productPrice: variant?.price ? variant.price : product.variants[0].price,
+            variantName: variant?.name
+              ? variant.name
+              : product.variants[0].name,
+            price: variant?.price ? variant.price : product.variants[0].price,
             quantity: quantity,
             image: product.images[0],
           },
@@ -122,7 +130,7 @@ export const CartProvider = ({ children }) => {
             ...item,
             variantId: newVariant._id,
             variantName: newVariant.name,
-            productPrice: newVariant.price,
+            price: newVariant.price,
           };
         }
         return item;
@@ -140,7 +148,6 @@ export const CartProvider = ({ children }) => {
   const clearCart = () => {
     setCartItems([]);
     setDiscountInfo(null);
-    messageApi.info("Cart cleared.");
   };
 
   const subtotal = useMemo(() => {
@@ -174,39 +181,24 @@ export const CartProvider = ({ children }) => {
   }, [subtotal, discountAmount, taxes, shippingCost]);
 
   const applyDiscountCode = async (code) => {
-    // In a real app, this would be an API call to validate the discount
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const normalizedCode = code.toUpperCase();
-
-        // Mock discount validation
-        if (normalizedCode === "SAVE10") {
-          const newDiscountInfo = {
-            discountId: "mock-discount-id-1",
-            code: normalizedCode,
-            type: "percentage",
-            value: 10,
-          };
-          setDiscountInfo(newDiscountInfo);
-          messageApi.success(`Discount "${normalizedCode}" applied!`);
-          resolve(newDiscountInfo);
-        } else if (normalizedCode === "FLAT20") {
-          const newDiscountInfo = {
-            discountId: "mock-discount-id-2",
-            code: normalizedCode,
-            type: "fixed",
-            value: 20,
-          };
-          setDiscountInfo(newDiscountInfo);
-          messageApi.success(`Discount "${normalizedCode}" applied!`);
-          resolve(newDiscountInfo);
-        } else {
-          setDiscountInfo(null);
-          messageApi.error("Invalid discount code.");
-          reject(new Error("Invalid discount code."));
-        }
-      }, 1000);
-    });
+    try {
+      const normalizedCode = code.toUpperCase();
+      const response = await axios.get(
+        `${API_URL}/discount-codes/code/${normalizedCode}`
+      );
+      const discount = response.data;
+      console.log(discount);
+      if (discount.usedCount >= discount.usageLimit) {
+        throw new Error("Discount code has reached its usage limit.");
+      }
+      setDiscountInfo(response.data);
+    } catch (error) {
+      setDiscountInfo(null);
+      if (error.message.includes("404")) {
+        throw new Error("Discount code not found.");
+      }
+      throw error;
+    }
   };
 
   const removeDiscountCode = () => {
@@ -218,7 +210,6 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   }, [cartItems]);
 
-  // Prepare cart data for order creation
   const getCartForOrder = (userInfo) => {
     return {
       userInfo: {
@@ -233,7 +224,7 @@ export const CartProvider = ({ children }) => {
         variantId: item.variantId,
         variantName: item.variantName,
         quantity: item.quantity,
-        price: item.variantId ? item.variantPrice : item.productPrice,
+        price: item.variantId ? item.variantPrice : item.price,
       })),
       discountInfo: discountInfo
         ? {
@@ -251,11 +242,44 @@ export const CartProvider = ({ children }) => {
     };
   };
 
+  const addOrderToUser = (order) => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    user.orders = [...(user.orders || []), order];
+    localStorage.setItem("user", JSON.stringify(user));
+  };
+
+  const getOrderFromUser = () => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    return user.orders || [];
+  };
+
+  const setLoyaltyPoints = (earnedPoints, usedPoints) => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    user.loyaltyPoints = (user.loyaltyPoints || 0) + earnedPoints - usedPoints;
+    localStorage.setItem("user", JSON.stringify(user));
+  };
+
+  const placeOrder = async (orderData) => {
+    try {
+      const response = await axios.post(`${API_URL}/orders`, orderData);
+      messageApi.success("Order placed successfully.");
+      addOrderToUser(response.data);
+      setLoyaltyPoints(response.data.loyaltyPointsEarned, response.data.loyaltyPointsUsed);
+      setOrders((prev) => [...prev, response.data]);
+      clearCart();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const [messageApi, contextHolder] = message.useMessage();
   return (
     <CartContext.Provider
       value={{
+        orders,
         cartItems,
+        placeOrder,
         addItemToCart,
         updateVariant,
         updateItemQuantity,

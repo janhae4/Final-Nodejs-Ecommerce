@@ -76,7 +76,7 @@ const OrderAdmin = () => {
     try {
       setLoading(true);
 
-      let url = `${API_URL}/orders/all?page=${page}&limit=${pageSize}`;
+      let url = `${API_URL}/orders/?page=${page}&limit=${pageSize}`;
 
       if (search && search.trim() !== "") {
         url += `&search=${encodeURIComponent(search)}`;
@@ -93,8 +93,8 @@ const OrderAdmin = () => {
       }
 
       const response = await axios.get(url);
-      setOrders(response.data.data);
-      console.log(response.data.data);
+      setOrders(response.data.orders);
+      console.log(response.data.orders);
       setPagination({
         current: page,
         pageSize: pageSize,
@@ -188,7 +188,9 @@ const OrderAdmin = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       setLoading(true);
-      await axios.patch(`${API_URL}/orders/${orderId}/status`, { status: newStatus });
+      await axios.patch(`${API_URL}/orders/${orderId}/status`, {
+        status: newStatus,
+      });
 
       // Update local state to reflect the change
       setOrders((prev) =>
@@ -277,53 +279,63 @@ const OrderAdmin = () => {
           delivered: "green",
           cancelled: "red",
         };
-      
+
         const statusOptions = {
           pending: [
-            { value: "confirmed", label: "confirmed" },
-            { value: "cancelled", label: "cancelled" },
+            { value: "confirmed", label: "Confirmed" },
+            { value: "cancelled", label: "Cancelled" },
           ],
           confirmed: [
-            { value: "shipping", label: "shipping" },
-            { value: "cancelled", label: "cancelled" },
+            { value: "shipping", label: "Shipping" },
+            { value: "cancelled", label: "Cancelled" },
           ],
           shipping: [
-            { value: "delivered", label: "delivered" },
-            { value: "cancelled", label: "cancelled" },
+            { value: "delivered", label: "Delivered" },
+            { value: "cancelled", label: "Cancelled" },
           ],
           delivered: [],
           cancelled: [],
         };
-      
+
+        // Hàm format chữ cái đầu viết hoa
+        const formatStatus = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
         const options = statusOptions[status];
-      
+        const currentStatus = formatStatus(status);
+
         if (!options || options.length === 0) {
-          return <Tag color={statusColors[status]}>{status}</Tag>;
+          return (
+            <div className="ml-3">
+              <Tag color={statusColors[status]}>{currentStatus}</Tag>
+            </div>
+          );
         }
-      
+
         return (
-          <Select
-            value={status}
-            style={{ width: 150 }}
-            onChange={(value) => handleStatusChange(record._id, value)}
-            disabled={loading}
-            options={[
-              {
-                value: status,
-                label: <Tag color={statusColors[status]}>{status}</Tag>,
-                disabled: true,
-              },
-              ...options.map((option) => ({
-                value: option.value,
-                label: (
-                  <Tag color={statusColors[option.value]}>
-                    {option.label}
-                  </Tag>
-                ),
-              })),
-            ]}
-            variant="borderless"
-          />
+          <div className="">
+            <Select
+              value={status}
+              style={{ width: 150 }}
+              onChange={(value) => handleStatusChange(record._id, value)}
+              disabled={loading}
+              options={[
+                {
+                  value: status,
+                  label: (
+                    <Tag color={statusColors[status]}>{currentStatus}</Tag>
+                  ),
+                  disabled: true,
+                },
+                ...options.map((option) => ({
+                  value: option.value,
+                  label: (
+                    <Tag color={statusColors[option.value]}>{option.label}</Tag>
+                  ),
+                })),
+              ]}
+              variant="borderless"
+            />
+          </div>
         );
       },
       filters: [
@@ -345,7 +357,6 @@ const OrderAdmin = () => {
             icon={<EyeOutlined />}
             size="small"
             onClick={() => showViewModal(record)}
-            className="bg-blue-500"
           >
             View
           </Button>
@@ -354,7 +365,6 @@ const OrderAdmin = () => {
             icon={<EditOutlined />}
             size="small"
             onClick={() => showModal(record)}
-            className="bg-blue-500"
           >
             Edit
           </Button>

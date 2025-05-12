@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const productConnection = require("../database/productConnection");
+const {productConnection} = require("../database/dbConnection");
 const { use } = require("../routes/orderRoute");
 
 const variantSchema = new mongoose.Schema({

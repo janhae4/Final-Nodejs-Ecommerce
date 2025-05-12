@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Badge, Modal, Table, Tag } from "antd";
+import { Badge, Modal, Table, Tag, Typography } from "antd";
 import axios from "axios";
+const { Text } = Typography;
 const ModalOderDiscount = ({
   orderModalVisible,
   setOrderModalVisible,
@@ -12,7 +13,6 @@ const ModalOderDiscount = ({
     const fetchOrders = async (code) => {
       try {
         const response = await axios.get(`${API_URL}/orders/code/${code}`);
-        console.log(response.data);
         setOrders(response.data);
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -35,8 +35,18 @@ const ModalOderDiscount = ({
         dataSource={orders || []}
         rowKey="_id"
         columns={[
-          { title: "Order Code", dataIndex: "orderCode", key: "orderCode" },
-          { title: "Customer", dataIndex: "userId", key: "userId", width:200 },
+          {
+            title: "Order Code",
+            dataIndex: "orderCode",
+            key: "orderCode",
+            render: (text) => <Text className="break-words line-clamp-2">{text}</Text>,
+          },
+          {
+            title: "Customer",
+            dataIndex: "userInfo",
+            key: "userInfo",
+            render: (text) => <Text className="break-words line-clamp-2">{text?.fullName}</Text>,
+          },
           {
             title: "Total",
             dataIndex: "totalAmount",

@@ -5,43 +5,22 @@ import { Link, useNavigate } from "react-router-dom"; // Assuming React Router
 import LoginForm from "../../../components/auth/LoginForm";
 import SocialAuthButtons from "../../../components/auth/SocialAuthButton";
 import axios from "axios";
-// import { useAuth } from '../../../contexts/AuthContext'; // Your auth context
-
+import { useAuth } from "../../../context/AuthContext";
 const { Title, Paragraph } = Typography;
 
 const LoginPage = () => {
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   // const { login } = useAuth(); // From your context
   const navigate = useNavigate();
 
   const handleLogin = async (values) => {
-    setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
-        {
-          email: values.email,
-          password: values.password,
-        }
-      );
-      const user = response.data.user;
-      if (user.isBanned) {
-        console.log("User is banned:", user.isBanned);
-        alert("Tài khoản của bạn đã bị cấm.");
-        setLoading(false);
-        return; // Dừng xử lý nếu tài khoản bị cấm
-      }
-      localStorage.setItem("user", JSON.stringify(user));
-      message.success("Đăng nhập thành công!");
-
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      setLoading(true);
+      await login(values);
     } catch (error) {
-      console.error("Login error:", error); // Log chi tiết lỗi
-      message.error("Đăng nhập thất bại. Vui lòng kiểm tra lại!");
+      console.error("Login error:", error);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
