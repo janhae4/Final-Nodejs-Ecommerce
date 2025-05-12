@@ -28,7 +28,7 @@ const CartItem = ({ item }) => {
   const handleChangeVariant = (value) => {
     const newVariant = item.variants.find((v) => v._id === value);
     updateVariant(itemKey, newVariant);
-  } 
+  };
 
   return (
     <Row
@@ -86,7 +86,10 @@ const CartItem = ({ item }) => {
       </Col>
       <Col xs={7} sm={3} md={3} className="text-right">
         <Text strong className="text-md">
-          ${itemSubtotal.toFixed(2)}
+          {itemSubtotal.toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          })}
         </Text>
       </Col>
       <Col xs={2} sm={2} md={2} className="text-right">

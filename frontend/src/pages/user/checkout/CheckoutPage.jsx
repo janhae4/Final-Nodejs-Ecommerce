@@ -103,7 +103,7 @@ const CheckoutPage = () => {
         console.log(4);
         await addAddress(newAddress);
       }
-      console.log(addressMode);
+
       loadUserAddresses();
       setAddressMode("select");
       setEditingAddress(null);
@@ -188,7 +188,7 @@ const CheckoutPage = () => {
         }
 
         const { _id, fullName, email, phone } = getUserInfo();
-        console.log(shippingAddress);
+        console.log(cartItems);
         const mockOrder = {
           userInfo: { userId: _id, fullName, email, phone },
           products: cartItems,
@@ -208,7 +208,7 @@ const CheckoutPage = () => {
         setCurrentStep(currentStep + 1);
       } catch (error) {
         console.log("Validation Failed:", error);
-        messageApi.error("Please complete the payment information.");
+        messageApi.error(error.response.data.message);
         setOrderProcessing(false);
       } finally {
         setOrderProcessing(false);
@@ -327,7 +327,7 @@ const CheckoutPage = () => {
             <Link to="/products" key="continue">
               <Button type="primary">Continue Shopping</Button>
             </Link>,
-            <Link to="/account/orders" key="orders">
+            <Link to="/myorder" key="orders">
               <Button>View Orders</Button>
             </Link>,
           ]}

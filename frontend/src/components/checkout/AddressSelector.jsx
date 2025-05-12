@@ -17,7 +17,7 @@ const AddressSelector = ({
   const [editingAddress, setEditingAddress] = useState(null);
 
   const handleEdit = (address) => {
-    setEditingAddress(address);
+    onEdit(address);
   };
 
   const handleCancelEdit = () => {

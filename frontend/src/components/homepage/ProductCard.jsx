@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Col, Typography, Button } from "antd";
+import { Card, Col, Typography, Button, Image, Carousel } from "antd";
 import {
   ShoppingCartOutlined,
   ThunderboltFilled,
@@ -19,12 +19,34 @@ const ProductCard = ({
       hoverable
       className=" rouded-lg overflow-hidden h-full flex flex-col"
       cover={
-        <div className="relative">
-          <img
-            alt={product.nameProduct}
-            src={product.images}
-            className="h-48 w-full object-cover"
-          />
+        <div className="relative w-full h-[150px]">
+          <Carousel
+            dots={false}
+            autoplay
+            className="w-full h-full flex items-center justify-center"
+          >
+            {product.images.map((imgUrl, index) => (
+              <div
+                key={index}
+                className="w-full h-[150px] p-2 flex items-center justify-center"
+              >
+                <img
+                  alt={`${product.nameProduct} - ${index}`}
+                  src={imgUrl}
+                  className="object-contain"
+                  style={{
+                    width: "auto",
+                    height: "auto",
+                    maxWidth: "90%",
+                    maxHeight: "140px",
+                    margin: "0 auto",
+                  }}
+                />
+              </div>
+            ))}
+          </Carousel>
+
+          {/* Badges */}
           {isNew && (
             <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
               NEW
@@ -53,9 +75,9 @@ const ProductCard = ({
           title={
             <Link
               href="#"
-              className="block text-gray-800 hover:text-brand-primary text-base font-semibold
+              className="block text-gray-800 hover:text-brand-primary text-sm font-semibold
               line-clamp-2 whitespace-normal break-words"
-              style={{ minHeight: "50px" }}
+              style={{ minHeight: "80px" }}
             >
               {product.nameProduct}
             </Link>
@@ -72,7 +94,10 @@ const ProductCard = ({
                 </Text>
               </div>
               <Text strong className="text-brand-primary text-lg">
-                ${product.price.toFixed(2)}
+                {product.price.toLocaleString("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                })}
               </Text>
               {product.price > 500 ? (
                 <div className="mt-1 text-xs text-green-600">

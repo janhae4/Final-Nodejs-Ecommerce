@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true, trim: true },
     tags: [{ type: String }],
     images: [{ type: String, required: true }],
-    shortDescription: { type: String, required: true, maxlength: 500 },
+    shortDescription: { type: String, required: true, maxlength: 1000 },
     variants: [variantSchema],
     comments: [commentSchema],
     ratingAverage: { type: Number, default: 0 },

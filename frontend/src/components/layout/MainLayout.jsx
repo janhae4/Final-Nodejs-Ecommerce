@@ -27,6 +27,7 @@ import {
   LogoutOutlined,
   ShopOutlined,
   CreditCardOutlined,
+  LeftOutlined,
 } from "@ant-design/icons";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { data, Link, Outlet, useNavigate } from "react-router-dom";
@@ -39,6 +40,7 @@ import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import AIChatbot from "./main/AIChatbotComponent";
 import { useAuth } from "../../context/AuthContext";
+import NavbarComponent from "./main/NavbarComponent";
 const { Text } = Typography;
 
 const MainLayout = () => {
@@ -52,6 +54,7 @@ const MainLayout = () => {
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
+  const showBackButton = window.location.pathname !== "/";
   const user = getUserInfo();
   useEffect(() => {
     function handleClickOutside(event) {
@@ -130,15 +133,40 @@ const MainLayout = () => {
         <div className="container mx-auto">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="text-2xl font-bold text-blue-600">
-              <Link to="/" className="hover:text-blue-700 transition-colors">
-                SHOP
-              </Link>
+            <div className="flex items-center">
+              {showBackButton && (
+                <>
+                  <Button
+                    type="text"
+                    icon={<LeftOutlined />}
+                    className=" mr-2"
+                    onClick={() => navigate(-1)}
+                  />
+                  <div className="text-2xl font-bold text-blue-600">
+                    <Link
+                      to="/"
+                      className="hover:text-blue-700 transition-colors"
+                    >
+                      SHOP
+                    </Link>
+                  </div>
+                </>
+              )}
+              {!showBackButton && (
+                <div className="text-2xl font-bold text-blue-600">
+                  <Link
+                    to="/"
+                    className="hover:text-blue-700 transition-colors"
+                  >
+                    SHOP
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Desktop Search */}
             <div
-              className="hidden md:block relative flex-grow max-w-xl mx-4"
+              className="hidden md:block relative flex-row flex-grow max-w-xl mx-4"
               ref={searchRef}
             >
               <Input
@@ -168,34 +196,22 @@ const MainLayout = () => {
                   onClick={() => setMobileSearchOpen(true)}
                 />
               </div>
-              <Link to="/products" className="h-full">
-                <div className="flex text-black items-center gap-2 hover:bg-gray-200 rounded-md p-2">
-                  <ShopOutlined className="text-lg" />
-                  <Text className="hidden md:inline" strong>
-                    Products
-                  </Text>
-                </div>
-              </Link>
-
-              <Link to="/myorder">
-                <div className="flex text-black items-center gap-2 hover:bg-gray-200 rounded-md p-2">
-                  <CreditCardOutlined className="text-lg" />
-                  <Text className="hidden md:inline" strong>
-                    My Order
-                  </Text>
-                </div>
-              </Link>
-
-              <Link to="/cart">
-                <div className="flex text-black items-center p-2 gap-2 hover:bg-gray-200 rounded-md">
-                  <Badge count={cartItemCount} size="small" offset={[4, -4]}>
-                    <ShoppingCartOutlined className="text-lg" />
-                  </Badge>
-                  <Text className="hidden md:inline" strong>
-                    Cart
-                  </Text>
-                </div>
-              </Link>
+              <NavbarComponent
+                path="products"
+                icon={ShopOutlined}
+                text="Products"
+              />
+              <NavbarComponent
+                path="myorder"
+                icon={CreditCardOutlined}
+                text="Order"
+              />
+              <NavbarComponent
+                path="cart"
+                icon={ShoppingCartOutlined}
+                text="Cart"
+                cartItemCount={cartItemCount}
+              />
 
               {isLoggedIn ? (
                 <Dropdown menu={{ items: userMenu }}>
@@ -209,7 +225,10 @@ const MainLayout = () => {
                       className="mr-2"
                     />
                     <span className="hidden sm:inline">
-                      Hi {user?.fullName.split(" ")[user?.fullName.split(" ").length - 1] || "User"}
+                      Hi{" "}
+                      {user?.fullName.split(" ")[
+                        user?.fullName.split(" ").length - 1
+                      ] || "User"}
                     </span>{" "}
                     <DownOutlined className="ml-1" />
                   </a>

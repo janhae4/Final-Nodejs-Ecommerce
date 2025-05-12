@@ -45,7 +45,7 @@ exports.createOrder = async (orderData) => {
         throw new Error("Not enough inventory for product");
       }
 
-      variant.inventory -= product.quantity;
+      variant.used += product.quantity;
       await productData.save({ session: productSession });
     }
     await order.save({ session: orderSession });
@@ -63,13 +63,12 @@ exports.createOrder = async (orderData) => {
 
     // Discount
     const discountCode = await DiscountCode.findOne({
-      code: orderData.discountInfo.code,
+      code: orderData?.discountInfo?.code,
     }).session(discountSession);
-    if (!discountCode) {
-      throw new Error("Discount code not found");
+    if (discountCode) {
+      discountCode.usedCount += 1;
+      await discountCode.save({ session: discountSession });
     }
-    discountCode.usedCount += 1;
-    await discountCode.save({ session: discountSession });
 
     await orderSession.commitTransaction();
     await productSession.commitTransaction();

@@ -14,7 +14,6 @@ export const useCart = () => useContext(CartContext);
 
 // Helper function to calculate item subtotal
 const calculateItemSubtotal = (item) => {
-  console.log(item);
   const price = item.price;
   return price * item.quantity;
 };
@@ -27,6 +26,9 @@ export const CartProvider = ({ children }) => {
   const [discountInfo, setDiscountInfo] = useState(null); // { discountId: string, code: string, type: 'percentage' | 'fixed', value: number }
   const [shippingCost, setShippingCost] = useState(5.0);
   const [taxRate, setTaxRate] = useState(0.07);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(() => {
+    return JSON.parse(localStorage.getItem("user")).loyaltyPoints;
+  });
   const [orders, setOrders] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -95,11 +97,7 @@ export const CartProvider = ({ children }) => {
         ];
       }
     });
-    messageApi.success(
-      `${product.nameProduct}${
-        variant ? ` (${variant.name})` : ""
-      } added to cart!`
-    );
+    messageApi.success(`Added to cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {
@@ -176,9 +174,9 @@ export const CartProvider = ({ children }) => {
   }, [subtotal, discountInfo]);
 
   const total = useMemo(() => {
-    const totalBeforeShipping = subtotal - discountAmount + taxes;
+    const totalBeforeShipping = subtotal - discountAmount + taxes - loyaltyPoints;
     return totalBeforeShipping > 0 ? totalBeforeShipping + shippingCost : 0;
-  }, [subtotal, discountAmount, taxes, shippingCost]);
+  }, [subtotal, discountAmount, taxes, shippingCost, loyaltyPoints]);
 
   const applyDiscountCode = async (code) => {
     try {
@@ -253,9 +251,10 @@ export const CartProvider = ({ children }) => {
     return user.orders || [];
   };
 
-  const setLoyaltyPoints = (earnedPoints, usedPoints) => {
+  const setLoyaltyPointsUser = (earnedPoints, usedPoints) => {
     const user = JSON.parse(localStorage.getItem("user")) || {};
     user.loyaltyPoints = (user.loyaltyPoints || 0) + earnedPoints - usedPoints;
+    setLoyaltyPoints(user.loyaltyPoints);
     localStorage.setItem("user", JSON.stringify(user));
   };
 
@@ -264,7 +263,10 @@ export const CartProvider = ({ children }) => {
       const response = await axios.post(`${API_URL}/orders`, orderData);
       messageApi.success("Order placed successfully.");
       addOrderToUser(response.data);
-      setLoyaltyPoints(response.data.loyaltyPointsEarned, response.data.loyaltyPointsUsed);
+      setLoyaltyPointsUser(
+        response.data.loyaltyPointsEarned,
+        response.data.loyaltyPointsUsed
+      );
       setOrders((prev) => [...prev, response.data]);
       clearCart();
       return response.data;
@@ -292,6 +294,7 @@ export const CartProvider = ({ children }) => {
         discountInfo,
         discountAmount,
         total,
+        loyaltyPoints,
         applyDiscountCode,
         removeDiscountCode,
         setShippingCost,

@@ -258,7 +258,8 @@ const OrderAdmin = () => {
       dataIndex: "shippingAddress",
       key: "shippingAddress",
       sorter: (a, b) => a.shippingAddress.localeCompare(b.shippingAddress),
-      render: (text) => <Text>{text}</Text>,
+      render: (text) => <Text className="break-words line-clamp-2">{text}</Text>,
+      width: 220,
     },
     {
       title: "Purchase date",

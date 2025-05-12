@@ -171,15 +171,6 @@ const OrderDetail = ({ order }) => {
                 {order.userInfo.email}
               </Descriptions.Item>
             </Descriptions>
-
-            <div className="mt-4 flex space-x-2">
-              <Button type="primary" block>
-                Track Order
-              </Button>
-              <Button block>
-                <Link to="/products">Continue Shopping</Link>
-              </Button>
-            </div>
           </Card>
         </Col>
       </Row>
