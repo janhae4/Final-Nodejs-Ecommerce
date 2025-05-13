@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { Typography, Divider, message, Layout } from "antd";
 import { Link, useNavigate } from "react-router-dom"; // Assuming React Router
@@ -22,6 +21,9 @@ const LoginPage = () => {
         {
           email: values.email,
           password: values.password,
+        },
+        {
+          withCredentials: true, 
         }
       );
       const user = response.data.user;
@@ -47,15 +49,23 @@ const LoginPage = () => {
     }
   };
 
+
+
   const handleSocialLogin = (provider) => {
-    // Implement social login logic
     console.log(`Login with ${provider}`);
     message.info(`Attempting login with ${provider}...`);
-    // Example: window.location.href = `/api/auth/${provider}`;
+    window.location.href = `http://localhost:3000/api/auth/${provider}`;
   };
 
   return (
-    <Layout>
+    <Layout
+      style={{
+        height: "100vh", // Chiều cao toàn màn hình
+        display: "flex",
+        justifyContent: "center", // Canh giữa theo chiều ngang
+        alignItems: "center", // Canh giữa theo chiều dọc
+      }}
+    >
       <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-md">
         <Title level={2} className="text-center mb-6">
           Welcome Back!
@@ -68,7 +78,7 @@ const LoginPage = () => {
         />
         <Paragraph className="mt-6 text-center">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-500 hover:text-blue-700">
+          <Link to="/auth/register" className="text-blue-500 hover:text-blue-700">
             Sign up
           </Link>
         </Paragraph>

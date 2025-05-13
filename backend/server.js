@@ -7,6 +7,7 @@ const discountCodeRoutes = require('./routes/discountRoute');
 const productRoutes = require('./routes/productRoute');
 const chatbotRoutes = require('./routes/chatbotRoute');
 
+
 //Routes
 const authRoutes = require('./routes/authRoute');
 const adminRoutes = require('./routes/adminRoute');
@@ -15,11 +16,21 @@ const userRoutes = require('./routes/userRoute');
 const app = express();
 const port = 3000;
 const passport = require('passport');
-
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
+
+// Cấu hình CORS cho phép gửi cookie
+const corsOptions = {
+  origin: "http://localhost:5173", // Địa chỉ frontend của bạn
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, // Quan trọng để gửi cookie
+};
+
+app.use(cors(corsOptions));
+
+app.use(cookieParser());
 app.use(passport.initialize());
 require('./config/passport');
-app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 

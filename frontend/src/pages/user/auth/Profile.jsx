@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-const ProfilePage = () => {
+const Profile = () => {
   const [form] = Form.useForm();
   const [user, setUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
@@ -165,4 +165,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default Profile;

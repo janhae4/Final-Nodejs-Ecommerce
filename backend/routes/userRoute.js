@@ -18,6 +18,7 @@ router.get('/orders', orderController.getUserOrders);
 router.post('/orders', orderController.createOrder);
 
 // Địa chỉ giao hàng
+router.get('/shipping-addresses', profileController.getAddresses);
 router.post('/shipping-addresses', profileController.addAddress);
 router.put('/shipping-addresses/:addressId', profileController.updateAddress);
 router.delete('/shipping-addresses/:addressId', profileController.deleteAddress);

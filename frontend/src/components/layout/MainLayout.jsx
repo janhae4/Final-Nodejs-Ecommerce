@@ -118,12 +118,12 @@ const MainLayout = () => {
   const userMenu = [
     {
       key: "1",
-      label: <Link to="/profile">My profile</Link>,
+      label: <Link to="/auth/profile">My profile</Link>,
       icon: <UserOutlined />,
     },
     {
       key: "2",
-      label: <Link to="/order">My order</Link>,
+      label: <Link to="/auth/order">My order</Link>,
       icon: <ShoppingCartOutlined />,
     },
     {

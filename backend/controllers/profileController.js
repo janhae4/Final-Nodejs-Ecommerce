@@ -39,6 +39,18 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+exports.getAddresses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('addresses');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json(user.addresses || []);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 exports.addAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
