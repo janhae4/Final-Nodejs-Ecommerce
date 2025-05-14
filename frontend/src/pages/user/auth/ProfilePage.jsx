@@ -5,7 +5,7 @@ import ProfileUpdateForm from '../../../components/profile/ProfileUpdateForm';
 import PasswordChangeForm from '../../../components/profile/PasswordChangeForm';
 import AddressList from '../../../components/profile/AddressList';
 import AddressForm from '../../../components/profile/AddressForm';
-// import { fetchUserProfile, updateUserProfile, changePassword, fetchAddresses, addAddress, updateAddress, deleteAddress, setDefaultAddress } from '../services/userService'; // API service calls
+import axios from 'axios';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -18,38 +18,70 @@ const ProfilePage = () => {
   const [editingAddress, setEditingAddress] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Dummy data - replace with API calls
-  const mockUser = { id: 1, fullName: 'Jane Doe', email: 'jane.doe@example.com' };
-  const mockAddresses = [
-    { id: 'addr1', label: 'Home', fullAddress: '123 Willow Creek, Springfield, IL', contactNumber: '555-0101', isDefault: true },
-    { id: 'addr2', label: 'Work', fullAddress: '456 Business Rd, Commerce City, IL', contactNumber: '555-0102', isDefault: false },
-  ];
+  // Fetch user profile
+  const fetchUserProfile = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
+    const response = await axios.get('http://localhost:3000/api/users/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    });
+
+    setUserData(response.data);
+    return response.data; // <-- Thêm dòng này
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+  }
+};
+
+
+  // Fetch user addresses
+const fetchAddresses = async () => {
+  const token = localStorage.getItem('authToken');
+  try {
+    const res = await axios.get('http://localhost:3000/api/users/shipping-addresses', {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    });
+    console.log("Addresses fetched:", res.data); // Log dữ liệu trả về từ API
+    return res.data;
+  } catch (error) {
+    console.error("Failed to fetch addresses:", error);
+    message.error("Failed to load addresses.");
+    return [];
+  }
+};
+
+  // Load user profile and addresses
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
-      try {
-        // const user = await fetchUserProfile();
-        // const userAddresses = await fetchAddresses();
-        // setUserData(user);
-        // setAddresses(userAddresses);
-        setUserData(mockUser);
-        setAddresses(mockAddresses);
-      } catch (error) {
-        message.error("Failed to load profile data.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  setLoading(true);
+  try {
+    await fetchUserProfile(); // chỉ cần gọi để nó tự setUserData
+    const userAddresses = await fetchAddresses();
+    setAddresses(userAddresses);
+  } catch (error) {
+    console.error("Error loading user data:", error);
+    message.error("Failed to load user data.");
+  } finally {
+    setLoading(false);
+  }
+};
     loadData();
   }, []);
 
+  // Handle profile update
   const handleProfileUpdate = async (values) => {
     setFormLoading(true);
     try {
-      // const updatedUser = await updateUserProfile(values);
-      // setUserData(updatedUser);
-      setUserData(prev => ({ ...prev, ...values })); // Optimistic update
+      const token = localStorage.getItem('authToken');
+      const response = await axios.put('http://localhost:3000/api/users/profile', values, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      setUserData(response.data); // Update the userData state with the updated info
       message.success("Profile updated successfully!");
     } catch (error) {
       message.error("Failed to update profile.");
@@ -58,42 +90,58 @@ const ProfilePage = () => {
     }
   };
 
+  // Handle password change
   const handlePasswordChange = async (values) => {
     setFormLoading(true);
     try {
-      // await changePassword(values);
+      const token = localStorage.getItem('authToken');
+      await axios.put('http://localhost:3000/api/users/change-password', values, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
       message.success("Password changed successfully!");
-      // Optionally, log out user or clear password form
     } catch (error) {
-      message.error(error.message || "Failed to change password.");
+      message.error("Failed to change password.");
     } finally {
       setFormLoading(false);
     }
   };
 
+  // Open address modal for adding new address
   const handleAddAddress = () => {
     setEditingAddress(null);
     setIsAddressModalVisible(true);
   };
 
+  // Open address modal for editing an existing address
   const handleEditAddress = (address) => {
     setEditingAddress(address);
     setIsAddressModalVisible(true);
   };
 
+  // Handle address deletion
   const handleDeleteAddress = async (addressId) => {
     try {
-      // await deleteAddress(addressId);
-      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
+      const token = localStorage.getItem('authToken');
+      await axios.delete(`http://localhost:3000/api/users/shipping-addresses/${addressId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      setAddresses(prev => prev.filter(addr => addr._id !== addressId));
       message.success("Address deleted successfully!");
     } catch (error) {
       message.error("Failed to delete address.");
     }
   };
-  
+
+  // Handle setting default address
   const handleSetDefaultAddress = async (addressId) => {
     try {
-      // await setDefaultAddress(addressId);
+      const token = localStorage.getItem('authToken');
+      await axios.put(`http://localhost:3000/api/users/shipping-addresses/${addressId}/set-default`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
       setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: addr.id === addressId })));
       message.success("Default address updated!");
     } catch (error) {
@@ -101,19 +149,26 @@ const ProfilePage = () => {
     }
   };
 
+  // Handle address form submit
   const handleAddressFormSubmit = async (values) => {
     setFormLoading(true);
     try {
+      const token = localStorage.getItem('authToken');
       if (editingAddress) {
-        // const updated = await updateAddress(editingAddress.id, values);
-        // setAddresses(prev => prev.map(addr => addr.id === editingAddress.id ? updated : addr));
-        setAddresses(prev => prev.map(addr => addr.id === editingAddress.id ? { ...addr, ...values } : addr));
+        const response = await axios.put(`http://localhost:3000/api/users/shipping-addresses/${editingAddress.id}`, values, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        const updatedAddress = response.data.address;
+        setAddresses(prev => prev.map(addr => addr.id === updatedAddress.id ? updatedAddress : addr));
         message.success("Address updated successfully!");
       } else {
-        // const newAddress = await addAddress(values);
-        // setAddresses(prev => [...prev, newAddress]);
-        const newAddr = { id: `addr${Date.now()}`, ...values };
-        setAddresses(prev => [...prev, newAddr]);
+        const response = await axios.post('http://localhost:3000/api/users/shipping-addresses', values, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        const newAddress = response.data.address;
+        setAddresses(prev => [...prev, newAddress]);
         message.success("Address added successfully!");
       }
       setIsAddressModalVisible(false);
@@ -125,6 +180,7 @@ const ProfilePage = () => {
     }
   };
 
+  // Loading spinner while data is being fetched
   if (loading) {
     return <Layout><div className="flex justify-center items-center h-64"><Spin size="large" /></div></Layout>;
   }
@@ -170,7 +226,6 @@ const ProfilePage = () => {
               <PasswordChangeForm onFinish={handlePasswordChange} loading={formLoading} />
             </Card>
           </TabPane>
-           {/* Add more tabs as needed, e.g., Order History */}
         </Tabs>
 
         <Modal
@@ -181,7 +236,7 @@ const ProfilePage = () => {
           destroyOnClose
         >
           <AddressForm 
-            initialValues={editingAddress || { isDefault: addresses.length === 0}}
+            initialValues={editingAddress || { isDefault: addresses.length === 0 }}
             onFinish={handleAddressFormSubmit}
             onCancel={() => setIsAddressModalVisible(false)}
             loading={formLoading}

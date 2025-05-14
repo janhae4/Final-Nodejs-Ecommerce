@@ -1,11 +1,12 @@
-const express = require("express");
-const swaggerUi = require("swagger-ui-express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const orderRoutes = require("./routes/orderRoute");
-const discountCodeRoutes = require("./routes/discountRoute");
-const productRoutes = require("./routes/productRoute");
-const chatbotRoutes = require("./routes/chatbotRoute");
+const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const orderRoutes = require('./routes/orderRoute');
+const discountCodeRoutes = require('./routes/discountRoute');
+const productRoutes = require('./routes/productRoute');
+const chatbotRoutes = require('./routes/chatbotRoute');
+
 
 //Routes
 const authRoutes = require("./routes/authRoute");
@@ -15,20 +16,22 @@ const guestRoutes = require("./routes/guestRoute");
 
 const app = express();
 const port = 3000;
-const passport = require("passport");
-const cookieparser = require("cookie-parser");
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const passport = require('passport');
+const cookieParser = require('cookie-parser');
+require('dotenv').config();
 
-require("dotenv").config();
+// Cấu hình CORS cho phép gửi cookie
+const corsOptions = {
+  origin: "http://localhost:5173", // Địa chỉ frontend của bạn
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, // Quan trọng để gửi cookie
+};
+
+app.use(cors(corsOptions));
+
+app.use(cookieParser());
 app.use(passport.initialize());
-require("./config/passport");
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  })
-);
-app.use(cookieparser());
+require('./config/passport');
 app.use(express.json());
 app.use(bodyParser.json());
 

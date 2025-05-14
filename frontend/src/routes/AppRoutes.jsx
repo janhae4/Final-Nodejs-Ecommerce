@@ -20,7 +20,11 @@ import ProductDetailPage from "../pages/user/products/ProductDetailPage";
 import CartPage from "../pages/user/cart/CartPage";
 import CheckoutPage from "../pages/user/checkout/CheckoutPage";
 import MainLayout from "../components/layout/MainLayout";
+<<<<<<< HEAD
 import OrderPage from "../pages/user/order/OrderPage";
+=======
+import SocialLoginSuccess from "../pages/user/auth/SocialLoginSuccess";
+>>>>>>> origin/update/thienan
 
 export default function AppRoutes() {
   return (
@@ -30,6 +34,7 @@ export default function AppRoutes() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<Register />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="social-login-success" element={<SocialLoginSuccess />} />
       </Route>
 
       {/* Admin layout */}

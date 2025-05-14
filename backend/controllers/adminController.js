@@ -1,57 +1,37 @@
-const User = require('../models/User');
+const adminService = require('../services/adminService');
 
-// Lấy tất cả users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password'); // bỏ password khi trả về
+    const users = await adminService.getAllUsers();
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Update thông tin user
 exports.updateUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const updateData = req.body;
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true }).select('-password');
-    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
-
+    const updatedUser = await adminService.updateUserById(req.params.userId, req.body);
     res.json({ message: 'User updated successfully', user: updatedUser });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.message === 'User not found' ? 404 : 500).json({ message: error.message });
   }
 };
 
-// Ban user
 exports.banUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    user.isBanned = true;
-    await user.save();
-
+    await adminService.banUserById(req.params.userId);
     res.json({ message: 'User has been banned.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.message === 'User not found' ? 404 : 500).json({ message: error.message });
   }
 };
 
-// Unban user
 exports.unbanUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    user.isBanned = false;
-    await user.save();
-
+    await adminService.unbanUserById(req.params.userId);
     res.json({ message: 'User has been unbanned.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.message === 'User not found' ? 404 : 500).json({ message: error.message });
   }
 };

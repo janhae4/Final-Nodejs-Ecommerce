@@ -15,14 +15,14 @@ const Register = () => {
       const response = await axios.post('http://localhost:3000/api/auth/register', {
         fullName: values.fullName,
         email: values.email,
-        shippingAddress: values.shippingAddress
+        shippingAddress: values.address
       });
 
       // Hiển thị thông báo thành công
       message.success('Đăng ký thành công! Vui lòng đăng nhập.');
 
       // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       // Nếu có lỗi xảy ra
       message.error('Đăng ký thất bại. Vui lòng kiểm tra lại!');
@@ -53,7 +53,7 @@ const Register = () => {
 
         <Form.Item
           label="Địa chỉ giao hàng"
-          name="shippingAddress"
+          name="address"
           rules={[{ required: true, message: 'Vui lòng nhập địa chỉ giao hàng!' }]}
         >
           <Input />

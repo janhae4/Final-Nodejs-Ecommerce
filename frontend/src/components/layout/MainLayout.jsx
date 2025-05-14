@@ -39,8 +39,15 @@ import MobileSearchDrawer from "./main/MobileSearchDrawer";
 import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import AIChatbot from "./main/AIChatbotComponent";
+<<<<<<< HEAD
 import { useAuth } from "../../context/AuthContext";
 import NavbarComponent from "./main/NavbarComponent";
+=======
+import Cookies from "js-cookie";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; 
+
+>>>>>>> origin/update/thienan
 const { Text } = Typography;
 
 const MainLayout = () => {
@@ -48,13 +55,37 @@ const MainLayout = () => {
   const { isLoggedIn, userInfo, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+<<<<<<< HEAD
+=======
+  const { isLoggedIn, login, logout } = useAuth();
+>>>>>>> origin/update/thienan
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
+<<<<<<< HEAD
   const showBackButton = window.location.pathname !== "/";
+=======
+  const location = useLocation();
+  
+  useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token");
+
+  if (token) {
+    login(token); // Gọi login() từ AuthContext
+    // ✅ Xoá token khỏi URL sau khi xử lý
+    params.delete("token");
+    params.delete("user");
+    const newSearch = params.toString();
+    navigate(location.pathname + (newSearch ? `?${newSearch}` : ""), { replace: true });
+  }
+}, [location, login, navigate]);
+
+
+>>>>>>> origin/update/thienan
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -100,24 +131,32 @@ const MainLayout = () => {
   }, [searchQuery, debounceSearch]);
 
   const handleLogin = () => {
+    login();
     navigate("/auth/login");
   };
 
+<<<<<<< HEAD
   useEffect(() => {
     console.log(isLoggedIn)
   }, [isLoggedIn]);
 
   useEffect(() => console.log(userInfo), [userInfo]);
+=======
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+>>>>>>> origin/update/thienan
 
   const userMenu = [
     {
       key: "1",
-      label: <Link to="/profile">My profile</Link>,
+      label: <Link to="/auth/profile">My profile</Link>,
       icon: <UserOutlined />,
     },
     {
       key: "2",
-      label: <Link to="/order">My order</Link>,
+      label: <Link to="/auth/order">My order</Link>,
       icon: <ShoppingCartOutlined />,
     },
     {

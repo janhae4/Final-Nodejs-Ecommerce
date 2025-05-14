@@ -61,12 +61,15 @@ const ManageUsers = () => {
 
   // Fetch users from backend with pagination and search
   const fetchUsers = async (page = 1, pageSize = 20, search = "") => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("authToken");
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("authToken");
+    
+    console.log("Token đang được gửi:", token); // Log token để kiểm tra giá trị
 
-      let url = `http://localhost:3000/api/admin/users?page=${page}&limit=${pageSize}`;
+    let url = `http://localhost:3000/api/admin/users?page=${page}&limit=${pageSize}`;
 
+<<<<<<< HEAD
       if (search && search.trim() !== "") {
         url += `&search=${encodeURIComponent(search)}`;
       }
@@ -90,8 +93,34 @@ const ManageUsers = () => {
       console.error(err.response?.data || err);
       messageApi.error("Failed to fetch users");
       setLoading(false);
+=======
+    if (search && search.trim() !== "") {
+      url += `&search=${encodeURIComponent(search)}`;
+>>>>>>> origin/update/thienan
     }
-  };
+
+    const res = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
+    setUsers(res.data || []);
+    setPagination({
+      current: page,
+      pageSize: pageSize,
+      total: res.data.totalCount || 0,
+    });
+
+    setLoading(false);
+  } catch (err) {
+    console.error("Lỗi fetch:", err.response?.data || err);
+    messageApi.error("Failed to fetch users");
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchUsers(page, pageSize, searchText);
@@ -134,7 +163,9 @@ const ManageUsers = () => {
         values,
         {
           headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         }
+        
       );
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
@@ -155,6 +186,7 @@ const ManageUsers = () => {
 
       await axios.delete(`http://localhost:3000/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       messageApi.success("User deleted successfully");
       setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
@@ -173,6 +205,7 @@ const ManageUsers = () => {
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         }
       );
 
@@ -193,6 +226,7 @@ const ManageUsers = () => {
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         }
       );
 
