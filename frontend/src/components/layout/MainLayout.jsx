@@ -40,7 +40,7 @@ import { useCart } from "../../context/CartContext";
 import AIChatbot from "./main/AIChatbotComponent";
 import Cookies from "js-cookie";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; 
+import { useAuth } from "../../context/AuthContext"; 
 
 const { Text } = Typography;
 

@@ -2,29 +2,36 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext.jsx'; 
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login,setIsLoggedIn } = useAuth(); // <-- Lấy login & setIsLoggedIn từ context
 
-  // Hàm xử lý khi người dùng submit form đăng ký
   const handleRegister = async (values) => {
     setLoading(true);
     try {
-      // Gửi yêu cầu đăng ký đến backend
-      const response = await axios.post('http://localhost:3000/api/auth/register', {
-        fullName: values.fullName,
-        email: values.email,
-        shippingAddress: values.address
-      });
+      const response = await axios.post(
+        'http://localhost:3000/api/auth/register',
+        {
+          fullName: values.fullName,
+          email: values.email,
+          shippingAddress: values.address,
+        },
+        { withCredentials: true }
+      );
+      const token = response.data.token;
+      const userInfo = response.data.user; // Giả sử thông tin người dùng từ backend
 
-      // Hiển thị thông báo thành công
-      message.success('Đăng ký thành công! Vui lòng đăng nhập.');
+      login(token, userInfo); // Lưu token và user vào cookie và localStorage
 
-      // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
-      navigate('/');
+      setIsLoggedIn(true); // Đặt lại trạng thái đăng nhập
+
+      message.success('Đăng ký thành công!');
+      navigate('/'); // hoặc điều hướng sang /login
     } catch (error) {
-      // Nếu có lỗi xảy ra
+      console.error(error.response?.data || error.message);
       message.error('Đăng ký thất bại. Vui lòng kiểm tra lại!');
     } finally {
       setLoading(false);

@@ -15,7 +15,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -32,25 +32,21 @@ const HomePage = () => {
   const { setIsLoggedIn } = useAuth();  // Sử dụng setIsLoggedIn từ context
 
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-  const user = params.get("user");
+  const token = Cookies.get("token");
+  const user = localStorage.getItem("user");
 
   if (token && user) {
-    Cookies.set("token", token, { expires: 1 });
-    Cookies.set("user", user, { expires: 1 });
 
     // Kiểm tra giá trị cookie vừa cài đặt
-    console.log(Cookies.get("token")); // In ra để xác nhận token đã được lưu
+    // console.log("token: ",Cookies.get("token")); 
+    // console.log(Cookies.get("user")); 
+    // In ra để xác nhận token đã được lưu
 
     // Cập nhật trạng thái đăng nhập khi có token
     setIsLoggedIn(true);
 
-    // Xóa query params khỏi URL
-    window.history.replaceState({}, document.title, "/");
-
     // Điều hướng sau khi cập nhật trạng thái đăng nhập
-    navigate("/dashboard");
+    navigate("/");
   }
 
 

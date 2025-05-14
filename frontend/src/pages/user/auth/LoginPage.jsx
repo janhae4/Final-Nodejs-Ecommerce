@@ -4,8 +4,7 @@ import { Link, useNavigate } from "react-router-dom"; // Assuming React Router
 import LoginForm from "../../../components/auth/LoginForm";
 import SocialAuthButtons from "../../../components/auth/SocialAuthButton";
 import axios from "axios";
-import Cookies  from 'js-cookie';
-import { useAuth } from '../../../contexts/AuthContext'; // Your auth context
+import { useAuth } from '../../../context/AuthContext'; // Your auth context
 
 const { Title, Paragraph } = Typography;
 
@@ -28,14 +27,16 @@ const LoginPage = () => {
         }
       );
       const user = response.data.user;
+
       if (user.isBanned) {
         console.log("User is banned:", user.isBanned);
         alert("Tài khoản của bạn đã bị cấm.");
         setLoading(false);
         return; // Dừng xử lý nếu tài khoản bị cấm
       }
-      const token = response.data.token;
-      login(token);
+      const fetchedUser = await getUserInfo(); // lấy từ server
+      setUserInfo(fetchedUser); // đảm bảo đúng user
+      setIsLoggedIn(true);
       message.success("Đăng nhập thành công!");
       
       if (user.role === "admin") {

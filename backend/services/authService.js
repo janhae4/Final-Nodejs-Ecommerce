@@ -3,23 +3,43 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 exports.registerUser = async ({ fullName, email, address, password, role }) => {
-  const existingUser = await User.findOne({ email });
-  if (existingUser) throw new Error("Email already exists");
+  try {
+    // Kiểm tra xem email đã tồn tại trong hệ thống chưa
+    const existingUser = await User.findOne({ email });
+    if (existingUser) throw new Error("Email already exists");
 
-  const newUser = new User({
-    fullName,
-    email,
-    addresses: [address],
-    provider: "local",
-    role: role || "user",
-  });
-  if (password) {
-  newUser.password = password;
+    // Mã hóa mật khẩu nếu có
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+
+    // Tạo người dùng mới
+    const newUser = new User({
+      fullName,
+      email,
+      addresses: [address],
+      provider: "local",
+      role: role || "user", // Nếu không có role thì mặc định là 'user'
+      password: hashedPassword, // Lưu mật khẩu đã mã hóa
+    });
+
+    // Lưu người dùng vào database
+    await newUser.save();
+    console.log("✅ New user registered:", newUser);
+
+    // Tạo token JWT
+    const token = jwt.sign(
+      { id: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' } // Token có thời gian sống là 1 ngày
+    );
+
+    // Trả về thông tin người dùng và token
+    return { user: newUser, token };
+  } catch (error) {
+    console.error("Error during registration:", error);
+    throw new Error(error.message); // Trả về lỗi nếu có
   }
-  await newUser.save();
-  console.log("✅ New user registered:", newUser);
-  return newUser;
 };
+
 
 exports.loginUser = async ({ email, password }, res) => {
   try {

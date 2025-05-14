@@ -8,6 +8,7 @@ const { authMiddleware } = require('../middlewares/authMiddleware');
 // MIDDLEWARE xác thực JWT
 router.use(authMiddleware);
 
+
 // Profile routes
 router.get('/profile', profileController.getProfile);
 router.put('/profile', profileController.updateProfile);

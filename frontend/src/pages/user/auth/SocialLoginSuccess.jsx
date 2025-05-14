@@ -1,27 +1,29 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+import Cookies from "js-cookie";
 
 function SocialLoginSuccess() {
   const navigate = useNavigate();
+  const { setIsLoggedIn, setUser } = useAuth();
 
-  useEffect(() => {
+    useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
-    const user = params.get("user");
+    const userId = params.get("userId");
 
-    if (token && user) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", user);
-
-      // ✅ Xóa query params mà không reload trang
-      window.history.replaceState({}, document.title, "/");
-
-      // Sau khi lưu vào localStorage, chuyển hướng đến trang dashboard
-      navigate("/",  { replace: true });
+    if (token && userId) {
+      // Lưu token và userId vào cookie
+      Cookies.set("token", token, { expires: 7, sameSite: "Strict", path: "/" });
+      Cookies.set("userId", userId, { expires: 7, sameSite: "Strict", path: "/" });
+      console.log("Token and UserId saved to cookies", token, userId);
+      // Chuyển hướng đến trang chủ hoặc dashboard sau khi đăng nhập thành công
+      navigate("/");  // Chuyển đến homepage
     }
   }, [navigate]);
 
   return <div>Đang xử lý đăng nhập...</div>;
 }
+ 
 
 export default SocialLoginSuccess;

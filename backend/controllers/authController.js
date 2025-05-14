@@ -6,11 +6,27 @@ const { generateToken } = require('../services/authService');
 exports.register = async (req, res) => {
   try {
     const user = await authService.registerUser(req.body);
-    res.status(201).json({ message: "Registration successful", user });
+
+    // Tạo token ngay sau khi người dùng đã được tạo thành công
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    // Kiểm tra xem token có được tạo đúng không
+    console.log("Token generated:", token);
+
+    // Gửi token qua cookie
+    res.cookie("token", token, {
+      httpOnly: false,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // Cookie sống 1 ngày
+    });
+
+    res.status(201).json({ message: "Đăng ký thành công", user, token });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 exports.login = async (req, res) => {
   try {

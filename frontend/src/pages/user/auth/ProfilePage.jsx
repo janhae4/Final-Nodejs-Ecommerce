@@ -6,9 +6,10 @@ import PasswordChangeForm from '../../../components/profile/PasswordChangeForm';
 import AddressList from '../../../components/profile/AddressList';
 import AddressForm from '../../../components/profile/AddressForm';
 import axios from 'axios';
-
+import Cookies from 'js-cookie'
 const { Title } = Typography;
 const { TabPane } = Tabs;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
@@ -17,16 +18,11 @@ const ProfilePage = () => {
   const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
-
   // Fetch user profile
   const fetchUserProfile = async () => {
   try {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    const response = await axios.get('http://localhost:3000/api/users/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
+    const response = await axios.get(`${API_URL}/users/profile`, {
+      withCredentials: true, 
     });
 
     setUserData(response.data);
@@ -39,18 +35,25 @@ const ProfilePage = () => {
 
   // Fetch user addresses
 const fetchAddresses = async () => {
-  const token = localStorage.getItem('authToken');
   try {
-    const res = await axios.get('http://localhost:3000/api/users/shipping-addresses', {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
+    const response = await axios.get(`${API_URL}/users/shipping-addresses`,{
+      withCredentials: true, 
     });
-    console.log("Addresses fetched:", res.data); // Log dữ liệu trả về từ API
-    return res.data;
+
+    // Kiểm tra nếu có dữ liệu trả về
+    if (response.status === 200 && response.data && response.data.length > 0) {
+      return response.data;
+    } else {
+      console.log('No shipping addresses found or user has not provided any.');
+      return [];  // Trả về mảng rỗng nếu không có địa chỉ
+    }
   } catch (error) {
-    console.error("Failed to fetch addresses:", error);
-    message.error("Failed to load addresses.");
-    return [];
+    if (error.response && error.response.status === 404) {
+      console.log('Endpoint for shipping addresses not found.');
+    } else {
+      console.error('Failed to fetch addresses:', error);
+    }
+    return [];  // Trả về mảng rỗng nếu có lỗi
   }
 };
 
@@ -77,7 +80,7 @@ const fetchAddresses = async () => {
     setFormLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.put('http://localhost:3000/api/users/profile', values, {
+      const response = await axios.put(`${API_URL}/users/profile`, values, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -111,7 +114,7 @@ const fetchAddresses = async () => {
 
     // Gửi PUT request KHÔNG GỬI confirmNewPassword
     const response = await axios.put(
-      'http://localhost:3000/api/users/change-password',
+      `${API_URL}/users/change-password`,
       { oldPassword, newPassword },  // loại bỏ confirmNewPassword
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -148,7 +151,7 @@ const fetchAddresses = async () => {
   const handleDeleteAddress = async (addressId) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.delete(`http://localhost:3000/api/users/shipping-addresses/${addressId}`, {
+      await axios.delete(`${API_URL}/users/shipping-addresses/${addressId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -163,7 +166,7 @@ const fetchAddresses = async () => {
   const handleSetDefaultAddress = async (addressId) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.put(`http://localhost:3000/api/users/shipping-addresses/${addressId}/set-default`, null, {
+      await axios.put(`${API_URL}/users/shipping-addresses/${addressId}/set-default`, null, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -180,7 +183,7 @@ const fetchAddresses = async () => {
     try {
       const token = localStorage.getItem('authToken');
       if (editingAddress) {
-        const response = await axios.put(`http://localhost:3000/api/users/shipping-addresses/${editingAddress.id}`, values, {
+        const response = await axios.put(`${API_URL}/users/shipping-addresses/${editingAddress.id}`, values, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
@@ -188,7 +191,7 @@ const fetchAddresses = async () => {
         setAddresses(prev => prev.map(addr => addr.id === updatedAddress.id ? updatedAddress : addr));
         message.success("Address updated successfully!");
       } else {
-        const response = await axios.post('http://localhost:3000/api/users/shipping-addresses', values, {
+        const response = await axios.post(`${API_URL}/users/shipping-addresses`, values, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
