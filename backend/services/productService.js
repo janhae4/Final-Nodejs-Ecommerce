@@ -1,5 +1,14 @@
 const Product = require('../models/Product');
 
+exports.getAllProducts = async () => {
+    try {
+        const products = await Product.find();
+        return products;
+    } catch (err) {
+        throw new Error('Error fetching products: ' + err.message);
+    }
+}
+
 exports.createProduct = async ({
     nameProduct,
     price,
@@ -81,12 +90,13 @@ exports.findProductsByCategory = async (category) => {
     }
 };
 
-exports.searchProducts = async ({ nameProduct, catrgory, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
+exports.searchProducts = async ({ nameProduct, category, brand, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
     try {
         const query = {};
 
         if (nameProduct) query.nameProduct = { $regex: nameProduct, $options: 'i' };
-        if (catrgory) query.catrgory = catrgory;
+        if (category) query.category = category;
+        if (brand) query.brand = { $regex: brand, $options: 'i' };
         if (minPrice !== undefined || maxPrice !== undefined) {
             query.price = {};
             if (minPrice !== undefined) query.price.$gte = minPrice;
@@ -107,6 +117,17 @@ exports.searchProducts = async ({ nameProduct, catrgory, minPrice, maxPrice, pag
     } catch (err) {
         throw new Error('Error searching products: ' + err.message);
     }
+};
+
+
+exports.getAllCategories = async () => {
+    const categories = await Product.distinct('category');
+    return categories;
+};
+
+exports.getAllBrands = async () => {
+    const brands = await Product.distinct('brand');
+    return brands;
 };
 
 exports.updateProduct = async (productId, updateData) => {
@@ -204,5 +225,15 @@ exports.decreaseInventory = async (productId, quantity, variantId = null) => {
         return product;
     } catch (err) {
         throw new Error('Error decreasing inventory: ' + err.message);
+    }
+};
+
+exports.getProductVariants = async (productId) => {
+    try {
+        const product = await Product.findById(productId).populate('variants');
+        if (!product) throw new Error('Product not found');
+        return product.variants;
+    } catch (err) {
+        throw new Error('Error fetching product variants: ' + err.message);
     }
 };

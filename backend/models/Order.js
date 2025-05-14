@@ -51,6 +51,15 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      productName: {
+        type: String,
+      },
+      variantId: {
+        type: String,
+      },
+      variantName: {
+        type: String,
+      },
       quantity: {
         type: Number,
         required: true,

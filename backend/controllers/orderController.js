@@ -1,41 +1,65 @@
 const orderService = require("../services/orderService");
+const guestService = require("../services/guestService");
 
 exports.getAllOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 20;
     const search = req.query.search || "";
     const skip = (page - 1) * limit;
-    const totalCount = await orderService.getOrderCount(search);
-    const totalPages = Math.ceil(totalCount / limit);
-    const data = await orderService.getAllOrders(skip, limit, search);
+
+    const timeFilter = req.query.timeFilter || "all";
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate)
+      : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const user = req.query.user || "";
+    const discountCode = req.query.discountCode || "";
+
+    const orders = await orderService.getAllOrders(
+      skip,
+      limit,
+      search,
+      timeFilter,
+      startDate,
+      endDate,
+      user,
+      discountCode
+    );
+    const count = await orderService.getOrderCount(
+      search,
+      timeFilter,
+      startDate,
+      endDate,
+      user,
+      discountCode
+    );
+
     res.status(200).json({
-      data,
-      totalPages,
       currentPage: page,
-      totalCount,
+      totalPages: Math.ceil(count / limit),
+      totalCount: count,
+      orders: orders,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.getOrders = async (req, res) => {
-  try {
-    const { user, discountCode } = req.query;
-    const orders = await orderService.getOrders(user, discountCode);
-    res.json(orders);
-  } catch (error) {
-    if (error.message.includes("not found")) {
-      return res.status(404).json({ message: error.message });
-    }
-    return res.status(500).json({ message: error.message });
-  }
-};
-
 exports.createOrder = async (req, res) => {
   try {
-    const order = await orderService.createOrder(req.body);
+    const isGuest = req.body.userId.includes("guest");
+    let order;
+    if (isGuest) {
+      order = await guestService.createGuest(req.body);
+    } else {
+      order = await orderService.createOrder(req.body);
+    }
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -96,8 +120,12 @@ exports.getOrderById = async (req, res) => {
 
 exports.getUserOrders = async (req, res) => {
   try {
-    const user = req.user;
-    const orders = await orderService.getOrderByUser(user._id);
+    const userId = req.params.userId;
+    if (userId.includes("guest")) {
+      const ordersGuest = await guestService.getGuestOrders(userId);
+      return res.json(ordersGuest);
+    }
+    const orders = await orderService.getOrderByUser(userId);
     res.json(orders);
   } catch (error) {
     if (error.message.includes("not found")) {

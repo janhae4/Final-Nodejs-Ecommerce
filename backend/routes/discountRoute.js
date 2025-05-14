@@ -4,6 +4,7 @@ const discountController = require('../controllers/discountController');
 
 router.get('/', discountController.getAllDiscount)
 router.get('/active', discountController.getDiscountActive)
+router.get('/code/:code', discountController.getDiscountByCode)
 router.get('/most-used', discountController.getMostUsedDiscount)
 router.get('/active-length', discountController.getActiveDiscountLength)
 router.get('/inactive-length', discountController.getInactiveDiscountLength)

@@ -76,7 +76,7 @@ exports.createProduct = async (req, res) => {
 exports.getProductByIdWithVariants = async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await ProductService.getProductByIdWithVariants(id); 
+        const product = await ProductService.getProductByIdWithVariants(id);
 
         res.status(200).json({ status: true, product });
     } catch (err) {
@@ -151,14 +151,15 @@ exports.searchByCategory = async (req, res, next) => {
 };
 
 // Search products with multiple criteria
-// GET/products/search?keyword=yourKeyword&minPrice=yourMinPrice&maxPrice=yourMaxPrice&category=yourCategory
+// GET/products/search?nameProduct=abc&minPrice=100&maxPrice=1000&category=xyz&brand=abcBrand&page=1&sortBy=price&sortOrder=asc
 exports.searchProducts = async (req, res) => {
     try {
-        const { nameProduct, category, minPrice, maxPrice, page, sortBy, sortOrder } = req.query;
+        const { nameProduct, category, brand, minPrice, maxPrice, page, sortBy, sortOrder } = req.query;
 
         const result = await ProductService.searchProducts({
             nameProduct,
             category,
+            brand,
             minPrice: minPrice ? parseFloat(minPrice) : undefined,
             maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
             page: page ? parseInt(page) : 1,
@@ -176,6 +177,26 @@ exports.searchProducts = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ status: false, message: 'Error searching products', error: err.message });
+    }
+};
+
+exports.getCategories = async (req, res) => {
+    try {
+        const categories = await ProductService.getAllCategories();
+        const data = categories.map((cat) => ({ _id: cat, name: cat }));
+        res.status(200).json({status: true, categories: data},);
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+};
+
+exports.getBrands = async (req, res) => {
+    try {
+        const brands = await ProductService.getAllBrands();
+        const data = brands.map((brand) => ({ _id: brand, name: brand }));
+        res.status(200).json({status: true, brands: data},);
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch brands' });
     }
 };
 
@@ -204,7 +225,7 @@ exports.updateProduct = async (req, res) => {
                     uploadStream.end(file.buffer);
                 });
 
-                uploadedImages.push(uploaded.secure_url); 
+                uploadedImages.push(uploaded.secure_url);
             }
         }
 
@@ -272,7 +293,7 @@ exports.addComment = async (req, res) => {
 exports.updateComment = async (req, res) => {
     try {
         const productId = req.params.id;
-        const commentId = req.params.commentId; 
+        const commentId = req.params.commentId;
         const { newContent } = req.body;
 
         if (!newContent) {
@@ -327,4 +348,14 @@ exports.decreaseInventory = async (req, res) => {
     }
 };
 
+
+exports.getProductVariants = async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const variants = await ProductService.getProductVariants(productId);
+        res.status(200).json(variants);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
 

@@ -1,28 +1,60 @@
-import { Routes, Route } from 'react-router-dom'
-import '../App.css'
+import { Routes, Route } from "react-router-dom";
 // Admin pages
-import AdminLayout from '../pages/admin/AdminLayout'
-import DiscountCodeAdmin from '../pages/admin/discount/Discount'
-import CreateProduct from '../pages/admin/product/CreateProduct'
-import ProductCatalog from '../pages/admin/product/ProductCatalog'
-import ProductDetail from '../pages/admin/product/ProductDetail'
-import EditProduct from '../pages/admin/product/ProductEdit'
-import Dashboard from '../pages/admin/Dashboard'
-import OrderAdmin from '../pages/admin/order/Order'
+import DiscountCodeAdmin from "../pages/admin/discount/Discount";
+import OrderAdmin from "../pages/admin/order/Order";
+import CreateProduct from "../pages/admin/product/CreateProduct";
+import ProductCatalog from "../pages/admin/product/ProductCatalog";
+import ProductDetail from "../pages/admin/product/ProductDetail";
+import EditProduct from "../pages/admin/product/ProductEdit";
+import Login from "../pages/user/auth/Login";
+import Register from "../pages/user/auth/Register";
+import Home from "../pages/user/HomePage";
+import Profile from "../pages/user/auth/Profile";
+import ManageUsers from "../pages/admin/user/ManageUser";
+import AdminLayout from "../components/layout/AdminLayout";
+import Dashboard from "../pages/admin/dashboard/Dashboard";
+
+import "../App.css";
+import LoginPage from "../pages/user/auth/LoginPage";
+import ProfilePage from "../pages/user/auth/ProfilePage";
+import HomePage from "../pages/user/HomePage";
+import ProductCatalogPage from "../pages/user/products/ProductCatalogPage";
+import ProductDetailPage from "../pages/user/products/ProductDetailPage";
+import CartPage from "../pages/user/cart/CartPage";
+import CheckoutPage from "../pages/user/checkout/CheckoutPage";
+import MainLayout from "../components/layout/MainLayout";
 
 export default function AppRoutes() {
-    return (
-        <Routes>
-            {/* Admin layout */}
-            <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="discounts" element={<DiscountCodeAdmin />} />
-                <Route path="products" element={<ProductCatalog />} />
-                <Route path="products/detail/:productId" element={<ProductDetail />} />
-                <Route path="products/create" element={<CreateProduct />} />
-                <Route path="products/edit/:id" element={<EditProduct />} />
-                {/* <Route path="users" element={<User />} /> */}
-            </Route>
-        </Routes>
-    )
+  return (
+    <Routes>
+      {/* Auth */}
+      <Route path="/auth">
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<Register />} />
+        <Route path="profile" element={<ProfilePage />} />
+      </Route>
+
+      {/* Admin layout */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="discounts" element={<DiscountCodeAdmin />} />
+        <Route path="orders" element={<OrderAdmin />} />
+        <Route path="products" element={<ProductCatalog />} />
+        <Route path="products/detail/:productId" element={<ProductDetail />} />
+        <Route path="products/create" element={<CreateProduct />} />
+        <Route path="products/edit/:id" element={<EditProduct />} />
+        <Route path="users" element={<ManageUsers />} />
+      </Route>
+
+      {/* User layout */}
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="/products" element={<ProductCatalogPage />} />
+        <Route path="/products/detail/:productId" element={<ProductDetailPage />}/>
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+      </Route>
+
+    </Routes>
+  );
 }

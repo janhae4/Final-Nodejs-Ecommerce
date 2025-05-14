@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 
 const generateOrderCode = () => {
   const timestamp = Date.now();
@@ -7,12 +8,47 @@ const generateOrderCode = () => {
 };
 
 exports.createOrder = async (orderData) => {
-  const order = new Order({
-    ...orderData,
-    orderCode: generateOrderCode(),
-    loyaltyPointsEarned: Math.floor(orderData.totalAmount || 0 * 0.1),
-  });
-  return await order.save();
+  const session = await Order.startSession();
+  session.startTransaction();
+
+  try {
+    const order = new Order({
+      ...orderData,
+      orderCode: generateOrderCode(),
+      loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
+    });
+
+    for (const product of orderData.products) {
+      const productData = await Product.findById(product._id).session(session);
+      if (!productData) {
+        throw new Error("Product not found");
+      }
+
+      const variant = productData.variants.id(product.variantId);
+      if (!variant) {
+        throw new Error("Product variant not found");
+      }
+
+      if (variant.inventory < product.quantity) {
+        throw new Error("Not enough inventory for product");
+      }
+
+      variant.inventory -= product.quantity;
+
+      await productData.save({ session });
+    }
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return order;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 exports.getOrders = async (user, discountCode) => {
@@ -48,23 +84,25 @@ exports.patchStatusOrder = async (orderId, orderData) => {
     }
 
     const validStatusTransitions = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['shipping', 'cancelled'],
-      shipping: ['delivered', 'cancelled'],
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["shipping", "cancelled"],
+      shipping: ["delivered", "cancelled"],
       delivered: [],
-      cancelled: []
+      cancelled: [],
     };
 
     const currentStatus = order.status;
     const newStatus = orderData.status;
 
     if (!validStatusTransitions[currentStatus].includes(newStatus)) {
-      throw new Error(`Cannot transition from ${currentStatus} to ${newStatus}`);
+      throw new Error(
+        `Cannot transition from ${currentStatus} to ${newStatus}`
+      );
     }
 
     order.status = orderData.status;
     order.statusHistory.push({ status: orderData.status });
-    
+
     return await order.save();
   } catch (error) {
     throw new Error("Error updating order: " + error.message);
@@ -72,7 +110,16 @@ exports.patchStatusOrder = async (orderId, orderData) => {
 };
 
 exports.updateOrder = async (orderId, orderData) => {
-  return await Order.findByIdAndUpdate(orderId, orderData, { new: true });
+  const order = await Order.findById(orderId);
+  const updatePayload = { ...orderData };
+
+  if (order.status !== orderData.status) {
+    updatePayload.$push = {
+      statusHistory: { status: orderData.status },
+    };
+  }
+
+  return await Order.findByIdAndUpdate(orderId, updatePayload, { new: true });
 };
 
 exports.getOrderById = async (orderId) => {
@@ -92,22 +139,123 @@ exports.deleteOrderById = async (orderId) => {
     const order = await Order.findByIdAndDelete(orderId);
     return { message: "Order deleted successfully" };
   } catch (error) {
-    throw new Error("Oder not found");
+    throw new Error("Order not found");
   }
 };
 
-exports.getOrderCount = async (search) => {
-  return await Order.countDocuments({
-    $or: [{ orderCode: { $regex: search, $options: "i" } }],
-  });
+const getDateRangeQuery = (timeFilter, startDate, endDate) => {
+  const dateQuery = {};
+  const now = new Date();
+
+  if (startDate && endDate) {
+    dateQuery.purchaseDate = {
+      $gte: startDate,
+      $lte: endDate,
+    };
+  } else if (timeFilter && timeFilter !== "all") {
+    dateQuery.purchaseDate = {};
+
+    switch (timeFilter) {
+      case "today":
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dateQuery.purchaseDate = {
+          $gte: today,
+          $lte: now,
+        };
+        break;
+
+      case "yesterday":
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+
+        const yesterdayEnd = new Date();
+        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+        yesterdayEnd.setHours(23, 59, 59, 999);
+
+        dateQuery.purchaseDate = {
+          $gte: yesterday,
+          $lte: yesterdayEnd,
+        };
+        break;
+
+      case "week":
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+
+        dateQuery.purchaseDate = {
+          $gte: weekStart,
+          $lte: now,
+        };
+        break;
+
+      case "month":
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+
+        dateQuery.purchaseDate = {
+          $gte: monthStart,
+          $lte: now,
+        };
+        break;
+    }
+  }
+
+  return dateQuery;
 };
 
-exports.getAllOrders = async (skip, limit, search) => {
+exports.getOrderCount = async (
+  search,
+  timeFilter,
+  startDate,
+  endDate,
+  user,
+  discountCode
+) => {
+  const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
+
+  const query = {
+    $and: [
+      search && { orderCode: { $regex: search, $options: "i" } },
+      ...dateQuery,
+      user && { user },
+      discountCode && { discountCode },
+    ].filter(Boolean),
+  };
+
+  return await Order.countDocuments(query);
+};
+
+
+exports.getAllOrders = async (
+  skip,
+  limit,
+  search,
+  timeFilter,
+  startDate,
+  endDate,
+  user,
+  discountCode
+) => {
   try {
-    await Order.collection.dropIndexes();
-    return await Order.find({
-      $or: [{ orderCode: { $regex: search, $options: "i" } }],
-    })
+    const dateQuery = getDateRangeQuery(timeFilter, startDate, endDate);
+
+    const query = {
+      $and: [
+        search && { orderCode: { $regex: search, $options: "i" } },
+        ...dateQuery,
+        user && { user },
+        discountCode && { discountCode },
+      ].filter(Boolean),
+    };
+
+    await Order.collection.createIndex({ orderCode: 1 });
+
+    return await Order.find(query)
+      .sort({ purchaseDate: -1 })
       .skip(skip)
       .limit(limit);
   } catch (error) {
