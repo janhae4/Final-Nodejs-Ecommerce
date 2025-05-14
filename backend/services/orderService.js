@@ -3,7 +3,11 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const emailService = require("./emailService");
-const guestService = require("./redisService");
+const redisService = require("./redisService");
+const { publishToExchange } = require("../database/rabbitmqConnection");
+
+const ORDER_EVENT_EXCHANGE = "order_events_exchange";
+
 const generateOrderCode = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
@@ -13,22 +17,16 @@ const generateOrderCode = () => {
 exports.createOrder = async (isGuest = null, orderData) => {
   const orderSession = await Order.startSession();
   const productSession = await Product.startSession();
-  const userSession = await User.startSession();
-  const discountSession = await DiscountCode.startSession();
+  
   orderSession.startTransaction();
   productSession.startTransaction();
-  userSession.startTransaction();
-  discountSession.startTransaction();
   try {
     // Order
-    console.log(orderData)
     const order = new Order({
       ...orderData,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });
-
-    console.log(order);
 
     // Product
     for (const product of orderData.products) {
@@ -37,65 +35,72 @@ exports.createOrder = async (isGuest = null, orderData) => {
       );
 
       if (!productData) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Product not found");
       }
 
       const variant = productData.variants.id(product.variantId);
       if (!variant) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Product variant not found");
       }
 
       if (variant.inventory < product.quantity) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Not enough inventory for product");
       }
-
-      variant.used += product.quantity;
       await productData.save({ session: productSession });
     }
+
+    const saved_order = await order.save({ session: orderSession });
+
     if (isGuest) {
-      console.log(order);
-      await guestService.createOrder(order);
-    }
-    await order.save({ session: orderSession });
-    emailService.sendOrderConfirmation(order);
-
-    // User
-    if (!isGuest) {
-      const user = await User.findById(orderData.userInfo.userId).session(
-        userSession
-      );
-      if (!user) {
-        throw new Error("User not found");
-      }
-      user.loyaltyPoints += order.loyaltyPointsEarned - order.loyaltyPointsUsed;
-      await user.save({ session: userSession });
-    }
-
-    // Discount
-    const discountCode = await DiscountCode.findOne({
-      code: orderData?.discountInfo?.code,
-    }).session(discountSession);
-    if (discountCode) {
-      discountCode.usedCount += 1;
-      await discountCode.save({ session: discountSession });
+      await redisService.createOrder(order);
     }
 
     await orderSession.commitTransaction();
-    await productSession.commitTransaction();
-    await userSession.commitTransaction();
-    await discountSession.commitTransaction();
-    return order;
+
+    const orderCreatedEvent = {
+      orderId: saved_order._id.toString(),
+      orderCode: saved_order.orderCode,
+      userId: saved_order.userInfo.userId
+        ? saved_order.userInfo.userId.toString()
+        : null,
+      isGuest: !!isGuest,
+      customerEmail: saved_order.userInfo.email,
+      customerName: saved_order.userInfo.name,
+      products: saved_order.products.map((p) => ({
+        productId: p.productId.toString(),
+        variantId: p.variantId.toString(),
+        quantity: p.quantity,
+        price: p.price,
+      })),
+      totalAmount: saved_order.totalAmount,
+      loyaltyPointsEarned: saved_order.loyaltyPointsEarned,
+      loyaltyPointsUsed: saved_order.loyaltyPointsUsed,
+      discountInfo: saved_order.discountInfo,
+      purchaseDate: saved_order.purchaseDate,
+    };
+
+    await publishToExchange(
+      ORDER_EVENT_EXCHANGE,
+      "order_created",
+      orderCreatedEvent
+    );
+    console.log(
+      `Order ${saved_order.orderCode} created successfully and event published.`
+    );
+    return saved_order;
   } catch (error) {
-    await orderSession.abortTransaction();
-    await productSession.abortTransaction();
-    await userSession.abortTransaction();
-    await discountSession.abortTransaction();
+    if (orderSession.inTransaction()) await orderSession.abortTransaction();
+    if (productSession.inTransaction()) await productSession.abortTransaction();
     throw error;
   } finally {
     orderSession.endSession();
     productSession.endSession();
-    userSession.endSession();
-    discountSession.endSession();
   }
 };
 exports.getOrders = async (user, discountCode) => {
@@ -340,4 +345,4 @@ exports.updateOrderUserId = async (oldUserId, newUserId) => {
   } catch (error) {
     throw new Error("Error updating order user ID: " + error.message);
   }
-}
+};

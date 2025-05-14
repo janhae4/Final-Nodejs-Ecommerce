@@ -182,9 +182,8 @@ export const AuthProvider = ({ children }) => {
       } else if (!isLoggedIn && id.includes("guest")) {
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
-      console.log(response.data);
-      setUserInfo({ id, ...response.data });
-      return { id, ...response.data };
+      setUserInfo({ id, ...response?.data });
+      return { id, ...response?.data };
     } catch (error) {
       console.error("Error fetching user info:", error);
       return {};

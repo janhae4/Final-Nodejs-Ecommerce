@@ -5,7 +5,9 @@ const User = require("../models/User");
 const redisService = require("./redisService");
 const orderService = require("./orderService");
 const emailService = require("./emailService");
-
+const { publishToExchange } = require("../database/rabbitmqConnection");
+const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
+const ORDER_EVENT_EXCHANGE = "order_events_exchange";
 const generateRandomPassword = () => {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let password = "";
@@ -20,8 +22,8 @@ exports.registerUser = async (data) => {
   const { userInfo, address } = data;
   const existingUser = await User.findOne({ email: userInfo.email });
   if (existingUser) throw new Error("Email already exists");
-  const existingAddesses = (await redisService.getInfo(userInfo.userId)).addresses || [];
-  existingAddesses.push(address);
+  const addresses = (await redisService.getInfo(userInfo.userId)).addresses || [];
+  addresses.push(address);
 
   if (!userInfo.password) {
     userInfo.password = generateRandomPassword();
@@ -30,18 +32,34 @@ exports.registerUser = async (data) => {
   const newUser = new User({
     fullName: userInfo.fullName,
     email: userInfo.email,
-    password: userInfo.password || password,
-    addresses: existingAddesses,
+    password: userInfo.password,
+    addresses,
     provider: "local",
     role: userInfo.role || "user",
   });
-  const savedUser = await newUser.save();
-  await orderService.updateOrderUserId(userInfo.id, savedUser._id);
-  redisService.deleteInfo(userInfo.userId);
-  emailService.sendRegisterConfirmation(userInfo, userInfo.password);
 
-  console.log("✅ New user registered:", newUser);
-  return existingAddesses;
+  const savedUser = await newUser.save();
+
+  try {
+    const registrationEmailEvent = {
+      user: {
+        id: savedUser._id.toString(),
+        email: savedUser.email,
+        fullName: savedUser.fullName,
+      },
+      password: userInfo.password,
+    }
+    await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.registered", registrationEmailEvent);
+
+    const orderConverterEvent = {
+      oldId: userInfo.id,
+      newId: savedUser._id,
+    }
+    await publishToExchange(ORDER_EVENT_EXCHANGE, "order.converter", orderConverterEvent);
+  } catch (error) {
+    console.error("Error publishing events:", error);
+  }
+  return savedUser.toObject();
 };
 
 exports.loginUser = async ({ email, password }, res) => {
@@ -78,7 +96,23 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   if (!isMatch) throw new Error("Old password is incorrect");
 
   user.password = await bcrypt.hash(newPassword, 10);
-  await user.save();
+  const savedUser = await user.save();
+
+  try {
+    const passwordChangedEvent = {
+      user: {
+        userId: user._id.toString(),
+        email: user.email,
+        fullName: user.fullName,
+      },
+      password: newPassword
+    };
+    await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.password.changed", passwordChangedEvent);
+  } catch (amqpError) {
+    console.error(`Failed to publish password changed event for user ${user.email}: ${amqpError.message}`);
+  }
+
+  return savedUser.toObject();
 };
 
 ///////////////////////////////////
@@ -178,3 +212,13 @@ const generateToken = (user) => {
     expiresIn: "1d",
   });
 };
+
+
+exports.addLoyaltyPoints = async (userId, points) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  user.loyaltyPoints += points;
+  await user.save();
+}

@@ -1,14 +1,17 @@
-const express = require('express');
-const swaggerUi = require('swagger-ui-express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const orderRoutes = require('./routes/orderRoute');
-const discountCodeRoutes = require('./routes/discountRoute');
-const productRoutes = require('./routes/productRoute');
-const chatbotRoutes = require('./routes/chatbotRoute');
-
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const { connectRabbitMQ } = require("./database/rabbitmqConnection");
+const inventoryConsumer = require("./consumers/inventoryConsumer");
+const emailConsumer = require("./consumers/emailConsumer");
+const orderIdConsumer = require("./consumers/orderIdConsumer");
+const loyaltyConsumer = require("./consumers/loyaltyConsumer");
 
 //Routes
+const orderRoutes = require("./routes/orderRoute");
+const discountCodeRoutes = require("./routes/discountRoute");
+const productRoutes = require("./routes/productRoute");
+const chatbotRoutes = require("./routes/chatbotRoute");
 const authRoutes = require("./routes/authRoute");
 const adminRoutes = require("./routes/adminRoute");
 const userRoutes = require("./routes/userRoute");
@@ -16,9 +19,9 @@ const guestRoutes = require("./routes/guestRoute");
 
 const app = express();
 const port = 3000;
-const passport = require('passport');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
+const passport = require("passport");
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
 
 // Cấu hình CORS cho phép gửi cookie
 const corsOptions = {
@@ -31,7 +34,7 @@ app.use(cors(corsOptions));
 
 app.use(cookieParser());
 app.use(passport.initialize());
-require('./config/passport');
+require("./config/passport");
 app.use(express.json());
 app.use(bodyParser.json());
 
@@ -43,15 +46,30 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/discount-codes", discountCodeRoutes);
 app.use("/api/products", productRoutes);
 
-app.use("/api/guests", guestRoutes)
+app.use("/api/guests", guestRoutes);
 
 app.use("/api/chatbot", chatbotRoutes);
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
-
-if (require.main === module) {
+async function start() {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  try {
+    await connectRabbitMQ(); 
+    console.log("RabbitMQ connected");
+
+    
+    inventoryConsumer.start();
+    loyaltyConsumer.start();
+    emailConsumer.start();
+    orderIdConsumer.start();
+
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  } catch (err) {
+    console.error("❌ Failed to start server:", err.message || err);
+    process.exit(1);
+  }
 }
+
+start()
+
