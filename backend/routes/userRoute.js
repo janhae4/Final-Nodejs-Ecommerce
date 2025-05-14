@@ -2,11 +2,18 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const profileController = require('../controllers/profileController');
+const redisController = require('../controllers/redisController');
 const orderController = require('../controllers/orderController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 
 // MIDDLEWARE xác thực JWT
 router.use(authMiddleware);
+
+// Cart
+router.post('/cart', redisController.addUserCart);
+router.get('/cart', redisController.getUserCart);
+router.put('/cart', redisController.updateUserCart);
+router.delete('/cart', redisController.deleteUserCart);
 
 // Profile routes
 router.get('/profile', profileController.getProfile);

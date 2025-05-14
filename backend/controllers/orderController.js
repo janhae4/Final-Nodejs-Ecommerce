@@ -1,5 +1,5 @@
 const orderService = require("../services/orderService");
-const guestService = require("../services/guestService");
+const guestService = require("../services/redisService");
 
 exports.getAllOrders = async (req, res) => {
   try {
@@ -53,12 +53,11 @@ exports.getAllOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const isGuest = req.body.userInfo.userId.includes("guest");
     let order;
-    if (isGuest) {
-      order = await guestService.createGuest(req.body);
+    if (req.body.isGuest) {
+      order = await orderService.createOrder(true, req.body);
     } else {
-      order = await orderService.createOrder(req.body);
+      order = await orderService.createOrder(null, req.body);
     }
     res.status(201).json(order);
   } catch (error) {

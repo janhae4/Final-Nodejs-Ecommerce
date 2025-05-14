@@ -3,13 +3,14 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const emailService = require("./emailService");
+const guestService = require("./redisService");
 const generateOrderCode = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
   return `ORDER${timestamp}${random}`;
 };
 
-exports.createOrder = async (orderData) => {
+exports.createOrder = async (isGuest = null, orderData) => {
   const orderSession = await Order.startSession();
   const productSession = await Product.startSession();
   const userSession = await User.startSession();
@@ -20,11 +21,14 @@ exports.createOrder = async (orderData) => {
   discountSession.startTransaction();
   try {
     // Order
+    console.log(orderData)
     const order = new Order({
       ...orderData,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });
+
+    console.log(order);
 
     // Product
     for (const product of orderData.products) {
@@ -48,18 +52,24 @@ exports.createOrder = async (orderData) => {
       variant.used += product.quantity;
       await productData.save({ session: productSession });
     }
+    if (isGuest) {
+      console.log(order);
+      await guestService.createOrder(order);
+    }
     await order.save({ session: orderSession });
-    await emailService.sendOrderConfirmation(order);
+    emailService.sendOrderConfirmation(order);
 
     // User
-    const user = await User.findById(orderData.userInfo.userId).session(
-      userSession
-    );
-    if (!user) {
-      throw new Error("User not found");
+    if (!isGuest) {
+      const user = await User.findById(orderData.userInfo.userId).session(
+        userSession
+      );
+      if (!user) {
+        throw new Error("User not found");
+      }
+      user.loyaltyPoints += order.loyaltyPointsEarned - order.loyaltyPointsUsed;
+      await user.save({ session: userSession });
     }
-    user.loyaltyPoints += (order.loyaltyPointsEarned - order.loyaltyPointsUsed);
-    await user.save({ session: userSession });
 
     // Discount
     const discountCode = await DiscountCode.findOne({

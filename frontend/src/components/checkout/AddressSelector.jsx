@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Form, Select, Button, Divider, Col, Row, Space } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
 import AddressForm from "./AddressForm";
 
 const { Option } = Select;
@@ -15,7 +16,7 @@ const AddressSelector = ({
   onDelete,
 }) => {
   const [editingAddress, setEditingAddress] = useState(null);
-
+  const { userInfo } = useAuth();
   const handleEdit = (address) => {
     onEdit(address);
   };
@@ -38,7 +39,7 @@ const AddressSelector = ({
           />
         </Col>
       ) : (
-        <Row gutter={16} align="middle">
+        <Row gutter={[16, 16]} align="middle">
           <Col flex="auto">
             <Form.Item
               name="address"
@@ -61,7 +62,7 @@ const AddressSelector = ({
                   </>
                 )}
               >
-                {addresses.filter(Boolean).map((address) => (
+                {addresses.map((address) => (
                   <Option key={address._id} value={address._id}>
                     {address.fullAddress}
                   </Option>
@@ -84,7 +85,9 @@ const AddressSelector = ({
               <Button
                 icon={<DeleteOutlined />}
                 danger
-                onClick={() => onDelete(form.getFieldValue("address"))}
+                onClick={() =>
+                  onDelete(userInfo.id, form.getFieldValue("address"))
+                }
               />
             </Space>
           </Col>

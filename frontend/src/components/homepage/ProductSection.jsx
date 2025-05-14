@@ -30,7 +30,7 @@ const ProductSection = ({ action, title, products, icon, description, isNew=fals
       </div>
       <Row gutter={[16, 16]}>
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} action={action} isNew={isNew} isBestSeller={isBestSeller} />
+          <ProductCard key={product._id} product={product} action={action} isNew={isNew} isBestSeller={isBestSeller} />
         ))}
       </Row>
     </div>

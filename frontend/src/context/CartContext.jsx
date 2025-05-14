@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { message } from "antd";
 import axios from "axios";
+import { useAuth } from "./AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 const CartContext = createContext();
 
@@ -19,26 +21,133 @@ const calculateItemSubtotal = (item) => {
 };
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    const localData = localStorage.getItem("cartItems");
-    return localData ? JSON.parse(localData) : [];
-  });
-  const [discountInfo, setDiscountInfo] = useState(null); // { discountId: string, code: string, type: 'percentage' | 'fixed', value: number }
+  const { isLoggedIn, userInfo, setAddresses } = useAuth();
+  const [cartItems, setCartItems] = useState([]);
+  const [discountInfo, setDiscountInfo] = useState(null);
   const [shippingCost, setShippingCost] = useState(5.0);
   const [taxRate, setTaxRate] = useState(0.07);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(() => {
-    return JSON.parse(localStorage.getItem("user")).loyaltyPoints;
-  });
-  const [orders, setOrders] = useState([]);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!localStorage.getItem("isCreateCart")) {
+      createGuestCart();
+      localStorage.setItem("isCreateCart", true);
+    }
+  }, [userInfo?._id, isLoggedIn]);
+
+  const createGuestCart = async () => {
+    try {
+      if (!userInfo?._id) return;
+      let response;
+      if (isLoggedIn) {
+        response = await axios.post(
+          `${API_URL}/users/cart`,
+          {
+            data: [],
+          },
+          { withCredentials: true }
+        );
+      } else {
+        response = await axios.post(`${API_URL}/guests/cart`, {
+          data: [],
+        });
+      }
+      const guestId = response.data;
+      localStorage.setItem("user", { id: guestId });
+      return guestId;
+    } catch (error) {
+      console.error("Failed to create guest cart:", error);
+      return null;
+    }
+  };
+
+  const fetchCart = async () => {
+    try {
+      if (!userInfo?.id) return;
+      if (isLoggedIn) {
+        const response = await axios.get(`${API_URL}/users/cart`, {
+          withCredentials: true,
+        });
+        setCartItems(response.data || []);
+      } else {
+        const guestId = userInfo.id;
+        const response = await axios.get(`${API_URL}/guests/cart/${guestId}`);
+        const cartData = response.data;
+        console.log(123, cartItems);
+        const normalizedData = cartData.data ? cartData.data : cartData;
+        setCartItems(normalizedData || []);
+      }
+
+      if (isLoggedIn && userInfo?._id) {
+        try {
+          const pointsResponse = await axios.get(`${API_URL}/users/profile`, {
+            withCredentials: true,
+          });
+          setLoyaltyPoints(pointsResponse.data.loyaltyPoints || 0);
+        } catch (error) {
+          console.error("Failed to fetch loyalty points:", error);
+        }
+      } else {
+        console.log(userInfo);
+        const guestId = userInfo.id;
+        try {
+          const guestInfoResponse = await axios.get(
+            `${API_URL}/guests/info/${guestId}`
+          );
+          setAddresses(guestInfoResponse.data.addresses);
+          if (guestInfoResponse.data && guestInfoResponse.data.loyaltyPoints) {
+            setLoyaltyPoints(guestInfoResponse.data.loyaltyPoints);
+          }
+        } catch (error) {
+          console.error("Failed to fetch guest loyalty points:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart:", error);
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getOrderFromUser();
-  }, [orders]);
+    fetchCart();
+  }, [isLoggedIn, userInfo]);
+
+  useEffect(() => {
+    console.log(cartItems);
+  }, [cartItems]);
+
+  const updateCartInRedis = async () => {
+    if (loading) return;
+    if (!userInfo?.id) return;
+    try {
+      if (isLoggedIn) {
+        await axios.put(
+          `${API_URL}/users/cart`,
+          {
+            data: cartItems,
+          },
+          { withCredentials: true }
+        );
+      } else {
+        console.log(cartItems);
+        const guestId = userInfo.id;
+        await axios.put(`${API_URL}/guests/cart/${guestId}`, {
+          data: cartItems,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update cart in Redis:", error);
+    }
+  };
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(updateCartInRedis, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [cartItems, loading]);
 
   const addItemToCart = (product, variant = null, quantity = 1) => {
     setCartItems((prevItems) => {
@@ -52,13 +161,12 @@ export const CartProvider = ({ children }) => {
         const updatedItems = [...prevItems];
         const newQuantity = updatedItems[existingItemIndex].quantity + quantity;
 
-        // Check against inventory
         const inventory = variant?.inventory || product.inventory;
         if (newQuantity > inventory) {
           messageApi.warning(
-            `Cannot add more. Only ${inventory} of ${product.nameProduct}${
-              variant ? ` (${variant.name})` : ""
-            } in stock.`
+            `Không thể thêm. Chỉ còn ${inventory} sản phẩm ${
+              product.nameProduct
+            }${variant ? ` (${variant.name})` : ""} trong kho.`
           );
           updatedItems[existingItemIndex].quantity = inventory;
         } else {
@@ -66,18 +174,13 @@ export const CartProvider = ({ children }) => {
         }
         return updatedItems;
       } else {
-        // Check inventory for new item
         const inventory = variant?.inventory || product.inventory;
         if (quantity > inventory) {
           messageApi.warning(
-            `Cannot add ${quantity}. Only ${inventory} of ${
-              product.nameProduct
-            }${variant ? ` (${variant.name})` : ""} in stock.`
+            `Cannot add ${quantity}. Only ${inventory} available.`
           );
           quantity = inventory;
         }
-
-        console.log(product.variants);
 
         return [
           ...prevItems,
@@ -90,14 +193,16 @@ export const CartProvider = ({ children }) => {
             variantName: variant?.name
               ? variant.name
               : product.variants[0].name,
-            price: variant?.price ? variant.price : product.variants[0].price,
+            price: Number(
+              variant?.price ? variant.price : product.variants[0].price
+            ),
             quantity: quantity,
             image: product.images[0],
           },
         ];
       }
     });
-    messageApi.success(`Added to cart!`);
+    messageApi.success(`Added into cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {
@@ -110,7 +215,7 @@ export const CartProvider = ({ children }) => {
 
           if (newQuantity < 1) return { ...item, quantity: 1 };
           if (inventory !== undefined && newQuantity > inventory) {
-            messageApi.warning(`Only ${inventory} in stock.`);
+            messageApi.warning(`Only ${inventory} available.`);
             return { ...item, quantity: inventory };
           }
           return { ...item, quantity: newQuantity };
@@ -140,12 +245,23 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) =>
       prevItems.filter((item) => item.key !== itemKey)
     );
-    messageApi.info("Item removed from cart.");
+    messageApi.info("Deleted!.");
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    setDiscountInfo(null);
+  const clearCart = async () => {
+    try {
+      if (isLoggedIn && userInfo?._id) {
+        await axios.delete(`${API_URL}users/cart/`, {
+          withCredentials: true,
+        });
+      } else {
+        const guestId = userInfo.id;
+        await axios.delete(`${API_URL}/guests/cart/${guestId}`);
+      }
+      setCartItems([]);
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    }
   };
 
   const subtotal = useMemo(() => {
@@ -169,12 +285,12 @@ export const CartProvider = ({ children }) => {
       deduction = discountInfo.value;
     }
 
-    // Ensure discount doesn't exceed subtotal
     return Math.min(deduction, subtotal);
   }, [subtotal, discountInfo]);
 
   const total = useMemo(() => {
-    const totalBeforeShipping = subtotal - discountAmount + taxes - loyaltyPoints;
+    const totalBeforeShipping =
+      subtotal - discountAmount + taxes - loyaltyPoints;
     return totalBeforeShipping > 0 ? totalBeforeShipping + shippingCost : 0;
   }, [subtotal, discountAmount, taxes, shippingCost, loyaltyPoints]);
 
@@ -187,7 +303,7 @@ export const CartProvider = ({ children }) => {
       const discount = response.data;
       console.log(discount);
       if (discount.usedCount >= discount.usageLimit) {
-        throw new Error("Discount code has reached its usage limit.");
+        throw new Error("Your discount code has reached its usage limit.");
       }
       setDiscountInfo(response.data);
     } catch (error) {
@@ -201,7 +317,7 @@ export const CartProvider = ({ children }) => {
 
   const removeDiscountCode = () => {
     setDiscountInfo(null);
-    messageApi.info("Discount code removed.");
+    messageApi.info("Deleted!");
   };
 
   const cartItemCount = useMemo(() => {
@@ -211,7 +327,7 @@ export const CartProvider = ({ children }) => {
   const getCartForOrder = (userInfo) => {
     return {
       userInfo: {
-        userId: userInfo._id,
+        userId: isLoggedIn ? userInfo._id : userInfo.id,
         fullName: userInfo.fullName,
         email: userInfo.email,
         phone: userInfo.phone,
@@ -237,37 +353,39 @@ export const CartProvider = ({ children }) => {
       taxes,
       shippingCost,
       total,
+      loyaltyPointsUsed: loyaltyPoints > 0 ? loyaltyPoints : 0,
+      loyaltyPointsEarned: Math.floor(total / 10),
     };
-  };
-
-  const addOrderToUser = (order) => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    user.orders = [...(user.orders || []), order];
-    localStorage.setItem("user", JSON.stringify(user));
-  };
-
-  const getOrderFromUser = () => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    return user.orders || [];
-  };
-
-  const setLoyaltyPointsUser = (earnedPoints, usedPoints) => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    user.loyaltyPoints = (user.loyaltyPoints || 0) + earnedPoints - usedPoints;
-    setLoyaltyPoints(user.loyaltyPoints);
-    localStorage.setItem("user", JSON.stringify(user));
   };
 
   const placeOrder = async (orderData) => {
     try {
-      const response = await axios.post(`${API_URL}/orders`, orderData);
+      let response;
+      console.log(orderData);
+      if (isLoggedIn) {
+        response = await axios.post(`${API_URL}/orders`, orderData, {
+          withCredentials: true,
+        });
+      } else {
+        response = await axios.post(`${API_URL}/guests/orders`, orderData);
+      }
       messageApi.success("Order placed successfully.");
-      addOrderToUser(response.data);
-      setLoyaltyPointsUser(
-        response.data.loyaltyPointsEarned,
-        response.data.loyaltyPointsUsed
-      );
-      setOrders((prev) => [...prev, response.data]);
+
+      const earnedPoints = response.data.loyaltyPointsEarned || 0;
+      const usedPoints = response.data.loyaltyPointsUsed || 0;
+
+      if (isLoggedIn) {
+        try {
+          await axios.post(`${API_URL}/users/${userInfo._id}/loyalty-points`, {
+            loyaltyPoints:
+              (userInfo.loyaltyPoints || 0) + earnedPoints - usedPoints,
+          });
+          setLoyaltyPoints((prev) => prev + earnedPoints - usedPoints);
+        } catch (error) {
+          console.error("Failed to update loyalty points:", error);
+        }
+      }
+
       clearCart();
       return response.data;
     } catch (error) {
@@ -279,7 +397,6 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider
       value={{
-        orders,
         cartItems,
         placeOrder,
         addItemToCart,

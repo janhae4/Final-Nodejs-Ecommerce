@@ -164,31 +164,50 @@ exports.sendOrderConfirmation = async (order) => {
         <div class="content">
           <div class="order-details">
             <p class="order-number">Order Code: ${order.orderCode}</p>
-            <p><strong>Purchase Date:</strong> ${order.purchaseDate.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status.toUpperCase()}</span></p>
+            <p><strong>Purchase Date:</strong> ${order.date}</p>
+            <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status?.toUpperCase()}</span></p>
           </div>
           
           <h3>Products:</h3>
            <div class="product-list">
-              ${order.products.map(p => `
+              ${order.products
+                .map(
+                  (p) => `
                 <div class="product-item">
-                  <img src="${p.productImage || 'https://via.placeholder.com/60?text=Product'}" 
+                  <img src="${
+                    p.productImage ||
+                    "https://via.placeholder.com/60?text=Product"
+                  }" 
                       alt="${p.productName}" 
                       class="product-image">
                   <div class="product-info">
                     <div class="product-name">${p.productName}</div>
-                    ${p.variantName ? `<div class="product-variant">Variant: ${p.variantName}</div>` : ''}
+                    ${
+                      p.variantName
+                        ? `<div class="product-variant">Variant: ${p.variantName}</div>`
+                        : ""
+                    }
                     <div class="product-meta">
                       <span class="product-quantity">Qty: ${p.quantity}</span>
-                      <span class="product-price">$${(p.price * p.quantity).toFixed(2)}</span>
+                      <span class="product-price">${(
+                        p.price * p.quantity
+                      ).toLocaleString("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      })}</span>
                     </div>
                   </div>
                 </div>
-              `).join('')}
+              `
+                )
+                .join("")}
             </div>
             
             <div class="total">
-              Total Amount: $${order.totalAmount.toLocaleString()}
+              Total Amount: $${order.totalAmount.toLocaleString("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              })}
             </div>
           </div>
           

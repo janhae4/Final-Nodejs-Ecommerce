@@ -16,7 +16,6 @@ import {
   Select,
   Divider,
 } from "antd";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import CartSummary from "../../../components/cart/CartSummary";
 import { useCart } from "../../../context/CartContext";
@@ -42,19 +41,20 @@ const CheckoutPage = () => {
     useCart();
   const {
     isLoggedIn,
-    getUserInfo,
+    userInfo,
     updateAddress,
     addAddress,
-    addresses,
     deleteAddress,
+    addresses,
   } = useAuth();
   const navigate = useNavigate();
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
-  const [userAddresses, setUserAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressMode, setAddressMode] = useState("select");
   const [editingAddress, setEditingAddress] = useState(null);
+
+  console.log(userInfo)
 
   // Load cart and address data
   useEffect(() => {
@@ -62,49 +62,39 @@ const CheckoutPage = () => {
       messageApi.info("Your cart is empty. Add items to proceed to checkout.");
       navigate("/cart");
     }
-
-    if (isLoggedIn) {
-      loadUserAddresses();
-    }
   }, [isLoggedIn, cartItemCount, currentStep, navigate]);
 
-  const loadUserAddresses = () => {
-    setLoadingAddresses(true);
-    const user = getUserInfo();
-    setUserAddresses(user.addresses);
 
+  useEffect(() => {
     shippingForm.setFieldsValue({
-      fullName: user.fullName,
-      email: user.email,
-      address: addresses[0]?._id,
+      fullName: userInfo?.fullName,
+      email: userInfo?.email,
     });
-
-    setLoadingAddresses(false);
-  };
+  }, [userInfo?.id]);
 
   const handleAddNewAddress = () => {
     setAddressMode("new");
-    console.log(1);
-    shippingForm.setFieldsValue({ address: undefined });
+    const currentValues = shippingForm.getFieldsValue(true);
+    shippingForm.setFieldsValue({
+      ...currentValues,
+      address: undefined,
+    });
   };
 
   const handleEditAddress = (address) => {
     setEditingAddress(address);
     setAddressMode("edit");
-    console.log(3);
   };
 
   const handleSaveAddress = async (newAddress) => {
     try {
       if (addressMode === "edit") {
-        console.log(2);
         await updateAddress(newAddress);
       } else {
-        console.log(4);
+        console.log("CHECKOUT", newAddress);
         await addAddress(newAddress);
       }
 
-      loadUserAddresses();
       setAddressMode("select");
       setEditingAddress(null);
 
@@ -112,42 +102,43 @@ const CheckoutPage = () => {
         (a) => a.fullAddress === newAddress.fullAddress
       );
       if (savedAddress) {
-        shippingForm.setFieldsValue({ address: savedAddress._id });
+        shippingForm.setFieldValue("address", savedAddress._id);
       }
     } catch (error) {
       messageApi.error("Failed to save address");
     }
   };
 
-  const handleDeleteAddress = async (addressId) => {
+  const handleDeleteAddress = async (userId, addressId) => {
     try {
-      await deleteAddress(addressId);
-      loadUserAddresses();
+      await deleteAddress(userId, addressId);
     } catch (error) {
       messageApi.error("Failed to delete address");
     }
   };
 
   const renderAddressSelector = () => {
-    if (!isLoggedIn) {
-      return <AddressForm onSubmit={handleSaveAddress} isGuest />;
-    }
-
     switch (addressMode) {
       case "new": {
         return (
           <AddressForm
+            form={shippingForm}
             onSubmit={handleSaveAddress}
             onCancel={() => setAddressMode("select")}
+            loadingAddresses={loadingAddresses}
+            setLoadingAddresses={setLoadingAddresses}
           />
         );
       }
       case "edit": {
         return (
           <AddressForm
+            form={shippingForm}
             initialValues={editingAddress}
             onSubmit={handleSaveAddress}
             onCancel={() => setAddressMode("select")}
+            loadingAddresses={loadingAddresses}
+            setLoadingAddresses={setLoadingAddresses}
           />
         );
       }
@@ -155,7 +146,7 @@ const CheckoutPage = () => {
         return (
           <AddressSelector
             form={shippingForm}
-            addresses={userAddresses}
+            addresses={addresses}
             loading={loadingAddresses}
             onSelect={(value) =>
               shippingForm.setFieldsValue({ address: value })
@@ -179,7 +170,7 @@ const CheckoutPage = () => {
         let shippingAddress;
 
         if (addressMode === "select") {
-          const selectedAddress = userAddresses.find(
+          const selectedAddress = addresses.find(
             (addr) => addr.id === shippingValues.address
           );
           shippingAddress = selectedAddress;
@@ -187,12 +178,14 @@ const CheckoutPage = () => {
           shippingAddress = shippingValues;
         }
 
-        const { _id, fullName, email, phone } = getUserInfo();
-        console.log(cartItems);
         const mockOrder = {
-          userInfo: { userId: _id, fullName, email, phone },
+          userInfo: {
+            userId: userInfo._id || userInfo.id,
+            fullName: userInfo.fullName,
+            email: userInfo.email,
+          },
           products: cartItems,
-          totalAmount: total,
+          totalAmount: Number(total),
           shippingAddress: shippingAddress.fullAddress,
           paymentMethod: paymentForm.getFieldValue("paymentMethod"),
           discountInfo: discountInfo && {
@@ -203,12 +196,15 @@ const CheckoutPage = () => {
           },
           date: new Date().toLocaleDateString(),
         };
+
         const ordersData = await placeOrder(mockOrder);
+
         setOrderDetails(ordersData);
         setCurrentStep(currentStep + 1);
+        console.log(23, ordersData);
       } catch (error) {
         console.log("Validation Failed:", error);
-        messageApi.error(error.response.data.message);
+        messageApi.error(error.response.data?.message || error.response.message);
         setOrderProcessing(false);
       } finally {
         setOrderProcessing(false);
@@ -232,7 +228,7 @@ const CheckoutPage = () => {
           <Form
             form={shippingForm}
             layout="vertical"
-            initialValues={{ address: userAddresses[0] || undefined }}
+            initialValues={{ address: addresses || null }}
           >
             <Row gutter={[16, 16]}>
               <Col span={12}>
@@ -258,7 +254,7 @@ const CheckoutPage = () => {
                   <Input placeholder="your.email@example.com" />
                 </Form.Item>
               </Col>
-              {renderAddressSelector()}
+              <Col span={24}>{renderAddressSelector()}</Col>
             </Row>
           </Form>
           <Divider />

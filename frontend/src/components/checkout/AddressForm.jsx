@@ -13,8 +13,16 @@ const AddressForm = ({
   onSubmit,
   onCancel,
   isGuest = false,
+  loadingAddresses,
+  setLoadingAddresses = null,
+  form,
 }) => {
-  const form = Form.useFormInstance();
+  const { userInfo } = useAuth();
+  const addressForm = form || Form.useForm()[0];
+
+  // Log giá trị form hiện tại - tốt để debug
+  console.log("Form values:", addressForm.getFieldsValue(true));
+
   const [selectedProvince, setSelectedProvince] = useState(
     initialValues?.provinceCode || null
   );
@@ -25,22 +33,22 @@ const AddressForm = ({
     initialValues?.wardCode || null
   );
   const [street, setStreet] = useState(initialValues?.street || "");
-  const [loading, setLoading] = useState(false);
 
   const provinceList = Object.values(provinces);
   const districtList = Object.values(districts);
   const wardList = Object.values(wards);
 
+  // Thiết lập giá trị ban đầu cho form nếu có initialValues
   useEffect(() => {
     if (initialValues) {
-      form.setFieldsValue({
+      addressForm.setFieldsValue({
         street: initialValues.street,
         province: initialValues.provinceCode,
         district: initialValues.districtCode,
         ward: initialValues.wardCode,
       });
     }
-  }, [initialValues]);
+  }, [initialValues, addressForm]);
 
   const filteredDistricts = selectedProvince
     ? districtList
@@ -56,30 +64,43 @@ const AddressForm = ({
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
+      setLoadingAddresses(true);
 
       const province = provinces[selectedProvince];
       const district = districts[selectedDistrict];
       const ward = wards[selectedWard];
+      console.log(form.getFieldsValue());
+      const fieldsValue = form.getFieldsValue();
       const fullAddress = {
-        street: street,
-        ward: ward.name_with_type,
-        wardCode: selectedWard,
-        district: district.name_with_type,
-        districtCode: selectedDistrict,
-        province: province.name_with_type,
-        provinceCode: selectedProvince,
-        fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
-        _id: initialValues?._id,
-    };
+        address: {
+          street: street,
+          ward: ward.name_with_type,
+          wardCode: selectedWard,
+          district: district.name_with_type,
+          districtCode: selectedDistrict,
+          province: province.name_with_type,
+          provinceCode: selectedProvince,
+          fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
+          _id: initialValues?._id || Date.now(),
+        },
+        userInfo: {
+          userId: userInfo._id || userInfo.id,
+          fullName: fieldsValue.fullName,
+          email: fieldsValue.email,
+        }
+      };
+      console.log(123, fullAddress);
       await onSubmit(fullAddress);
+    } catch (error) {
+      console.error("Error submitting address:", error);
+      message.error("Failed to save address");
     } finally {
-      setLoading(false);
+      setLoadingAddresses(false);
     }
   };
 
   return (
-    <>
+    <Form form={addressForm}>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8} md={8}>
           <Form.Item
@@ -94,7 +115,10 @@ const AddressForm = ({
               onChange={(value) => {
                 setSelectedProvince(value);
                 setSelectedDistrict(null);
-                form.setFieldsValue({ district: null, ward: null });
+                addressForm.setFieldsValue({
+                  district: null,
+                  ward: null,
+                });
               }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
@@ -122,7 +146,8 @@ const AddressForm = ({
               disabled={!selectedProvince}
               onChange={(value) => {
                 setSelectedDistrict(value);
-                form.setFieldsValue({ ward: null });
+                // Sửa setFieldValue thành setFieldsValue
+                addressForm.setFieldsValue({ ward: null });
               }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
@@ -172,21 +197,25 @@ const AddressForm = ({
             <Input
               type="text"
               value={street}
-              onChange={(e) => setStreet(e.target.value)}
+              onChange={(e) => {
+                setStreet(e.target.value);
+                // Cập nhật giá trị form
+                addressForm.setFieldsValue({ street: e.target.value });
+              }}
               placeholder="Enter your full address"
             />
           </Form.Item>
         </Col>
       </Row>
       <Form.Item>
-        <Space>
-          <Button type="primary" onClick={handleSubmit} loading={loading}>
+        <Space className="flex items-center mt-8">
+          <Button type="primary" onClick={handleSubmit} loading={loadingAddresses}>
             {initialValues ? "Update Address" : "Save Address"}
           </Button>
           {onCancel && <Button onClick={onCancel}>Cancel</Button>}
         </Space>
       </Form.Item>
-    </>
+    </Form>
   );
 };
 

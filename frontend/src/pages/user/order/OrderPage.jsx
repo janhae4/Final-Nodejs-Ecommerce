@@ -26,7 +26,7 @@ const statusLabels = {
 
 const OrderPage = () => {
   const API_URL = import.meta.env.VITE_API_URL;
-  const { getUserInfo } = useAuth();
+  const { userInfo } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeKeys, setActiveKeys] = useState({});
@@ -35,9 +35,9 @@ const OrderPage = () => {
     const getOrders = async () => {
       try {
         setLoading(true);
-        const userInfo = getUserInfo();
+        console.log(userInfo);
         const response = await axios.get(
-          `${API_URL}/orders/?userId=${userInfo._id}`
+          `${API_URL}/orders/?userId=${userInfo.id}`
         );
         setOrders(response.data.orders || []);
       } catch (error) {
@@ -47,7 +47,7 @@ const OrderPage = () => {
       }
     };
     getOrders();
-  }, []);
+  }, [userInfo.id]);
 
   const toggleOrderDetails = (orderId) => {
     setActiveKeys(prev => ({

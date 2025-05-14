@@ -10,32 +10,50 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [addresses, setAddresses] = useState([]);
+  const [userInfo, setUserInfo] = useState({});
   const [messageApi, contextHolder] = message.useMessage();
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (userInfo?.id?.includes("guest")) {
+      setIsLoggedIn(false);
+    } else {
+      setIsLoggedIn(true);
+    }
+  }, [userInfo.id]);
+
   const guestLogin = () => {
-    const id = uuidv4();
-    localStorage.setItem("user-guest", JSON.stringify({ id }));
+    const id = `guest-${uuidv4()}`;
+    localStorage.setItem("user", JSON.stringify({ id }));
   };
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const guest = JSON.parse(localStorage.getItem("user-guest"));
-    if (user) {
-      setIsLoggedIn(true);
-      console.log(user.addresses)
-      setAddresses(user.addresses || []);
-    } else if (!guest) {
-      guestLogin();
-    }
+    const init = async () => {
+      const user = await getUserInfo();
+      console.log(12321, user)
+      setUserInfo(user);
+      const fetched = await getAddresses();
+      setAddresses(fetched || []);
+    };
+    init();
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    console.log("Addresses changed:", addresses);
+  }, [addresses]);
+
+  useEffect(() => {
+    if (!localStorage.getItem("user")) guestLogin();
   }, []);
 
   const logout = async () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("user-guest");
-    await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+    localStorage.removeItem("cartItems");
+    localStorage.removeItem("isCreateCart");
     setIsLoggedIn(false);
+    guestLogin()
+    await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
   };
 
   const login = async (data) => {
@@ -49,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         alert("Tài khoản của bạn đã bị cấm.");
         return;
       }
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify({id: user._id}));
       messageApi.success("Đăng nhập thành công!");
 
       if (user.role === "admin") {
@@ -76,53 +94,142 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  const addAddress = async (address) => {
+  const addAddress = async (shippingForm) => {
     try {
-      await axios.post(`${API_URL}/users/shipping-addresses`, address, {
-        withCredentials: true,
-      });
-      const user = JSON.parse(localStorage.getItem("user")) || {};
-      user.addresses = [...(user.addresses || []), address];
-      localStorage.setItem("user", JSON.stringify(user));
-      setAddresses((prev) => [...prev, address]);
+      const { address, userInfo: user } = shippingForm;
+      if (!isLoggedIn) {
+        console.log(321321);
+        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, {
+          shippingForm,
+        });
+        setUserInfo(user);
+      } else {
+        const r1 = await axios.post(
+          `${API_URL}/users/shipping-addresses`,
+          address,
+          { withCredentials: true }
+        );
+        setAddresses(r1.data.addresses);
+
+        if (r1.data.updatedUser) {
+          setUserInfo(r1.data.updatedUser);
+        }
+      }
     } catch (error) {
+      console.error("Add address failed:", error);
       messageApi.error("Failed to add address.");
     }
   };
 
-  const updateAddress = async (address) => {
+  const updateAddress = async (data) => {
     try {
-      await axios.put(
-        `${API_URL}/users/shipping-addresses/${address._id}`,
-        address,
-        {
-          withCredentials: true,
-        }
-      );
-      const user = JSON.parse(localStorage.getItem("user")) || {};
-      user.addresses = user.addresses.map((a) =>
-        a._id === address._id ? address : a
-      );
-      localStorage.setItem("user", JSON.stringify(user));
-      setAddresses(user.addresses);
+      const { userInfo, address } = data;
+      let response;
+      if (!isLoggedIn) {
+        response = await axios.put(
+          `${API_URL}/guests/shipping-addresses/${userInfo.id}`,
+          address
+        );
+      } else {
+        response = await axios.put(
+          `${API_URL}/users/shipping-addresses/`,
+          address,
+          {
+            withCredentials: true,
+          }
+        );
+      }
+      setAddresses(response.data.addresses);
+      messageApi.success("Address updated successfully.");
     } catch (error) {
       messageApi.error("Failed to update address.");
     }
   };
 
-  const deleteAddress = (addressId) => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    user.addresses = user.addresses.filter((a) => a._id !== addressId);
-    localStorage.setItem("user", JSON.stringify(user));
-    setAddresses((prev) => prev.filter((a) => a._id !== addressId));
+  const deleteAddress = async (id = null, addressId) => {
+    try {
+      let response;
+      if (!isLoggedIn) {
+        response = await axios.delete(
+          `${API_URL}/guests/shipping-addresses/${id}/${addressId}`
+        );
+      } else {
+        (response = await axios.delete(
+          `${API_URL}/users/shipping-addresses/${addressId}`
+        )),
+          { withCredentials: true };
+      }
+      setAddresses(response.data.addresses);
+      messageApi.success("Address deleted successfully.");
+    } catch (error) {
+      messageApi.error("Failed to delete address.");
+    }
   };
 
-  const getUserInfo = () => {
-    return JSON.parse(localStorage.getItem("user"));
+  useEffect(() => {
+    setAddresses(userInfo.addresses)
+  }, [userInfo.id]);
+
+  const getUserInfo = async () => {
+    try {
+      const id = JSON.parse(localStorage.getItem("user"))?.id;
+      let response;
+      if (isLoggedIn && !id?.includes("guest")) {
+        response = await axios.get(`${API_URL}/users/profile`, {withCredentials: true});
+      } else if (!isLoggedIn && id.includes("guest")) {
+        response = await axios.get(`${API_URL}/guests/info/${id}`);
+      }
+      setUserInfo({ id, ...response.data });
+      return { id, ...response.data };
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      return {};
+    }
   };
 
-  const getAddresses = () => {
-    return JSON.parse(localStorage.getItem("user")).addresses;
+  const updateInfo = async (id, data) => {
+    try {
+      const response = await axios.put(`${API_URL}/guests/info/${id}`, data);
+      setUserInfo(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating user info:", error);
+      return {};
+    }
+  };
+
+  const addInfo = async (id, data) => {
+    try {
+      const response = await axios.post(`${API_URL}/guests/info/${id}`, data);
+      setUserInfo(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating user info:", error);
+      return {};
+    }
+  };
+
+  const getAddresses = async () => {
+    try {
+      if (!userInfo?.id) return;
+      if (isLoggedIn) {
+        const response = await axios.get(
+          `${API_URL}/users/shipping-addresses`,
+          {
+            withCredentials: true,
+          }
+        );
+        return response.data;
+      } else {
+        const response = await axios.get(
+          `${API_URL}/guests/shipping-addresses/${userInfo.id}`
+        );
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      return [];
+    }
   };
 
   return (
@@ -130,11 +237,15 @@ export const AuthProvider = ({ children }) => {
       value={{
         isLoggedIn,
         addresses,
+        userInfo,
+        setAddresses,
         addInfoToUser,
+        addInfo,
         addAddress,
         updateAddress,
         deleteAddress,
         getUserInfo,
+        getAddresses,
         addOrderToUser,
         login,
         logout,

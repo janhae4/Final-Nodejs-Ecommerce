@@ -14,17 +14,19 @@ const CartPage = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4 md:p-8 overflow-auto">
-        <Title level={2} className="mb-6">Your Shopping Cart</Title>
+        <Title level={2} className="mb-6 text-center">Your Shopping Cart</Title>
         {cartItemCount === 0 ? (
+          <div className='flex justify-center items-center'> 
           <Empty
             image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
             description={
-              <span>
+              <span className='-ml-10'>
                 Your cart is empty. <Link to="/products" className="text-blue-500 hover:text-blue-700">Continue Shopping</Link>
               </span>
             }
-            className="py-10"
+            className="p-12 ml-6"
           />
+          </div>
         ) : (
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={16}>

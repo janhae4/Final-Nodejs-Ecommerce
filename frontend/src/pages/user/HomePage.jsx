@@ -47,13 +47,14 @@ const HomePage = () => {
 
   const filterProducts = async (category) => {
     try {
+      const limit = 4
       const urls = [
         `${API_URL}/products/filter?type=best_sellers`,
         `${API_URL}/products/filter?type=new_arrivals`,
-        `${API_URL}/products/searchByCategory?category=laptop&limit=5`,
-        `${API_URL}/products/searchByCategory?category=monito&limit=5`,
-        `${API_URL}/products/searchByCategory?category=hard_drive&limit=5`,
-        `${API_URL}/products/searchByCategory?category=component&limit=5`,
+        `${API_URL}/products/searchByCategory?category=laptop&limit=${limit}`,
+        `${API_URL}/products/searchByCategory?category=monito&limit=${limit}`,
+        `${API_URL}/products/searchByCategory?category=hard_drive&limit=${limit}`,
+        `${API_URL}/products/searchByCategory?category=component&limit=${limit}`,
       ];
       const responses = await Promise.all(urls.map((url) => axios.get(url)));
       setBestSellers(responses[0].data.products);

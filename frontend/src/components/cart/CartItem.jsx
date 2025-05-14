@@ -62,12 +62,12 @@ const CartItem = ({ item }) => {
 
       <Col xs={9} sm={5} md={5} clas sName="text-right">
         <Select
-          value={item.variantId}
+          value={item?.variantId}
           onChange={handleChangeVariant}
           className="w-full"
-          defaultValue={item.variants[0]?._id}
+          defaultValue={ item?.variants && item?.variants[0]?._id || ""}
         >
-          {item.variants.map((v) => (
+          {item?.variants.map((v) => (
             <Select.Option key={v.id} value={v._id}>
               {v.name}
             </Select.Option>

@@ -45,7 +45,7 @@ const { Text } = Typography;
 
 const MainLayout = () => {
   const { cartItemCount } = useCart();
-  const { isLoggedIn, getUserInfo, logout } = useAuth();
+  const { isLoggedIn, userInfo, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -55,7 +55,6 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
   const showBackButton = window.location.pathname !== "/";
-  const user = getUserInfo();
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -103,6 +102,12 @@ const MainLayout = () => {
   const handleLogin = () => {
     navigate("/auth/login");
   };
+
+  useEffect(() => {
+    console.log(isLoggedIn)
+  }, [isLoggedIn]);
+
+  useEffect(() => console.log(userInfo), [userInfo]);
 
   const userMenu = [
     {
@@ -225,11 +230,8 @@ const MainLayout = () => {
                       className="mr-2"
                     />
                     <span className="hidden sm:inline">
-                      Hi{" "}
-                      {user?.fullName.split(" ")[
-                        user?.fullName.split(" ").length - 1
-                      ] || "User"}
-                    </span>{" "}
+                      {`Hi, ${userInfo?.fullName || "Anonymous"}`}
+                    </span>
                     <DownOutlined className="ml-1" />
                   </a>
                 </Dropdown>

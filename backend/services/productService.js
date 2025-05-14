@@ -228,7 +228,7 @@ exports.getProductVariants = async (productId) => {
 
 exports.getBestSellers = async () => {
     try {
-        const bestSellers = await Product.find().sort({ soldQuantity: -1 }).limit(5);
+        const bestSellers = await Product.find().sort({ soldQuantity: -1 }).limit(4);
         return bestSellers;
     } catch (err) {
         throw new Error('Error fetching best sellers: ' + err.message);
@@ -237,7 +237,7 @@ exports.getBestSellers = async () => {
 
 exports.getNewArrivals = async () => {
     try {
-        const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(5);
+        const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(4);
         return newArrivals;
     } catch (err) {
         throw new Error('Error fetching new arrivals: ' + err.message);
