@@ -49,10 +49,14 @@ exports.loginUser = async ({ email, password }, res) => {
 
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
+  console.log('---- PASSWORD SERVICE ----');
+  console.log('userId:', userId);
+  console.log('oldPassword:', oldPassword);
+  console.log('newPassword:', newPassword);
   const user = await User.findById(userId);
   const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) throw new Error("Old password is incorrect");
-
+  
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 };

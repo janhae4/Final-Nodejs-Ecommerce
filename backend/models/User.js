@@ -19,9 +19,14 @@ const userSchema = new mongoose.Schema({
 // Nếu người dùng đăng ký qua email (local), mã hóa password trước khi lưu
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password') || this.provider !== 'local') return next(); // Không mã hóa password khi đăng nhập qua Google
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+  if (typeof this.password !== 'string') return next();
+  try{
+
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  }catch(err){
+    next(err);
+  }
 });
 
 const User = userConnection.model('User', userSchema);

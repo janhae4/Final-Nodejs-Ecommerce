@@ -11,20 +11,23 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: 'http://localhost:3000/api/auth/google/callback',
 },
-function(accessToken, refreshToken, profile, done) {
-    // console.log("Google profile:", profile); // Log profile của người dùng
-    const { email, given_name, family_name } = profile._json; // Lấy email và tên người dùng
+async function(accessToken, refreshToken, profile, done) {
+  try {
+    const { email, given_name, family_name } = profile._json;
     const fullName = `${given_name} ${family_name}`;
 
-    const user = { 
+    const user = await authService.googleLogin({
       email,
       fullName,
-      googleId: profile.id,
-    };
+      googleId: profile.id
+    });
 
     return done(null, user);
+  } catch (error) {
+    return done(error, null);
   }
-));
+}))
+
 
 // Cấu hình Route cho Google OAuth
 app.get('/auth/google', passport.authenticate('google', {

@@ -91,21 +91,46 @@ const fetchAddresses = async () => {
   };
 
   // Handle password change
-  const handlePasswordChange = async (values) => {
-    setFormLoading(true);
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.put('http://localhost:3000/api/users/change-password', values, {
+ const handlePasswordChange = async (values) => {
+  setFormLoading(true);
+  // console.log(values);
+
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      message.error('You need to log in first.');
+      return;
+    }
+
+    const { oldPassword, newPassword } = values;
+
+    if (!oldPassword || !newPassword) {
+      message.error('Please fill in all required fields.');
+      return;
+    }
+
+    // Gửi PUT request KHÔNG GỬI confirmNewPassword
+    const response = await axios.put(
+      'http://localhost:3000/api/users/change-password',
+      { oldPassword, newPassword },  // loại bỏ confirmNewPassword
+      {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
-      });
-      message.success("Password changed successfully!");
-    } catch (error) {
-      message.error("Failed to change password.");
-    } finally {
-      setFormLoading(false);
+      }
+    );
+
+    if (response.status === 200) {
+      message.success('Password changed successfully!');
     }
-  };
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Failed to change password.';
+    message.error(errorMessage);
+  } finally {
+    setFormLoading(false);
+  }
+};
+
+
 
   // Open address modal for adding new address
   const handleAddAddress = () => {

@@ -32,6 +32,9 @@ exports.logout = (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
+  console.log('---- CHANGE PASSWORD REQUEST ----');
+  console.log('req.user:', req.user); // kiểm tra thông tin user từ token
+  console.log('req.body:', req.body); // kiểm tra dữ liệu gửi lên
   const { oldPassword, newPassword } = req.body;
   try {
     await authService.changeUserPassword(req.user.id, oldPassword, newPassword);
