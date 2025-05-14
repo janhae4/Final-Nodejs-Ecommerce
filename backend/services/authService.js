@@ -48,14 +48,9 @@ exports.registerUser = async (data) => {
         fullName: savedUser.fullName,
       },
       password: userInfo.password,
+      oldUserId: userInfo.userId,
     }
     await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.registered", registrationEmailEvent);
-
-    const orderConverterEvent = {
-      oldId: userInfo.id,
-      newId: savedUser._id,
-    }
-    await publishToExchange(ORDER_EVENT_EXCHANGE, "order.converter", orderConverterEvent);
   } catch (error) {
     console.error("Error publishing events:", error);
   }

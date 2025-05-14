@@ -312,7 +312,7 @@ exports.sendRegisterConfirmation = async (user, password) => {
             color: #555;
           }
           .credential-value {
-            background-color:#4CAF50;
+            background-color:#f5f5f5;
             padding: 8px 12px;
             border-radius: 4px;
             font-family: monospace;
@@ -457,7 +457,7 @@ exports.sendRevoveryPassword = async (user, password) => {
             color: #555;
           }
           .credential-value {
-            background-color:#4CAF50;
+            background-color: #f5f5f5;
             padding: 8px 12px;
             border-radius: 4px;
             font-family: monospace;
@@ -535,6 +535,5 @@ exports.sendRevoveryPassword = async (user, password) => {
       </html>
     `,
   };
-
   await transporter.sendMail(mailOptions);
 };

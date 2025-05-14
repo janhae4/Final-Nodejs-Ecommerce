@@ -17,7 +17,7 @@ const generateOrderCode = () => {
 exports.createOrder = async (isGuest = null, orderData) => {
   const orderSession = await Order.startSession();
   const productSession = await Product.startSession();
-  
+
   orderSession.startTransaction();
   productSession.startTransaction();
   try {
@@ -70,8 +70,8 @@ exports.createOrder = async (isGuest = null, orderData) => {
         ? saved_order.userInfo.userId.toString()
         : null,
       isGuest: !!isGuest,
-      customerEmail: saved_order.userInfo.email,
-      customerName: saved_order.userInfo.name,
+      email: saved_order.userInfo.email,
+      fullName: saved_order.userInfo.fullName,
       products: saved_order.products.map((p) => ({
         productId: p.productId.toString(),
         variantId: p.variantId.toString(),
@@ -87,7 +87,7 @@ exports.createOrder = async (isGuest = null, orderData) => {
 
     await publishToExchange(
       ORDER_EVENT_EXCHANGE,
-      "order_created",
+      "order.created",
       orderCreatedEvent
     );
     console.log(
