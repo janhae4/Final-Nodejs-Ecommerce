@@ -7,31 +7,29 @@ import provinces from "hanhchinhvn/dist/tinh_tp.json";
 import districts from "hanhchinhvn/dist/quan_huyen.json";
 import wards from "hanhchinhvn/dist/xa_phuong.json";
 import { useAuth } from "../../../context/AuthContext";
+import RegisterForm from "../../../components/auth/RegisterForm";
 const { Title, Paragraph } = Typography;
 
 const RegisterPage = () => {
   const { register } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
 
   const handleRegister = async (values) => {
     setLoading(true);
     try {
       // Send registration request to backend
-      await axios.post('http://localhost:3000/api/auth/register', {
-        fullName: values.fullName,
-        email: values.email,
-        shippingAddress: values.address
-      });
+      await axios.post('http://localhost:3000/api/auth/register', values);
 
       // Show success message
-      message.success('Registration successful! Please log in.');
+      messageApi.success('Registration successful! Please check your email to verify your account.');
 
       // Redirect to login page after successful registration
       navigate('/auth/login');
     } catch (error) {
       console.error("Registration error:", error);
-      message.error('Registration failed. Please check your information!');
+      messageApi.error(error.response.data.message || "Registration failed, please try again!");
     } finally {
       setLoading(false);
     }
@@ -39,60 +37,21 @@ const RegisterPage = () => {
 
   const handleSocialRegister = async (response) => {
     console.log(`Register with ${response}`);
-    message.info(`Attempting registration with ${response}...`);
+    messageApi.info(`Attempting registration with ${response}...`);
     window.location.href = `http://localhost:3000/api/auth/${response}`;
   };
 
   return (
     <Layout
-      style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
+      className="flex items-center justify-center"
     >
-      <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-md">
-        <Title level={2} className="text-center mb-6">
+      {contextHolder}
+      <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-xl ">
+        <Title level={2} className="text-center">
           Create Account
         </Title>
         
-        <Form onFinish={handleRegister} layout="vertical">
-          <Form.Item
-            label="Full Name"
-            name="fullName"
-            rules={[{ required: true, message: 'Please enter your full name!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ required: true, type: 'email', message: 'Please enter a valid email!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Shipping Address"
-            name="address"
-            rules={[{ required: true, message: 'Please enter your shipping address!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={loading}
-              style={{ width: '100%' }}
-            >
-              Register
-            </Button>
-          </Form.Item>
-        </Form>
+        <RegisterForm onFinish={handleRegister} setLoading={setLoading} loading={loading} />
 
         <Divider>Or register with</Divider>
         <SocialAuthButtons

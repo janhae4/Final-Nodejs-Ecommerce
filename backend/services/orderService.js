@@ -329,3 +329,15 @@ exports.getOrderByDiscountCode = async (discountCode) => {
     throw new Error("Error fetching orders by discount code: " + error.message);
   }
 };
+
+exports.updateOrderUserId = async (oldUserId, newUserId) => {
+  try {
+    const orders = await Order.updateMany(
+      { "userInfo.userId": oldUserId },
+      { $set: { "userInfo.userId": newUserId } }
+    );
+    return orders;
+  } catch (error) {
+    throw new Error("Error updating order user ID: " + error.message);
+  }
+}

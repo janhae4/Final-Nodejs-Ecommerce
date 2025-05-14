@@ -1,14 +1,68 @@
-// src/components/auth/RegisterForm.jsx
-import React from 'react';
-import { Form, Input, Button } from 'antd';
+import React, { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import provinces from "hanhchinhvn/dist/tinh_tp.json";
+import districts from "hanhchinhvn/dist/quan_huyen.json";
+import wards from "hanhchinhvn/dist/xa_phuong.json";
+import { Form, Input, Button, Select, Col, Row } from "antd";
 
-const RegisterForm = ({ onFinish, loading }) => {
+const RegisterForm = ({ onFinish, setLoading, loading }) => {
+  const { userInfo } = useAuth();
+  const [selectedProvince, setSelectedProvince] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [selectedWard, setSelectedWard] = useState(null);
+  const [street, setStreet] = useState(null);
+  const [form] = Form.useForm();
+
+  const provinceList = Object.values(provinces);
+  const districtList = Object.values(districts);
+  const wardList = Object.values(wards);
+  const filteredDistricts = selectedProvince
+    ? districtList
+        .filter((d) => d.parent_code === selectedProvince)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+
+  const filteredWards = selectedDistrict
+    ? wardList
+        .filter((w) => w.parent_code === selectedDistrict)
+        .sort((a, b) => a.code.localeCompare(b.code))
+    : [];
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    form.validateFields();
+    const province = provinces[selectedProvince];
+    const district = districts[selectedDistrict];
+    const ward = wards[selectedWard];
+    const fieldsValue = form.getFieldsValue();
+    const fullAddress = {
+      address: {
+        street: street,
+        ward: ward.name_with_type,
+        wardCode: selectedWard,
+        district: district.name_with_type,
+        districtCode: selectedDistrict,
+        province: province.name_with_type,
+        provinceCode: selectedProvince,
+        fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
+        _id: Date.now(),
+      },
+      userInfo: {
+        userId: userInfo._id || userInfo.id,
+        fullName: fieldsValue.fullName,
+        email: fieldsValue.email,
+      },
+    };
+    console.log(fullAddress)
+    await onFinish(fullAddress);
+    setLoading(false);
+  };
   return (
-    <Form name="register" onFinish={onFinish} layout="vertical" className="w-full max-w-md">
+    <Form name="register" form={form} onFinish={onFinish} layout="vertical">
       <Form.Item
         name="fullName"
         label="Full Name"
-        rules={[{ required: true, message: 'Please input your full name!' }]}
+        rules={[{ required: true, message: "Please input your full name!" }]}
       >
         <Input placeholder="John Doe" />
       </Form.Item>
@@ -17,58 +71,125 @@ const RegisterForm = ({ onFinish, loading }) => {
         name="email"
         label="Email"
         rules={[
-          { required: true, message: 'Please input your email!' },
-          { type: 'email', message: 'The input is not valid E-mail!' },
+          { required: true, message: "Please input your email!" },
+          { type: "email", message: "The input is not valid E-mail!" },
         ]}
       >
         <Input placeholder="you@example.com" />
       </Form.Item>
-
-      <Form.Item
-        name="shippingAddress"
-        label="Default Shipping Address"
-        rules={[{ required: true, message: 'Please input your shipping address!' }]}
-      >
-        <Input.TextArea rows={3} placeholder="123 Main St, Anytown, USA" />
-      </Form.Item>
-      
-      {/* Password will be set via recovery or social login initially, or add password fields if needed */}
-      {/* For simplicity, initial password might be auto-generated and sent via email,
-           or user sets it after first social login / email confirmation.
-           If direct password creation:
-      <Form.Item
-        name="password"
-        label="Password"
-        rules={[{ required: true, message: 'Please input your password!' }]}
-        hasFeedback
-      >
-        <Input.Password />
-      </Form.Item>
-
-      <Form.Item
-        name="confirm"
-        label="Confirm Password"
-        dependencies={['password']}
-        hasFeedback
-        rules={[
-          { required: true, message: 'Please confirm your password!' },
-          ({ getFieldValue }) => ({
-            validator(_, value) {
-              if (!value || getFieldValue('password') === value) {
-                return Promise.resolve();
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={8} md={8}>
+          <Form.Item
+            name="province"
+            label="Province"
+            rules={[{ required: true, message: "Please select a province" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select a province"
+              optionFilterProp="children"
+              onChange={(value) => {
+                setSelectedProvince(value);
+                setSelectedDistrict(null);
+                addressForm.setFieldsValue({
+                  district: null,
+                  ward: null,
+                });
+              }}
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
               }
-              return Promise.reject(new Error('The two passwords that you entered do not match!'));
-            },
-          }),
-        ]}
-      >
-        <Input.Password />
-      </Form.Item>
-      */}
+            >
+              {provinceList.map((province) => (
+                <Option key={province.code} value={province.code}>
+                  {province.name_with_type}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
 
+        <Col xs={24} sm={8} md={8}>
+          <Form.Item
+            name="district"
+            label="District"
+            rules={[{ required: true, message: "Please select a district" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select a district"
+              optionFilterProp="children"
+              disabled={!selectedProvince}
+              onChange={(value) => {
+                setSelectedDistrict(value);
+                // Sửa setFieldValue thành setFieldsValue
+                addressForm.setFieldsValue({ ward: null });
+              }}
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {filteredDistricts.map((district) => (
+                <Option key={district.code} value={district.code}>
+                  {district.name_with_type}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
 
+        <Col xs={24} sm={8} md={8}>
+          <Form.Item
+            name="ward"
+            label="Ward"
+            rules={[{ required: true, message: "Please select a ward" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select a ward"
+              optionFilterProp="children"
+              disabled={!selectedDistrict}
+              value={selectedWard}
+              onChange={(value) => setSelectedWard(value)}
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {filteredWards.map((ward) => (
+                <Option key={ward.code} value={ward.code}>
+                  {ward.name_with_type}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} sm={24} md={24}>
+          <Form.Item
+            name="street"
+            label="Address street"
+            rules={[{ required: true, message: "Please enter your address" }]}
+          >
+            <Input
+              type="text"
+              value={street}
+              onChange={(e) => {
+                setStreet(e.target.value);
+                addressForm.setFieldsValue({ street: e.target.value });
+              }}
+              placeholder="Enter your full address"
+            />
+          </Form.Item>
+        </Col>
+      </Row>
       <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading} block className="bg-blue-500 hover:bg-blue-600">
+        <Button
+          type="primary"
+          onClick={handleSubmit}
+          loading={loading}
+          block
+          className="bg-blue-500 hover:bg-blue-600"
+        >
           Create Account
         </Button>
       </Form.Item>

@@ -19,7 +19,7 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const HomePage = () => {
-  const { addItemToCart, cartItems } = useCart();
+  const { addItemToCart } = useCart();
   const [newProducts, setNewProducts] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [laptops, setLaptops] = useState([]);
@@ -91,30 +91,35 @@ const HomePage = () => {
         products={newProducts}
         icon={<RocketOutlined />}
         description="Discover our latest tech products just added to the store"
+        action={addItemToCart }
       />
       <ProductSection
         title="Best Sellers"
         products={bestSellers}
         icon={<FireOutlined />}
         description="Top-rated products loved by our customers"
+        action={addItemToCart }
       />
       <ProductSection
         title="Premium Laptops"
         products={laptops}
         icon={<LaptopOutlined />}
         description="Powerful laptops for work, gaming, and creativity"
+        action={addItemToCart }
       />
       <ProductSection
         title="High-Quality Monitors"
         products={monitors}
         icon={<DesktopOutlined />}
         description="Crystal-clear displays for every need"
+        action={addItemToCart }
       />
       <ProductSection
         title="Storage Solutions"
         products={hardDrives}
         icon={<HddOutlined />}
         description="SSDs, HDDs, and more for all your storage needs"
+        action={addItemToCart }
       />
       <ProductSection
         title="PC Components"

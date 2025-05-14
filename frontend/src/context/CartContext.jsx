@@ -27,6 +27,7 @@ export const CartProvider = ({ children }) => {
   const [shippingCost, setShippingCost] = useState(5.0);
   const [taxRate, setTaxRate] = useState(0.07);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [createCart, setCreateCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -35,7 +36,7 @@ export const CartProvider = ({ children }) => {
       createGuestCart();
       localStorage.setItem("isCreateCart", true);
     }
-  }, [userInfo?._id, isLoggedIn]);
+  }, [createCart]);
 
   const createGuestCart = async () => {
     try {
@@ -150,6 +151,7 @@ export const CartProvider = ({ children }) => {
   }, [cartItems, loading]);
 
   const addItemToCart = (product, variant = null, quantity = 1) => {
+    setCreateCart(true);
     setCartItems((prevItems) => {
       const itemKey = variant ? `${product._id}-${variant._id}` : product._id;
 
@@ -251,7 +253,7 @@ export const CartProvider = ({ children }) => {
   const clearCart = async () => {
     try {
       if (isLoggedIn && userInfo?._id) {
-        await axios.delete(`${API_URL}users/cart/`, {
+        await axios.delete(`${API_URL}/users/cart/`, {
           withCredentials: true,
         });
       } else {

@@ -152,3 +152,8 @@ exports.updateInfo = async (guestId, data) => {
   await client.set(key, JSON.stringify({ ...raw, ...data }));
   return data;
 };
+
+exports.deleteInfo = async (guestId) => {
+  const key = `guest_info:${guestId}`;
+  await client.del(key);
+};

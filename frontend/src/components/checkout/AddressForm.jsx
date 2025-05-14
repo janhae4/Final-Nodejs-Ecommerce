@@ -20,9 +20,6 @@ const AddressForm = ({
   const { userInfo } = useAuth();
   const addressForm = form || Form.useForm()[0];
 
-  // Log giá trị form hiện tại - tốt để debug
-  console.log("Form values:", addressForm.getFieldsValue(true));
-
   const [selectedProvince, setSelectedProvince] = useState(
     initialValues?.provinceCode || null
   );

@@ -44,6 +44,15 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
     return statusColors[status] || "default";
   };
 
+  const getPaymentMethod = (paymentMethod) => {
+    const paymentMethods = {
+      cash: "Cash",
+      credit_card: "Credit Card",
+      paypal: "PayPal",
+    };
+    return paymentMethods[paymentMethod] || paymentMethod["cash"];
+  }
+
   const calculateFinalTotal = () => {
     const subtotal = calculateTotal();
     if (!discount) return subtotal;
@@ -178,16 +187,16 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
           </div>
 
           <Descriptions bordered column={{ xs: 1, sm: 2 }} className="mb-4">
-            <Descriptions.Item label="User ID">
-              {orderData.userId}
+            <Descriptions.Item label="User Name">
+              {orderData.userInfo.fullName}
             </Descriptions.Item>
             <Descriptions.Item label="Purchase Date">
               {orderData.purchaseDate
                 ? dayjs(orderData.purchaseDate).format("DD/MM/YYYY")
                 : "N/A"}
             </Descriptions.Item>
-            <Descriptions.Item label="Payment ID">
-              {orderData.paymentId}
+            <Descriptions.Item label="Payment Method">
+              {getPaymentMethod(orderData.paymentMethod)}
             </Descriptions.Item>
             <Descriptions.Item label="Discount Code">
               {orderData.discountCode || "N/A"}

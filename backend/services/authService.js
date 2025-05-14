@@ -1,24 +1,47 @@
 const bcrypt = require("bcryptjs");
+const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const redisService = require("./redisService");
+const orderService = require("./orderService");
+const emailService = require("./emailService");
 
-exports.registerUser = async ({ fullName, email, address, password, role }) => {
-  const existingUser = await User.findOne({ email });
+const generateRandomPassword = () => {
+  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let password = "";
+  for (let i = 0; i < 8; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    password += characters.charAt(randomIndex);
+  }
+  return password;
+};
+
+exports.registerUser = async (data) => {
+  const { userInfo, address } = data;
+  const existingUser = await User.findOne({ email: userInfo.email });
   if (existingUser) throw new Error("Email already exists");
+  const existingAddesses = (await redisService.getInfo(userInfo.userId)).addresses || [];
+  existingAddesses.push(address);
+
+  if (!userInfo.password) {
+    userInfo.password = generateRandomPassword();
+  }
 
   const newUser = new User({
-    fullName,
-    email,
-    addresses: [address],
+    fullName: userInfo.fullName,
+    email: userInfo.email,
+    password: userInfo.password || password,
+    addresses: existingAddesses,
     provider: "local",
-    role: role || "user",
+    role: userInfo.role || "user",
   });
-  if (password) {
-  newUser.password = password;
-  }
-  await newUser.save();
+  const savedUser = await newUser.save();
+  await orderService.updateOrderUserId(userInfo.id, savedUser._id);
+  redisService.deleteInfo(userInfo.userId);
+  emailService.sendRegisterConfirmation(userInfo, userInfo.password);
+
   console.log("✅ New user registered:", newUser);
-  return newUser;
+  return existingAddesses;
 };
 
 exports.loginUser = async ({ email, password }, res) => {
@@ -30,7 +53,9 @@ exports.loginUser = async ({ email, password }, res) => {
     if (!isMatch) throw new Error("Invalid credentials");
 
     // Tạo JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     // Gửi token qua HttpOnly cookie
     res.cookie("token", token, {
@@ -40,13 +65,12 @@ exports.loginUser = async ({ email, password }, res) => {
       maxAge: 24 * 60 * 60 * 1000, // Thời gian sống cookie (24 giờ)
     });
 
-    return user;  // Trả về thông tin user nếu cần
+    return user; // Trả về thông tin user nếu cần
   } catch (error) {
     console.error("Login error:", error);
-    throw error;  // Ném lỗi cho phía gọi API xử lý
+    throw error; // Ném lỗi cho phía gọi API xử lý
   }
 };
-
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   const user = await User.findById(userId);
@@ -107,9 +131,13 @@ exports.handleGoogleCallback = async (user) => {
     throw new Error("Missing required information from Google profile.");
   }
   // console.log("✅ Google user info:", user);
-  const token = jwt.sign({ id: user._id, rold: user.role }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
+  const token = jwt.sign(
+    { id: user._id, rold: user.role },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    }
+  );
   // console.log("token google: ", token);
   const encodedUser = encodeURIComponent(JSON.stringify(user));
 
@@ -146,5 +174,7 @@ exports.findOrCreateOAuthUser = async (profile, provider) => {
 };
 
 const generateToken = (user) => {
-  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
 };
