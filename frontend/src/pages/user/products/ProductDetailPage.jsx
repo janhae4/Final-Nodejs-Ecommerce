@@ -31,7 +31,7 @@ const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
 
 const ProductDetailPage = () => {
-  const { productId } = useParams();
+  const { slug } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -42,7 +42,7 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchProductById(productId)
+    fetchProductById(slug)
       .then((data) => {
         setProduct(data);
         console.log(data);
@@ -57,7 +57,7 @@ const ProductDetailPage = () => {
         console.error(err);
         setLoading(false);
       });
-  }, [productId]);
+  }, [slug]);
 
   const handleVariantSelect = (variantId) => {
     const variant = product.variants.find((v) => v._id === variantId);

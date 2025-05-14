@@ -1,8 +1,8 @@
 // src/services/productService.js
 import axios from "axios";
 
-export const fetchProductById = async (id) => {
-  const response = await axios.get(`http://localhost:3000/api/products/${id}`);
+export const fetchProductById = async (slug) => {
+  const response = await axios.get(`http://localhost:3000/api/products/slug/${slug}`);
   return response.data.product;
 };
 

@@ -70,6 +70,16 @@ exports.createProduct = async (req, res) => {
     }
 };
 
+exports.getProductBySlug = async (req, res) => {
+    try {
+        const product = await ProductService.getProductBySlug(req.params.slug);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        res.status(200).json({status: true, product});
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 
 // Get product by ID
 // GET/products/:id
@@ -184,7 +194,7 @@ exports.getCategories = async (req, res) => {
     try {
         const categories = await ProductService.getAllCategories();
         const data = categories.map((cat) => ({ _id: cat, name: cat }));
-        res.status(200).json({status: true, categories: data},);
+        res.status(200).json({ status: true, categories: data },);
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch categories' });
     }
@@ -194,7 +204,7 @@ exports.getBrands = async (req, res) => {
     try {
         const brands = await ProductService.getAllBrands();
         const data = brands.map((brand) => ({ _id: brand, name: brand }));
-        res.status(200).json({status: true, brands: data},);
+        res.status(200).json({ status: true, brands: data },);
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch brands' });
     }

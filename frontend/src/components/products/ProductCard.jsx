@@ -117,7 +117,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
             </div>
 
 
-            <Link to={`/products/detail/${product._id}`}>
+            <Link to={`/products/detail/${product.slug}`}>
               <Button
                 type="primary"
                 block

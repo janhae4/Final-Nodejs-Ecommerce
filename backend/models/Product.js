@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require('slugify');
 const productConnection = require("../database/productConnection");
 const { use } = require("../routes/orderRoute");
 
@@ -18,6 +19,7 @@ const commentSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema(
   {
     nameProduct: { type: String, required: true, trim: true },
+    slug: { type: String, unique: true, trim: true },
     brand: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     category: { type: String, required: true, trim: true },
@@ -33,6 +35,14 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+
+productSchema.pre('save', function (next) {
+  if (!this.slug && this.nameProduct) {
+    this.slug = slugify(this.nameProduct, { lower: true });
+  }
+  next();
+});
 
 const Product = productConnection.model("Product", productSchema);
 

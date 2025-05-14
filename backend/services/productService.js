@@ -46,6 +46,16 @@ exports.createProduct = async ({
     }
 };
 
+exports.getProductBySlug = async (slug) => {
+    try {
+        const product = await Product.findOne({ slug: slug });
+        if (!product) throw new Error('Product not found');
+        return product;
+    } catch (err) {
+        throw new Error('Error fetching product with slug: ' + err.message);
+    }
+};
+
 exports.getProductByIdWithVariants = async (productId) => {
     try {
         const product = await Product.findById(productId).populate('variants');

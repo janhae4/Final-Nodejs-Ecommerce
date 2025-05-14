@@ -54,6 +54,7 @@ const ProductCatalogPage = () => {
     }
   
     queryParams.append("page", currentPage);
+    queryParams.append("pageSize", pageSize);
   
     fetch(`http://localhost:3000/api/products/search?${queryParams.toString()}`)
       .then(res => res.json())
