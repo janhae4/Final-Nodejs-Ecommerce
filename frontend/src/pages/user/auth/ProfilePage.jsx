@@ -20,13 +20,22 @@ const ProfilePage = () => {
 
   // Fetch user profile
   const fetchUserProfile = async () => {
+  try {
     const token = localStorage.getItem('authToken');
-    const res = await axios.get('http://localhost:3000/api/users/profile', {
+    if (!token) return;
+
+    const response = await axios.get('http://localhost:3000/api/users/profile', {
       headers: { Authorization: `Bearer ${token}` },
       withCredentials: true,
     });
-    return res.data;
-  };
+
+    setUserData(response.data);
+    return response.data; // <-- Thêm dòng này
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+  }
+};
+
 
   // Fetch user addresses
 const fetchAddresses = async () => {
@@ -48,19 +57,18 @@ const fetchAddresses = async () => {
   // Load user profile and addresses
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
-      try {
-        const user = await fetchUserProfile();
-        const userAddresses = await fetchAddresses();
-        setUserData(user);
-        setAddresses(userAddresses);
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        message.error("Failed to load user data.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  setLoading(true);
+  try {
+    await fetchUserProfile(); // chỉ cần gọi để nó tự setUserData
+    const userAddresses = await fetchAddresses();
+    setAddresses(userAddresses);
+  } catch (error) {
+    console.error("Error loading user data:", error);
+    message.error("Failed to load user data.");
+  } finally {
+    setLoading(false);
+  }
+};
     loadData();
   }, []);
 

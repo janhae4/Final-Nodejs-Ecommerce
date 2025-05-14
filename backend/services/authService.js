@@ -10,12 +10,14 @@ exports.registerUser = async ({ fullName, email, address, password, role }) => {
     fullName,
     email,
     addresses: [address],
-    password,
     provider: "local",
     role: role || "user",
   });
-
+  if (password) {
+  newUser.password = password;
+  }
   await newUser.save();
+  console.log("✅ New user registered:", newUser);
   return newUser;
 };
 
@@ -104,11 +106,11 @@ exports.handleGoogleCallback = async (user) => {
   if (!user || !user.email || !user.fullName) {
     throw new Error("Missing required information from Google profile.");
   }
-
+  // console.log("✅ Google user info:", user);
   const token = jwt.sign({ id: user._id, rold: user.role }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
-
+  // console.log("token google: ", token);
   const encodedUser = encodeURIComponent(JSON.stringify(user));
 
   return { token, encodedUser };

@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import {
-  Layout,
-  Row,
-  Col,
-  Typography,
-  Space,
-  Input,
-  Button,
-} from "antd";
+import { Layout, Row, Col, Typography, Space, Input, Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import ProductSection from "../../components/homepage/ProductSection";
 import ProductCarousel from "../../components/homepage/ProductCarousel";
-import { RocketOutlined, FireOutlined, LaptopOutlined, DesktopOutlined, HddOutlined, HomeOutlined, PercentageOutlined, ThunderboltFilled } from "@ant-design/icons";
+import {
+  RocketOutlined,
+  FireOutlined,
+  LaptopOutlined,
+  DesktopOutlined,
+  HddOutlined,
+  HomeOutlined,
+  PercentageOutlined,
+  ThunderboltFilled,
+} from "@ant-design/icons";
 import axios from "axios";
+import Cookies from "js-cookie";
+import { useAuth } from "../../contexts/AuthContext";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -26,20 +29,31 @@ const HomePage = () => {
   const [hardDrives, setHardDrives] = useState([]);
   const [components, setComponents] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL;
+  const { setIsLoggedIn } = useAuth();  // Sử dụng setIsLoggedIn từ context
 
   useEffect(() => {
-    // Kiểm tra và lấy token và user từ URL nếu có
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    const user = params.get("user");
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const user = params.get("user");
 
-    if (token && user) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", user);
+  if (token && user) {
+    Cookies.set("token", token, { expires: 1 });
+    Cookies.set("user", user, { expires: 1 });
 
-      // Xóa query params khỏi URL mà không làm mới trang
-      window.history.replaceState({}, document.title, "/");
-    }
+    // Kiểm tra giá trị cookie vừa cài đặt
+    console.log(Cookies.get("token")); // In ra để xác nhận token đã được lưu
+
+    // Cập nhật trạng thái đăng nhập khi có token
+    setIsLoggedIn(true);
+
+    // Xóa query params khỏi URL
+    window.history.replaceState({}, document.title, "/");
+
+    // Điều hướng sau khi cập nhật trạng thái đăng nhập
+    navigate("/dashboard");
+  }
+
+
 
     // Lấy danh sách sản phẩm
     const filterProducts = async () => {
@@ -63,9 +77,9 @@ const HomePage = () => {
         console.error(err);
       }
     };
-    
+
     filterProducts();
-  }, []);
+  }, [setIsLoggedIn, API_URL, navigate]);  // Thêm setIsLoggedIn và API_URL vào dependencies
 
   return (
     <Content className="container mx-auto px-4 py-8">

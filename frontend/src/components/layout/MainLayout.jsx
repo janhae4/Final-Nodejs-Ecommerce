@@ -38,13 +38,17 @@ import MobileSearchDrawer from "./main/MobileSearchDrawer";
 import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import AIChatbot from "./main/AIChatbotComponent";
+import Cookies from "js-cookie";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; 
+
 const { Text } = Typography;
 
 const MainLayout = () => {
   const { cartItemCount } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, login, logout } = useAuth();
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -53,6 +57,22 @@ const MainLayout = () => {
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
+  const location = useLocation();
+  
+  useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token");
+
+  if (token) {
+    login(token); // Gọi login() từ AuthContext
+    // ✅ Xoá token khỏi URL sau khi xử lý
+    params.delete("token");
+    params.delete("user");
+    const newSearch = params.toString();
+    navigate(location.pathname + (newSearch ? `?${newSearch}` : ""), { replace: true });
+  }
+}, [location, login, navigate]);
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -64,13 +84,6 @@ const MainLayout = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    }
   }, []);
 
   const getSearchResults = async (query) => {
@@ -106,12 +119,12 @@ const MainLayout = () => {
   }, [searchQuery, debounceSearch]);
 
   const handleLogin = () => {
+    login();
     navigate("/auth/login");
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
+    logout();
     navigate("/");
   };
 
