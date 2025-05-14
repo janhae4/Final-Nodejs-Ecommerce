@@ -24,28 +24,28 @@ const LoginPage = () => {
     }
   };
 
-const handleSocialLogin = async (response) => {
-  console.log(`Login with ${response}`);
-  const { tokenId } = response;
-  login(tokenId);
-  message.info(`Attempting login with ${response}...`);
+  const handleSocialLogin = async (response) => {
+    console.log(`Login with ${response}`);
+    const { tokenId } = response;
+    message.info(`Attempting login with ${response}...`);
 
-  if (response === 'google') {
-    try {
-      const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {
-          Authorization: `Bearer ${tokenId}`,
-        },
-      });
-      console.log('User info from Google:', res.data);
-    } catch (err) {
-      console.error('Error fetching Google user info:', err);
+    if (response === "google") {
+      try {
+        const res = await axios.get(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: {
+              Authorization: `Bearer ${tokenId}`,
+            },
+          }
+        );
+        console.log("User info from Google:", res.data);
+      } catch (err) {
+        console.error("Error fetching Google user info:", err);
+      }
     }
-  }
-
-  window.location.href = `http://localhost:3000/api/auth/${response}`;
-};
-
+    window.location.href = `http://localhost:3000/api/auth/${response}`;
+  };
 
   return (
     <Layout
@@ -68,7 +68,10 @@ const handleSocialLogin = async (response) => {
         />
         <Paragraph className="mt-6 text-center">
           Don't have an account?{" "}
-          <Link to="/auth/register" className="text-blue-500 hover:text-blue-700">
+          <Link
+            to="/auth/register"
+            className="text-blue-500 hover:text-blue-700"
+          >
             Sign up
           </Link>
         </Paragraph>

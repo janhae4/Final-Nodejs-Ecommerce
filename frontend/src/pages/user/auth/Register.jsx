@@ -3,6 +3,9 @@ import { Typography, Divider, message, Layout, Form, Input, Button } from "antd"
 import { Link, useNavigate } from "react-router-dom";
 import SocialAuthButtons from "../../../components/auth/SocialAuthButton";
 import axios from "axios";
+import provinces from "hanhchinhvn/dist/tinh_tp.json";
+import districts from "hanhchinhvn/dist/quan_huyen.json";
+import wards from "hanhchinhvn/dist/xa_phuong.json";
 import { useAuth } from "../../../context/AuthContext";
 const { Title, Paragraph } = Typography;
 

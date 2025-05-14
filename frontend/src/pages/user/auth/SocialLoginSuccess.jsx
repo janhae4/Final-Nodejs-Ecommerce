@@ -6,12 +6,15 @@ function SocialLoginSuccess() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const user = params.get("user");
-    console.log(user);
+    const user = JSON.parse(params.get("user"));
+    console.log(params, user);
     if (user) {
-      localStorage.setItem("user", {
-        id: user.googleId,
-      });
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: user.googleId,
+        })
+      );
       window.history.replaceState({}, document.title, "/");
       navigate("/", { replace: true });
     }

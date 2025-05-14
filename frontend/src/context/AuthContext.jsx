@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const user = await getUserInfo();
-      console.log(12321, user)
+      console.log(12321, user);
       setUserInfo(user);
       const fetched = await getAddresses();
       setAddresses(fetched || []);
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("cartItems");
     localStorage.removeItem("isCreateCart");
-    guestLogin()
+    guestLogin();
     setIsLoggedIn(false);
     await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
   };
@@ -64,11 +64,11 @@ export const AuthProvider = ({ children }) => {
       const user = response.data.user;
       if (user.isBanned) {
         console.log("User is banned:", user.isBanned);
-        alert("Tài khoản của bạn đã bị cấm.");
+        alert("Your account has been banned.");
         return;
       }
-      localStorage.setItem("user", JSON.stringify({id: user._id}));
-      messageApi.success("Đăng nhập thành công!");
+      localStorage.setItem("user", JSON.stringify({ id: user._id }));
+      messageApi.success("Login successful!");
 
       if (user.role === "admin") {
         navigate("/admin");
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      messageApi.error("Đăng nhập thất bại. Vui lòng kiểm tra lại!");
+      messageApi.error("Login failed, please try again!");
     }
   };
 
@@ -167,18 +167,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    setAddresses(userInfo.addresses)
+    setAddresses(userInfo.addresses);
   }, [userInfo.id]);
 
   const getUserInfo = async () => {
     try {
       const id = JSON.parse(localStorage.getItem("user"))?.id;
+      console.log(id);
       let response;
       if (isLoggedIn && !id?.includes("guest")) {
-        response = await axios.get(`${API_URL}/users/profile`, {withCredentials: true});
+        response = await axios.get(`${API_URL}/users/profile`, {
+          withCredentials: true,
+        });
       } else if (!isLoggedIn && id.includes("guest")) {
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
+      console.log(response.data);
       setUserInfo({ id, ...response.data });
       return { id, ...response.data };
     } catch (error) {
