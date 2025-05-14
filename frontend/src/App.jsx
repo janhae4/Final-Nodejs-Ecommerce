@@ -3,7 +3,7 @@ import { CartProvider } from "./context/CartContext";
 import { StyleProvider } from "@ant-design/cssinjs";
 
 import AppRoutes from "./routes/AppRoutes";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (

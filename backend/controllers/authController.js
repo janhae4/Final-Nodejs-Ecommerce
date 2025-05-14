@@ -42,12 +42,12 @@ exports.changePassword = async (req, res) => {
 exports.googleCallback = async (req, res) => {
   try {
     const { token, encodedUser } = await authService.handleGoogleCallback(req.user);
-
+    res.cookie("token", token, { httpOnly: true });
     // ✅ Chuyển hướng về trang chủ kèm token và user
-    res.redirect(`http://localhost:5173/?token=${token}&user=${encodedUser}`);
+    res.redirect(`http://localhost:5173/auth/oauth-success?user=${encodedUser}`);
   } catch (error) {
     console.error("Error in googleCallback:", error);
-    res.redirect("http://localhost:5173/login?error=oauth_failed");
+    res.redirect("http://localhost:5173/auth/login?error=oauth_failed");
   }
 };
 
@@ -55,8 +55,8 @@ exports.googleCallback = async (req, res) => {
 exports.facebookCallback = async (req, res) => {
   try {
     const { token, encodedUser } = await authService.handleFacebookCallback(req.user);
-
-    res.redirect(`http://localhost:5173/?token=${token}&user=${encodedUser}`);
+    res.cookie("token", token, { httpOnly: true });
+    res.redirect(`http://localhost:5173/auth/oauth-success?user=${encodedUser}`);
   } catch (error) {
     console.error("Facebook login error:", error);
     res.status(500).json({ message: "Đăng nhập với Facebook thất bại" });

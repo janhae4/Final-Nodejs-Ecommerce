@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("cartItems");
     localStorage.removeItem("isCreateCart");
-    setIsLoggedIn(false);
     guestLogin()
+    setIsLoggedIn(false);
     await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
   };
 

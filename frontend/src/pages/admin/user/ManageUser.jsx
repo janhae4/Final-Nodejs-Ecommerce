@@ -61,15 +61,14 @@ const ManageUsers = () => {
 
   // Fetch users from backend with pagination and search
   const fetchUsers = async (page = 1, pageSize = 20, search = "") => {
-  try {
-    setLoading(true);
-    const token = localStorage.getItem("authToken");
-    
-    console.log("Token đang được gửi:", token); // Log token để kiểm tra giá trị
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("authToken");
 
-    let url = `http://localhost:3000/api/admin/users?page=${page}&limit=${pageSize}`;
+      console.log("Token đang được gửi:", token); // Log token để kiểm tra giá trị
 
-<<<<<<< HEAD
+      let url = `http://localhost:3000/api/admin/users?page=${page}&limit=${pageSize}`;
+
       if (search && search.trim() !== "") {
         url += `&search=${encodeURIComponent(search)}`;
       }
@@ -90,37 +89,11 @@ const ManageUsers = () => {
 
       setLoading(false);
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("Lỗi fetch:", err.response?.data || err);
       messageApi.error("Failed to fetch users");
       setLoading(false);
-=======
-    if (search && search.trim() !== "") {
-      url += `&search=${encodeURIComponent(search)}`;
->>>>>>> origin/update/thienan
     }
-
-    const res = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      withCredentials: true,
-    });
-
-    setUsers(res.data || []);
-    setPagination({
-      current: page,
-      pageSize: pageSize,
-      total: res.data.totalCount || 0,
-    });
-
-    setLoading(false);
-  } catch (err) {
-    console.error("Lỗi fetch:", err.response?.data || err);
-    messageApi.error("Failed to fetch users");
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchUsers(page, pageSize, searchText);
@@ -165,7 +138,6 @@ const ManageUsers = () => {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         }
-        
       );
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
@@ -369,14 +341,14 @@ const ManageUsers = () => {
                 prefix={<SearchOutlined />}
                 className="w-full md:w-64"
               />
-                <Button
-                  type="primary"
-                  icon={<ReloadOutlined />}
-                  onClick={() => fetchUsers(page, pageSize, searchText)}
-                  className="bg-blue-500"
-                >
-                  Refresh
-                </Button>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={() => fetchUsers(page, pageSize, searchText)}
+                className="bg-blue-500"
+              >
+                Refresh
+              </Button>
             </div>
           </div>
 

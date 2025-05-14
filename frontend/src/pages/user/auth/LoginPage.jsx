@@ -4,54 +4,18 @@ import { Link, useNavigate } from "react-router-dom"; // Assuming React Router
 import LoginForm from "../../../components/auth/LoginForm";
 import SocialAuthButtons from "../../../components/auth/SocialAuthButton";
 import axios from "axios";
-<<<<<<< HEAD
 import { useAuth } from "../../../context/AuthContext";
-=======
-import Cookies  from 'js-cookie';
-import { useAuth } from '../../../contexts/AuthContext'; // Your auth context
-
->>>>>>> origin/update/thienan
 const { Title, Paragraph } = Typography;
 
 const LoginPage = () => {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth(); // From your context
   const navigate = useNavigate();
 
   const handleLogin = async (values) => {
     try {
-<<<<<<< HEAD
       setLoading(true);
       await login(values);
-=======
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
-        {
-          email: values.email,
-          password: values.password,
-        },
-        {
-          withCredentials: true, 
-        }
-      );
-      const user = response.data.user;
-      if (user.isBanned) {
-        console.log("User is banned:", user.isBanned);
-        alert("Tài khoản của bạn đã bị cấm.");
-        setLoading(false);
-        return; // Dừng xử lý nếu tài khoản bị cấm
-      }
-      const token = response.data.token;
-      login(token);
-      message.success("Đăng nhập thành công!");
-      
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
->>>>>>> origin/update/thienan
     } catch (error) {
       console.error("Login error:", error);
       setLoading(false);
@@ -60,20 +24,17 @@ const LoginPage = () => {
     }
   };
 
-
-
 const handleSocialLogin = async (response) => {
   console.log(`Login with ${response}`);
-  const { tokenId } = response; // Đối với Google, bạn có thể lấy tokenId từ response
+  const { tokenId } = response;
   login(tokenId);
   message.info(`Attempting login with ${response}...`);
 
-  // Lấy thông tin người dùng từ token hoặc từ API của Google
   if (response === 'google') {
     try {
       const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {
-          Authorization: `Bearer ${tokenId}`, // Gửi token để xác thực
+          Authorization: `Bearer ${tokenId}`,
         },
       });
       console.log('User info from Google:', res.data);
@@ -89,10 +50,10 @@ const handleSocialLogin = async (response) => {
   return (
     <Layout
       style={{
-        height: "100vh", // Chiều cao toàn màn hình
+        height: "100vh",
         display: "flex",
-        justifyContent: "center", // Canh giữa theo chiều ngang
-        alignItems: "center", // Canh giữa theo chiều dọc
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-md">

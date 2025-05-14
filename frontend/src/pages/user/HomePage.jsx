@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Layout, Row, Col, Typography, Space, Input, Button } from "antd";
-import { useNavigate } from "react-router-dom";
 import ProductSection from "../../components/homepage/ProductSection";
 import ProductCarousel from "../../components/homepage/ProductCarousel";
 import {
@@ -14,8 +13,7 @@ import {
   ThunderboltFilled,
 } from "@ant-design/icons";
 import axios from "axios";
-import Cookies from "js-cookie";
-import { useAuth } from "../../contexts/AuthContext";
+import { useCart } from "../../context/CartContext";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
