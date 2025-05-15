@@ -22,7 +22,7 @@ const ReviewForm = ({ onSubmitComment, onSubmitRating, isLoggedIn, loading }) =>
           <Form.Item
             name="rating"
             label="Your Rating"
-            rules={[{ required: true, message: 'Please provide a rating!' }]}
+            rules={[{ required: false, message: 'Please provide a rating!' }]}
           >
             <Rate allowClear />
           </Form.Item>

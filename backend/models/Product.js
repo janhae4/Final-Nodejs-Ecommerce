@@ -11,10 +11,10 @@ const variantSchema = new mongoose.Schema({
 });
 
 const commentSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  userFullName: { type: String, required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+  userFullName: { type: String},
   content: { type: String, required: true },
-  rating: { type: Number, required: true, min: 1, max: 5 },
+  rating: { type: Number, min: 1, max: 5 },
   createdAt: { type: Date, default: Date.now },
 });
 

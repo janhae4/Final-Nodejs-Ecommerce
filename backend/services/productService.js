@@ -101,7 +101,7 @@ exports.findProductsByCategory = async (category) => {
     }
 };
 
-exports.searchProducts = async ({ nameProduct, category, brand, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
+exports.searchProducts = async ({ nameProduct, category, brand, minPrice, maxPrice, minRating, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
     try {
         const query = {};
 
@@ -112,6 +112,9 @@ exports.searchProducts = async ({ nameProduct, category, brand, minPrice, maxPri
             query.price = {};
             if (minPrice !== undefined) query.price.$gte = minPrice;
             if (maxPrice !== undefined) query.price.$lte = maxPrice;
+        }
+        if (minRating) {
+            query.ratingAverage = { $gte: parseFloat(minRating) };
         }
 
         const totalProducts = await Product.countDocuments(query);
@@ -180,33 +183,42 @@ exports.addCommentToProduct = async (productId, userId, content, rating, io) => 
     const product = await Product.findById(productId);
     if (!product) throw new Error("Product not found");
 
-    const alreadyCommented = product.comments.some(
-        (c) => c.user && c.user._id.toString() === userId.toString()
-    );
-    if (alreadyCommented) {
-        throw new Error("You have already rated this product");
+    // Nếu là user đã login thì kiểm tra duplicate comment
+    if (userId) {
+        const alreadyCommented = product.comments.some(
+            (c) => c.user && c.user.toString() === userId.toString()
+        );
+        if (alreadyCommented) {
+            throw new Error("You have already rated this product");
+        }
     }
 
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+    let userFullName = "Anonymous";
+    if (userId) {
+        const user = await User.findById(userId);
+        if (!user) throw new Error("User not found");
+        userFullName = user.fullName;
+    }
+
     const newComment = {
-        user: userId,
-        userFullName: user.fullName,
+        user: userId, // null nếu là guest
+        userFullName,
         content,
-        rating,
         createdAt: new Date()
     };
 
+    // Nếu có rating (chỉ user login mới có)
+    if (rating !== undefined) {
+        newComment.rating = rating;
+        const totalRating = product.ratingAverage * product.ratingCount + rating;
+        product.ratingCount += 1;
+        product.ratingAverage = totalRating / product.ratingCount;
+    }
+
     product.comments.push(newComment);
-
-    // Update rating
-    const totalRating = product.ratingAverage * product.ratingCount + rating;
-    product.ratingCount += 1;
-    product.ratingAverage = totalRating / product.ratingCount;
-
     await product.save();
 
-    // Emit socket if nessesary
+    // Emit socket nếu cần
     if (io) {
         io.emit("newComment", {
             productId,
@@ -217,40 +229,13 @@ exports.addCommentToProduct = async (productId, userId, content, rating, io) => 
     return product;
 };
 
+
 exports.getCommentsByProductId = async (productId) => {
     const product = await Product.findById(productId);
     if (!product) {
         throw new Error('Product not found');
     }
     return product.comments;
-};
-
-
-exports.getProductsByRating = async (minRating) => {
-    const query = {};
-
-    if (minRating) {
-        query.ratingAverage = { $gte: parseFloat(minRating) };
-    }
-
-    const products = await Product.find(query);
-    return products;
-};
-
-exports.updateComment = async (productId, commentId, newContent) => {
-    try {
-        const product = await Product.findById(productId);
-        if (!product) throw new Error('Product not found');
-
-        const comment = product.comments.id(commentId);
-        if (!comment) throw new Error('Comment not found');
-
-        comment.content = newContent;
-        await product.save();
-        return product;
-    } catch (err) {
-        throw err;
-    }
 };
 
 exports.deleteComment = async (productId, commentId) => {

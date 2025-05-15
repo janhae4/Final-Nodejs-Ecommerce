@@ -53,7 +53,7 @@ const corsOptions = {
   credentials: true, // Quan trọng để gửi cookie
 };
 
-app.use(cors(corsOptions));
+app.use(cors({corsOptions, credentials: true}));
 
 app.use(cookieParser());
 app.use(passport.initialize());

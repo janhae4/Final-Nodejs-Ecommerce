@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Select, InputNumber, Button, Slider, Rate, Typography, message } from 'antd';
-import { fetchCategories, fetchBrands } from '../../services/productService'; 
+import { fetchCategories, fetchBrands} from '../../services/productService';
+import { set } from 'mongoose';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -16,7 +17,7 @@ const ProductFilter = ({ onFilterChange, initialFilters }) => {
       try {
         const [categoryData, brandData] = await Promise.all([
           fetchCategories(),
-          fetchBrands()
+          fetchBrands(),
         ]);
         setCategories(categoryData);
         setBrands(brandData);
@@ -39,8 +40,13 @@ const ProductFilter = ({ onFilterChange, initialFilters }) => {
       ...values,
       minPrice: values.priceRange?.[0],
       maxPrice: values.priceRange?.[1],
+      minRating: values.rating,
     };
+
     delete filtersToApply.priceRange;
+    delete filtersToApply.rating;
+
+    console.log('Final filters:', filtersToApply);
     onFilterChange(filtersToApply);
   };
 
@@ -79,10 +85,10 @@ const ProductFilter = ({ onFilterChange, initialFilters }) => {
           </Form.Item>
           <div className="flex justify-between mt-1">
             <Form.Item name={["priceRange", 0]} noStyle>
-              <InputNumber min={0} max={50000000} step={100} style={{ width: '48%' }} formatter={v => `${v} VNĐ`} parser={v => v.replace(/\$\s?|(,*)/g, '')}/>
+              <InputNumber min={0} max={50000000} step={100} style={{ width: '48%' }} formatter={v => `${v} VNĐ`} parser={v => v.replace(/\$\s?|(,*)/g, '')} />
             </Form.Item>
             <Form.Item name={["priceRange", 1]} noStyle>
-              <InputNumber min={0} max={50000000} step={100} style={{ width: '48%' }} formatter={v => `${v} VNĐ`} parser={v => v.replace(/\$\s?|(,*)/g, '')}/>
+              <InputNumber min={0} max={50000000} step={100} style={{ width: '48%' }} formatter={v => `${v} VNĐ`} parser={v => v.replace(/\$\s?|(,*)/g, '')} />
             </Form.Item>
           </div>
         </Form.Item>

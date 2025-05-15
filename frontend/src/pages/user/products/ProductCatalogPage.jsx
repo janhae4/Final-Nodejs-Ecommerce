@@ -37,6 +37,7 @@ const ProductCatalogPage = () => {
     }
     if (filters.minPrice !== undefined) queryParams.append("minPrice", filters.minPrice);
     if (filters.maxPrice !== undefined) queryParams.append("maxPrice", filters.maxPrice);
+    if (filters.minRating !== undefined) queryParams.append("minRating", filters.minRating);
   
     // Sort
     if (sortOption === 'price_asc') {

@@ -24,8 +24,8 @@ import ImageGallery from "../../../components/ImageGallery";
 import VariantSelector from "../../../components/products/VariantSelector";
 import ReviewsSection from "../../../components/products/ReviewSections";
 import StarRatingDisplay from "../../../components/StartRatingDisplay";
-import { fetchProductById } from "../../../services/productService"; // ✅ Gọi API thật
-import { useCart } from "../../../context/CartContext"; // ✅ Hook cho giỏ hàng
+import { fetchProductById } from "../../../services/productService"; 
+import { useCart } from "../../../context/CartContext"; 
 
 const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
@@ -38,7 +38,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const { addItemToCart } = useCart(); // ✅ hook từ context
+  const { addItemToCart } = useCart(); 
 
   useEffect(() => {
     setLoading(true);
@@ -139,8 +139,8 @@ const ProductDetailPage = () => {
 
               <div className="mb-3">
                 <StarRatingDisplay
-                  rating={product.averageRating}
-                  count={product.totalReviews}
+                  rating={product.ratingAverage}
+                  count={product.ratingCount}
                   size="medium"
                 />
               </div>

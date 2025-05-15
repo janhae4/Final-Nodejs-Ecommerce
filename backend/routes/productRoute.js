@@ -11,7 +11,6 @@ router.get('/searchByBrand', ProductController.searchProductByBrand);
 router.get('/searchByCategory', ProductController.searchByCategory);
 router.get('/searchByPrice', ProductController.searchByPrice);
 //Get product by rating
-router.get('/search/by-rating', ProductController.getProductsByRating);
 router.get("/categories", ProductController.getCategories);
 router.get("/brands", ProductController.getBrands);
 router.get('/slug/:slug', ProductController.getProductBySlug);
@@ -30,6 +29,7 @@ router.delete('/:id', ProductController.deleteProduct);
 
 //Add comment
 router.post('/:productId/comments', authMiddleware, ProductController.addProductComment);
+router.post('/:productId/comments_anonymous', ProductController.addProductComment);
 //Get comments
 router.get('/:productId/comments', ProductController.getProductComments);
 

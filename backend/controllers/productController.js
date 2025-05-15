@@ -165,7 +165,7 @@ exports.searchByCategory = async (req, res, next) => {
 // GET/products/search?nameProduct=abc&minPrice=100&maxPrice=1000&category=xyz&brand=abcBrand&page=1&sortBy=price&sortOrder=asc
 exports.searchProducts = async (req, res) => {
   try {
-    const { nameProduct, category, brand, minPrice, maxPrice, page, sortBy, sortOrder } = req.query;
+    const { nameProduct, category, brand, minPrice, maxPrice, minRating, page, sortBy, sortOrder } = req.query;
 
     const result = await ProductService.searchProducts({
       nameProduct,
@@ -173,6 +173,7 @@ exports.searchProducts = async (req, res) => {
       brand,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      minRating: minRating ? parseFloat(minRating) : undefined,
       page: page ? parseInt(page) : 1,
       sortBy,
       sortOrder,
@@ -285,10 +286,18 @@ exports.deleteProduct = async (req, res) => {
 exports.addProductComment = async (req, res) => {
   const { productId } = req.params;
   const { content, rating } = req.body;
-  const userId = req.user._id;
+  const io = req.app.get('io');
+  // Kiểm tra nếu chưa đăng nhập (không có req.user)
+  const isGuest = !req.user;
 
   try {
-    const io = req.app.get('io');
+    // Nếu là guest mà lại gửi kèm rating => từ chối
+    if (isGuest && rating) {
+      return res.status(401).json({ message: 'Guests are not allowed to rate. Please log in to rate a product.' });
+    }
+
+    const userId = isGuest ? null : req.user._id;
+
     const product = await ProductService.addCommentToProduct(
       productId,
       userId,
@@ -298,8 +307,9 @@ exports.addProductComment = async (req, res) => {
     );
 
     res.status(200).json({ message: "Comment added", product });
+    console.log("Comment added successfully");
   } catch (err) {
-    console.error(err);
+    console.error('Error add comment:' + err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -316,42 +326,6 @@ exports.getProductComments = async (req, res) => {
   }
 };
 
-//GET /api/products/search/by-rating?minRating=4
-exports.getProductsByRating = async (req, res) => {
-  const { minRating } = req.query;
-
-  try {
-    const products = await ProductService.getProductsByRating(minRating);
-    res.status(200).json({ products });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-// Update a comment
-// PATCH/products/:id/comments/:commentId
-exports.updateComment = async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const commentId = req.params.commentId;
-    const { newContent } = req.body;
-
-    if (!newContent) {
-      return res.status(400).json({ status: false, message: 'New content is required' });
-    }
-
-    const updatedProduct = await ProductService.updateComment(productId, commentId, newContent);
-
-    res.status(200).json({
-      status: true,
-      message: 'Comment updated successfully',
-      product: updatedProduct
-    });
-  } catch (err) {
-    res.status(500).json({ status: false, message: 'Error updating comment', error: err.message });
-  }
-}
 
 exports.deleteComment = async (req, res) => {
   try {
