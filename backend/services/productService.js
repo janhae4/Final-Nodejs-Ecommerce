@@ -349,8 +349,9 @@ exports.increaseUsed = async (productId, variantId, quantity) => {
 
     const variant = product.variants.id(variantId);
     if (!variant) throw new Error("Variant not found");
-
+    
     variant.used += quantity;
+    product.soldQuantity += quantity;
     await product.save();
     return product;
   } catch (err) {

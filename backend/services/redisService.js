@@ -66,12 +66,12 @@ exports.addGuestAddress = async (guestId, data) => {
 
 exports.createOrder = async (data) => {
   const orderId = uuidv4();
-  const key = `guest_info:${data.userInfo.userId}`;
+  const key = `guest_info:${data.userId}`;
 
   const info = await client.get(key);
   const parsedInfo = JSON.parse(info);
 
-  const currentPoints = parsedInfo.loyaltyPoints || 0;
+  const currentPoints = parsedInfo?.loyaltyPoints || 0;
   const newPoints = currentPoints + (data.loyaltyPoints || 0);
 
   await client.set(
@@ -82,7 +82,7 @@ exports.createOrder = async (data) => {
     })
   );
 
-  await this.deleteCart(data.userInfo.userId);
+  await this.deleteCart(data.userId);
 
   return orderId;
 };

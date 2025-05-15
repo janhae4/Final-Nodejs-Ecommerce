@@ -80,31 +80,6 @@ export const CartProvider = ({ children }) => {
         const normalizedData = cartData.data ? cartData.data : cartData;
         setCartItems(normalizedData || []);
       }
-
-      if (isLoggedIn && userInfo?._id) {
-        try {
-          const pointsResponse = await axios.get(`${API_URL}/users/profile`, {
-            withCredentials: true,
-          });
-          setLoyaltyPoints(pointsResponse.data.loyaltyPoints || 0);
-        } catch (error) {
-          console.error("Failed to fetch loyalty points:", error);
-        }
-      } else {
-        console.log(userInfo);
-        const guestId = userInfo.id;
-        try {
-          const guestInfoResponse = await axios.get(
-            `${API_URL}/guests/info/${guestId}`
-          );
-          setAddresses(guestInfoResponse.data.addresses);
-          if (guestInfoResponse.data && guestInfoResponse.data.loyaltyPoints) {
-            setLoyaltyPoints(guestInfoResponse.data.loyaltyPoints);
-          }
-        } catch (error) {
-          console.error("Failed to fetch guest loyalty points:", error);
-        }
-      }
     } catch (error) {
       console.error("Failed to fetch cart:", error);
       setCartItems([]);

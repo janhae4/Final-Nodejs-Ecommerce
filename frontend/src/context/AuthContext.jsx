@@ -33,11 +33,10 @@ export const AuthProvider = ({ children }) => {
       const user = await getUserInfo();
       console.log(12321, user);
       setUserInfo(user);
-      const fetched = await getAddresses();
-      setAddresses(fetched || []);
+      setAddresses(user.addresses || []);
     };
     init();
-  }, [isLoggedIn]);
+  }, [userInfo.id]);
 
   useEffect(() => {
     console.log("Addresses changed:", addresses);

@@ -8,8 +8,8 @@ const NOTIFICATION_RECOVERY_QUEUE = "notification_recovery_queue";
 
 const handleOrderCreated = async (eventData) => {
   console.log(
-    "[NotificationConsumer] Processing order.created event:",
-    eventData
+    "[NotificationConsumer] Processing order.created event: ",
+    eventData.orderCode
   );
 
   await emailService.sendOrderConfirmation(eventData);

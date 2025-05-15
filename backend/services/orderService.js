@@ -1,8 +1,5 @@
-const DiscountCode = require("../models/DiscountCode");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const User = require("../models/User");
-const emailService = require("./emailService");
 const redisService = require("./redisService");
 const { publishToExchange } = require("../database/rabbitmqConnection");
 
@@ -15,12 +12,11 @@ const generateOrderCode = () => {
 };
 
 exports.createOrder = async (isGuest = null, orderData) => {
-  const orderSession = await Order.startSession();
   const productSession = await Product.startSession();
-
-  orderSession.startTransaction();
-  productSession.startTransaction();
+  const orderSession = await Order.startSession();
   try {
+    orderSession.startTransaction();
+    productSession.startTransaction();
     // Order
     const order = new Order({
       ...orderData,
@@ -73,6 +69,8 @@ exports.createOrder = async (isGuest = null, orderData) => {
       email: saved_order.userInfo.email,
       fullName: saved_order.userInfo.fullName,
       products: saved_order.products.map((p) => ({
+        productName: p.productName,
+        variantName: p.variantName,
         productId: p.productId.toString(),
         variantId: p.variantId.toString(),
         quantity: p.quantity,
@@ -83,6 +81,7 @@ exports.createOrder = async (isGuest = null, orderData) => {
       loyaltyPointsUsed: saved_order.loyaltyPointsUsed,
       discountInfo: saved_order.discountInfo,
       purchaseDate: saved_order.purchaseDate,
+      status: saved_order.status,
     };
 
     await publishToExchange(
@@ -90,13 +89,14 @@ exports.createOrder = async (isGuest = null, orderData) => {
       "order.created",
       orderCreatedEvent
     );
+
     console.log(
       `Order ${saved_order.orderCode} created successfully and event published.`
     );
     return saved_order;
   } catch (error) {
-    if (orderSession.inTransaction()) await orderSession.abortTransaction();
-    if (productSession.inTransaction()) await productSession.abortTransaction();
+    await orderSession.abortTransaction();
+    await productSession.abortTransaction();
     throw error;
   } finally {
     orderSession.endSession();

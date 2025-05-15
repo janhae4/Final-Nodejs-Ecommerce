@@ -8,33 +8,20 @@ const handleOrderCreated = async (eventData) => {
     "[InventoryConsumer] Processing order.created for inventory update:",
     eventData.orderCode
   );
-  try {
-    for (const item of eventData.products) {
-      await productService.increaseUsed(
-        item.productId,
-        item.variantId,
-        item.quantity
-      );
-      console.log(
-        `[InventoryConsumer] Updated inventory for product ${item.productId}, variant ${item.variantId}.`
-      );
-    }
-    await productSession.commitTransaction();
+
+  for (const item of eventData.products) {
+    await productService.increaseUsed(
+      item.productId,
+      item.variantId,
+      item.quantity
+    );
     console.log(
-      `[InventoryConsumer] Inventory updated successfully for order ${eventData.orderCode}`
+      `[InventoryConsumer] Updated inventory for product ${item.productId}, variant ${item.variantId}.`
     );
-  } catch (error) {
-    console.error(
-      `[InventoryConsumer] Error updating inventory for order ${eventData.orderCode}:`,
-      error
-    );
-    if (productSession.inTransaction()) {
-      await productSession.abortTransaction();
-    }
-    throw error;
-  } finally {
-    productSession.endSession();
   }
+  console.log(
+    `[InventoryConsumer] Inventory updated successfully for order ${eventData.orderCode}`
+  );
 };
 
 const start = async () => {

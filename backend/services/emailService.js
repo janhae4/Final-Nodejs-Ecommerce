@@ -8,28 +8,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-exports.toEmailDTO = (order) => {
-  return {
-    email: order.userInfo.email,
-    orderCode: order.orderCode,
-    purchaseDate: order.purchaseDate,
-    status: order.status,
-    totalAmount: order.totalAmount,
-    loyaltyPointsEarned: order.loyaltyPointsEarned,
-    products: order.products.map((p) => ({
-      productName: p.productName,
-      productImage: p.productImage,
-      variantName: p.variantName,
-      quantity: p.quantity,
-      price: p.price,
-    })),
-  };
-};
-
 exports.sendOrderConfirmation = async (order) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: order.userInfo.email,
+    to: order.email,
     subject: `Order Confirmation - ${order.orderCode}`,
     html: `
       <!DOCTYPE html>
@@ -182,7 +164,7 @@ exports.sendOrderConfirmation = async (order) => {
         <div class="content">
           <div class="order-details">
             <p class="order-number">Order Code: ${order.orderCode}</p>
-            <p><strong>Purchase Date:</strong> ${order.date}</p>
+            <p><strong>Purchase Date:</strong> ${order.purchaseDate}</p>
             <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status?.toUpperCase()}</span></p>
           </div>
           
@@ -192,12 +174,6 @@ exports.sendOrderConfirmation = async (order) => {
                 .map(
                   (p) => `
                 <div class="product-item">
-                  <img src="${
-                    p.productImage ||
-                    "https://via.placeholder.com/60?text=Product"
-                  }" 
-                      alt="${p.productName}" 
-                      class="product-image">
                   <div class="product-info">
                     <div class="product-name">${p.productName}</div>
                     ${

@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const {productConnection} = require("../database/dbConnection");
-const { use } = require("../routes/orderRoute");
-
 const variantSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
