@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const authController = require("../controllers/authController");
-const jwt = require('jsonwebtoken'); // Bạn cần import jwt nếu dùng
+const jwt = require('jsonwebtoken');
 
 const { register, login, changePassword,logout } = require('../controllers/authController');
 const { authMiddleware } = require('../middlewares/authMiddleware');

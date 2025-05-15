@@ -58,9 +58,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, data, {
-        withCredentials: true,
-      });
+      const response = await axios.post(`${API_URL}/auth/login`, data, {withCredentials: true});
       const user = response.data.user;
       if (user.isBanned) {
         console.log("User is banned:", user.isBanned);
@@ -78,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      messageApi.error("Login failed, please try again!");
+      messageApi.error(error.response.data.message ||"Login failed, please try again!");
     }
   };
 

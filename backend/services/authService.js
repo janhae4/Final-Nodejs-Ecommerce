@@ -61,7 +61,7 @@ exports.registerUser = async (data) => {
   return savedUser.toObject();
 };
 
-exports.loginUser = async ({ email, password }, res) => {
+exports.loginUser = async ({ email, password }) => {
   try {
     const user = await User.findOne({ email });
     if (!user) throw new Error("User not found");
@@ -69,20 +69,7 @@ exports.loginUser = async ({ email, password }, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid credentials");
 
-    // Tạo JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    // Gửi token qua HttpOnly cookie
-    res.cookie("token", token, {
-      httpOnly: true, // Giới hạn truy cập từ JavaScript
-      secure: process.env.NODE_ENV === "production", // Chỉ sử dụng trên HTTPS khi production
-      sameSite: "strict", // Cookie chỉ gửi theo cùng domain
-      maxAge: 24 * 60 * 60 * 1000, // Thời gian sống cookie (24 giờ)
-    });
-
-    return user; // Trả về thông tin user nếu cần
+    return user;
   } catch (error) {
     console.error("Login error:", error);
     throw error; // Ném lỗi cho phía gọi API xử lý
