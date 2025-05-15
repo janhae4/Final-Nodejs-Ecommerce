@@ -180,20 +180,6 @@ const AdminLayout = () => {
       icon: <ShopOutlined />,
       label: "Products",
       path: "/admin/products",
-      children: [
-        {
-          key: "products",
-          icon: <AppstoreOutlined />,
-          label: "Product Catalog",
-          path: "/admin/products",
-        },
-        {
-          key: "products/create",
-          icon: <PlusOutlined />,
-          label: "Create Product",
-          path: "/admin/products/create",
-        },
-      ],
     },
     {
       key: "orders",

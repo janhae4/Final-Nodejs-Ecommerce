@@ -6,33 +6,9 @@ import ProductList from '../../../components/products/ProductList';
 import ProductFilter from '../../../components/products/ProductFilter';
 import ProductSort from '../../../components/products/ProductSort';
 import AppPagination from '../../../components/AppPagination';
-// import { fetchProducts } from '../../../services/productService'; // API call
 
 const { Search } = Input;
 const { Title } = Typography;
-
-// Mock Data (IMPORTANT: Replace with actual API calls and data)
-const allMockProducts = Array.from({ length: 50 }, (_, i) => ({
-  id: `prod${i + 1}`,
-  name: `Awesome Product ${i + 1} - Model X${i%5 + 1} Series ${String.fromCharCode(65 + i%3)}`,
-  price: parseFloat((Math.random() * 200 + 20).toFixed(2)),
-  images: [
-    { url: `https://picsum.photos/seed/${i+1}/400/300` }, // Placeholder image
-    { url: `https://picsum.photos/seed/a${i+1}/400/300` },
-    { url: `https://picsum.photos/seed/b${i+1}/400/300` },
-  ],
-  shortDescription: 'This is a great product that you will absolutely love. It has many features and comes in various colors. High quality materials ensure durability. Perfect for everyday use or as a gift.',
-  brand: { id: `brand${(i % 3) + 1}`, name: ['Sony', 'Apple', 'Generic Brand'][(i % 3)] },
-  category: { id: `cat${(i % 4) + 1}`, name: ['Electronics', 'Books', 'Home Goods', 'Apparel'][(i % 4)] },
-  tags: [['New', 'Sale', 'Featured'][i % 3]],
-  rating: Math.floor(Math.random() * 5) + 1,
-  variants: [ // Every product must have at least two variants
-    { id: `var${i+1}a`, name: 'Red, Small', stock: Math.floor(Math.random() * 10) },
-    { id: `var${i+1}b`, name: 'Blue, Medium', stock: Math.floor(Math.random() * 15) },
-    { id: `var${i+1}c`, name: 'Green, Large', stock: Math.floor(Math.random() * 5) },
-  ]
-}));
-
 
 const ProductCatalogPage = () => {
   const [products, setProducts] = useState([]);
@@ -49,79 +25,55 @@ const ProductCatalogPage = () => {
 
   const fetchAndFilterProducts = useCallback(() => {
     setLoading(true);
-    console.log("Fetching with:", { currentPage, pageSize, searchTerm, sortOption, filters });
-
-    // --- SIMULATE API CALL ---
-    let filteredProducts = [...allMockProducts];
-
-    // Search
-    if (searchTerm) {
-      filteredProducts = filteredProducts.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.shortDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filters
-    if (filters.category) {
-      filteredProducts = filteredProducts.filter(p => p.category.id === filters.category);
-    }
+    
+    // Xây dựng query params
+    const queryParams = new URLSearchParams();
+  
+    if (searchTerm) queryParams.append("nameProduct", searchTerm);
+    if (filters.category) queryParams.append("category", filters.category);
     if (filters.brand && filters.brand.length > 0) {
-      filteredProducts = filteredProducts.filter(p => filters.brand.includes(p.brand.id));
+      // Nếu brand là mảng, có thể gửi lặp lại hoặc join
+      filters.brand.forEach(b => queryParams.append("brand", b)); // hoặc join bằng dấu phẩy
     }
-    if (filters.minPrice !== undefined) {
-      filteredProducts = filteredProducts.filter(p => p.price >= filters.minPrice);
+    if (filters.minPrice !== undefined) queryParams.append("minPrice", filters.minPrice);
+    if (filters.maxPrice !== undefined) queryParams.append("maxPrice", filters.maxPrice);
+  
+    // Sort
+    if (sortOption === 'price_asc') {
+      queryParams.append("sortBy", "price");
+      queryParams.append("sortOrder", "asc");
+    } else if (sortOption === 'price_desc') {
+      queryParams.append("sortBy", "price");
+      queryParams.append("sortOrder", "desc");
+    } else if (sortOption === 'name_asc') {
+      queryParams.append("sortBy", "nameProduct");
+      queryParams.append("sortOrder", "asc");
+    } else if (sortOption === 'name_desc') {
+      queryParams.append("sortBy", "nameProduct");
+      queryParams.append("sortOrder", "desc");
     }
-    if (filters.maxPrice !== undefined) {
-      filteredProducts = filteredProducts.filter(p => p.price <= filters.maxPrice);
-    }
-    if (filters.rating) {
-      filteredProducts = filteredProducts.filter(p => p.rating >= filters.rating);
-    }
-
-    // Sorting
-    switch (sortOption) {
-      case 'name_asc':
-        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'name_desc':
-        filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'price_asc':
-        filteredProducts.sort((a, b) => a.price - b.price);
-        break;
-      case 'price_desc':
-        filteredProducts.sort((a, b) => b.price - a.price);
-        break;
-      case 'relevance': // No specific relevance logic in mock
-      default:
-        break;
-    }
-    
-    const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    
-    setTimeout(() => { // Simulate network delay
-      setProducts(paginatedProducts);
-      setTotalProducts(filteredProducts.length);
-      setLoading(false);
-    }, 500);
-    // --- END SIMULATION ---
-
-    /* // Real API Call Example:
-    fetchProducts({ page: currentPage, limit: pageSize, search: searchTerm, sort: sortOption, ...filters })
+  
+    queryParams.append("page", currentPage);
+    queryParams.append("pageSize", pageSize);
+  
+    fetch(`http://localhost:3000/api/products/search?${queryParams.toString()}`)
+      .then(res => res.json())
       .then(data => {
-        setProducts(data.products);
-        setTotalProducts(data.totalCount);
+        if (data.status) {
+          setProducts(data.products);
+          setTotalProducts(data.totalProducts);
+        } else {
+          message.error(data.message || "Lỗi khi tải sản phẩm");
+        }
         setLoading(false);
       })
       .catch(error => {
         console.error("Failed to fetch products:", error);
-        message.error("Could not load products.");
+        message.error("Không thể tải sản phẩm");
         setLoading(false);
       });
-    */
   }, [currentPage, pageSize, searchTerm, sortOption, filters]);
+  
 
   useEffect(() => {
     fetchAndFilterProducts();
@@ -180,10 +132,10 @@ const ProductCatalogPage = () => {
         </Row>
 
         <Row gutter={[24, 24]}>
-          <Col xs={24} md={6} lg={5}> {/* Sidebar for filters */}
+          <Col xs={24} md={7} lg={6}> {/* Sidebar for filters */}
             <ProductFilter onFilterChange={handleFilterChange} initialFilters={filters} />
           </Col>
-          <Col xs={24} md={18} lg={19}> {/* Main content area for products */}
+          <Col xs={24} md={17} lg={18}> {/* Main content area for products */}
             {loading ? (
                 <div className="flex justify-center items-center h-64"><Spin size="large" /></div>
             ) : (

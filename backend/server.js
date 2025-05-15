@@ -20,10 +20,36 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+const http = require('http');
+const server = http.createServer(app);
+
+// Tạo socket server
+const { Server } = require('socket.io');
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // frontend
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  },
+});
+
+// Gắn io vào app để dùng trong controller
+app.set("io", io);
+
+// Lắng nghe kết nối từ client
+io.on("connection", (socket) => {
+  console.log("Client connected via socket.io");
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
+
 // Cấu hình CORS cho phép gửi cookie
 const corsOptions = {
   origin: "http://localhost:5173", // Địa chỉ frontend của bạn
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true, // Quan trọng để gửi cookie
 };
 
@@ -47,11 +73,13 @@ app.use("/api/guests", guestRoutes)
 
 app.use("/api/chatbot", chatbotRoutes);
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+else {
+  server.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 }

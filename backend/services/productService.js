@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const User = require('../models/User');
 
 exports.getAllProducts = async () => {
     try {
@@ -46,6 +47,16 @@ exports.createProduct = async ({
     }
 };
 
+exports.getProductBySlug = async (slug) => {
+    try {
+        const product = await Product.findOne({ slug: slug });
+        if (!product) throw new Error('Product not found');
+        return product;
+    } catch (err) {
+        throw new Error('Error fetching product with slug: ' + err.message);
+    }
+};
+
 exports.getProductByIdWithVariants = async (productId) => {
     try {
         const product = await Product.findById(productId).populate('variants');
@@ -82,20 +93,21 @@ exports.findProductsByPrice = async (min, max) => {
     }
 };
 
-exports.findProductsByCategory = async (category, limit = null) => {
+exports.findProductsByCategory = async (category) => {
     try {
-        return await Product.find({ category: { $regex: category, $options: 'i' } }).limit(limit);
+        return await Product.find({ category: { $regex: category, $options: 'i' } });
     } catch (err) {
         throw new Error('Error finding products by category: ' + err.message);
     }
 };
 
-exports.searchProducts = async ({ nameProduct, category, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
+exports.searchProducts = async ({ nameProduct, category, brand, minPrice, maxPrice, page = 1, sortBy = 'createdAt', sortOrder = 'desc' }) => {
     try {
         const query = {};
 
         if (nameProduct) query.nameProduct = { $regex: nameProduct, $options: 'i' };
         if (category) query.category = category;
+        if (brand) query.brand = { $regex: brand, $options: 'i' };
         if (minPrice !== undefined || maxPrice !== undefined) {
             query.price = {};
             if (minPrice !== undefined) query.price.$gte = minPrice;
@@ -103,7 +115,7 @@ exports.searchProducts = async ({ nameProduct, category, minPrice, maxPrice, pag
         }
 
         const totalProducts = await Product.countDocuments(query);
-        const limit = 10;
+        const limit = 12;
         const totalPages = Math.ceil(totalProducts / limit);
         const skip = (page - 1) * limit;
 
@@ -116,6 +128,17 @@ exports.searchProducts = async ({ nameProduct, category, minPrice, maxPrice, pag
     } catch (err) {
         throw new Error('Error searching products: ' + err.message);
     }
+};
+
+
+exports.getAllCategories = async () => {
+    const categories = await Product.distinct('category');
+    return categories;
+};
+
+exports.getAllBrands = async () => {
+    const brands = await Product.distinct('brand');
+    return brands;
 };
 
 exports.updateProduct = async (productId, updateData) => {
@@ -153,16 +176,65 @@ exports.deleteProduct = async (productId) => {
     }
 };
 
-exports.addComment = async (productId, commentData) => {
-    try {
-        const product = await Product.findById(productId);
-        if (!product) throw new Error('Product not found');
+exports.addCommentToProduct = async (productId, userId, content, rating, io) => {
+    const product = await Product.findById(productId);
+    if (!product) throw new Error("Product not found");
 
-        product.comments.push(commentData);
-        return await product.save();
-    } catch (err) {
-        throw new Error('Error adding comment: ' + err.message);
+    const alreadyCommented = product.comments.some(
+        (c) => c.user && c.user._id.toString() === userId.toString()
+    );
+    if (alreadyCommented) {
+        throw new Error("You have already rated this product");
     }
+
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+    const newComment = {
+        user: userId,
+        userFullName: user.fullName,
+        content,
+        rating,
+        createdAt: new Date()
+    };
+
+    product.comments.push(newComment);
+
+    // Update rating
+    const totalRating = product.ratingAverage * product.ratingCount + rating;
+    product.ratingCount += 1;
+    product.ratingAverage = totalRating / product.ratingCount;
+
+    await product.save();
+
+    // Emit socket if nessesary
+    if (io) {
+        io.emit("newComment", {
+            productId,
+            comment: newComment
+        });
+    }
+
+    return product;
+};
+
+exports.getCommentsByProductId = async (productId) => {
+    const product = await Product.findById(productId);
+    if (!product) {
+        throw new Error('Product not found');
+    }
+    return product.comments;
+};
+
+
+exports.getProductsByRating = async (minRating) => {
+    const query = {};
+
+    if (minRating) {
+        query.ratingAverage = { $gte: parseFloat(minRating) };
+    }
+
+    const products = await Product.find(query);
+    return products;
 };
 
 exports.updateComment = async (productId, commentId, newContent) => {
@@ -225,21 +297,3 @@ exports.getProductVariants = async (productId) => {
         throw new Error('Error fetching product variants: ' + err.message);
     }
 };
-
-exports.getBestSellers = async () => {
-    try {
-        const bestSellers = await Product.find().sort({ soldQuantity: -1 }).limit(4);
-        return bestSellers;
-    } catch (err) {
-        throw new Error('Error fetching best sellers: ' + err.message);
-    }
-}
-
-exports.getNewArrivals = async () => {
-    try {
-        const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(4);
-        return newArrivals;
-    } catch (err) {
-        throw new Error('Error fetching new arrivals: ' + err.message);
-    }
-}

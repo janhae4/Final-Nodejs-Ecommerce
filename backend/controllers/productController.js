@@ -1,5 +1,6 @@
-const ProductService = require("../services/productService");
-const cloudinary = require("../database/cloudinary");
+const ProductService = require('../services/productService');
+const cloudinary = require('../database/cloudinary');
+const slugify = require('slugify');
 
 // Create a new product
 // POST/products/create
@@ -22,7 +23,7 @@ exports.createProduct = async (req, res) => {
       for (const file of req.files) {
         const uploaded = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: "products" },
+            { folder: 'products' },
             (error, result) => {
               if (error) reject(error);
               else resolve(result);
@@ -37,14 +38,14 @@ exports.createProduct = async (req, res) => {
 
     const tagsArray = Array.isArray(tags)
       ? tags
-      : typeof tags === "string"
-      ? tags.split(",").map((t) => t.trim())
-      : [];
+      : typeof tags === 'string'
+        ? tags.split(',').map((t) => t.trim())
+        : [];
 
     let variantsArray = [];
     if (Array.isArray(variants)) {
       variantsArray = variants;
-    } else if (typeof variants === "string") {
+    } else if (typeof variants === 'string') {
       try {
         variantsArray = JSON.parse(variants);
       } catch {
@@ -64,15 +65,22 @@ exports.createProduct = async (req, res) => {
       comments,
     });
 
-    res
-      .status(201)
-      .json({ status: true, message: "Product created successfully", product });
+    res.status(201).json({ status: true, message: 'Product created successfully', product });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error creating product", error: err.message });
+    res.status(500).json({ message: 'Error creating product', error: err.message });
   }
 };
+
+exports.getProductBySlug = async (req, res) => {
+  try {
+    const product = await ProductService.getProductBySlug(req.params.slug);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ status: true, product });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 // Get product by ID
 // GET/products/:id
@@ -83,11 +91,9 @@ exports.getProductByIdWithVariants = async (req, res) => {
 
     res.status(200).json({ status: true, product });
   } catch (err) {
-    res
-      .status(404)
-      .json({ message: "Error fetching product", error: err.message });
+    res.status(404).json({ message: 'Error fetching product', error: err.message });
   }
-};
+}
 
 // Search products by name
 // GET/products/searchByName?keyword=yourKeyword
@@ -96,17 +102,15 @@ exports.searchProductByName = async (req, res) => {
     const { keyword } = req.query;
 
     if (!keyword) {
-      return res.status(400).json({ message: "Keyword is required" });
+      return res.status(400).json({ message: 'Keyword is required' });
     }
 
     const products = await ProductService.searchProductsByName(keyword);
     res.status(200).json({ status: true, products });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error searching products", error: err.message });
+    res.status(500).json({ message: 'Error searching products', error: err.message });
   }
-};
+}
 
 // Search products by brand
 // GET/products/searchByBrand?keyword=yourKeyword
@@ -115,17 +119,15 @@ exports.searchProductByBrand = async (req, res) => {
     const { keyword } = req.query;
 
     if (!keyword) {
-      return res.status(400).json({ message: "Keyword is required" });
+      return res.status(400).json({ message: 'Keyword is required' });
     }
 
     const products = await ProductService.searchProductsByBrand(keyword);
     res.status(200).json({ status: true, products });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error searching products", error: err.message });
+    res.status(500).json({ message: 'Error searching products', error: err.message });
   }
-};
+}
 
 // Search products by price
 // GET/products/searchByPrice?minPrice=yourMinPrice&maxPrice=yourMaxPrice
@@ -140,12 +142,7 @@ exports.searchByPrice = async (req, res, next) => {
 
     res.status(200).json({ status: true, products });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        message: "Error searching products by price",
-        error: err.message,
-      });
+    res.status(500).json({ message: 'Error searching products by price', error: err.message });
   }
 };
 
@@ -153,41 +150,27 @@ exports.searchByPrice = async (req, res, next) => {
 // GET/products/searchByCategory?category=yourCategory
 exports.searchByCategory = async (req, res, next) => {
   try {
-    const { category, limit } = req.query;
+    const { category } = req.query;
     if (!category) {
-      return res
-        .status(400)
-        .json({ message: "Category is required for search" });
+      return res.status(400).json({ message: 'Category is required for search' });
     }
-    const products = await ProductService.findProductsByCategory(category, limit);
+    const products = await ProductService.findProductsByCategory(category);
     res.status(200).json({ status: true, products });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        message: "Error searching products by category",
-        error: err.message,
-      });
+    res.status(500).json({ message: 'Error searching products by category', error: err.message });
   }
 };
 
 // Search products with multiple criteria
-// GET/products/search?keyword=yourKeyword&minPrice=yourMinPrice&maxPrice=yourMaxPrice&category=yourCategory
+// GET/products/search?nameProduct=abc&minPrice=100&maxPrice=1000&category=xyz&brand=abcBrand&page=1&sortBy=price&sortOrder=asc
 exports.searchProducts = async (req, res) => {
   try {
-    const {
-      nameProduct,
-      category,
-      minPrice,
-      maxPrice,
-      page,
-      sortBy,
-      sortOrder,
-    } = req.query;
+    const { nameProduct, category, brand, minPrice, maxPrice, page, sortBy, sortOrder } = req.query;
 
     const result = await ProductService.searchProducts({
       nameProduct,
       category,
+      brand,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       page: page ? parseInt(page) : 1,
@@ -197,20 +180,34 @@ exports.searchProducts = async (req, res) => {
 
     res.status(200).json({
       status: true,
-      message: "Products fetched successfully",
+      message: 'Products fetched successfully',
       products: result.products,
       totalProducts: result.totalProducts,
       totalPages: result.totalPages,
-      currentPage: result.currentPage,
+      currentPage: result.currentPage
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error searching products",
-        error: err.message,
-      });
+    res.status(500).json({ status: false, message: 'Error searching products', error: err.message });
+  }
+};
+
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = await ProductService.getAllCategories();
+    const data = categories.map((cat) => ({ _id: cat, name: cat }));
+    res.status(200).json({ status: true, categories: data },);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch categories' });
+  }
+};
+
+exports.getBrands = async (req, res) => {
+  try {
+    const brands = await ProductService.getAllBrands();
+    const data = brands.map((brand) => ({ _id: brand, name: brand }));
+    res.status(200).json({ status: true, brands: data },);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch brands' });
   }
 };
 
@@ -222,9 +219,7 @@ exports.updateProduct = async (req, res) => {
 
     const oldImages = Array.isArray(req.body.oldImages)
       ? req.body.oldImages
-      : req.body.oldImages
-      ? [req.body.oldImages]
-      : [];
+      : req.body.oldImages ? [req.body.oldImages] : [];
 
     let uploadedImages = [];
 
@@ -232,7 +227,7 @@ exports.updateProduct = async (req, res) => {
       for (const file of req.files) {
         const uploaded = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: "products" },
+            { folder: 'products' },
             (error, result) => {
               if (error) reject(error);
               else resolve(result);
@@ -247,30 +242,24 @@ exports.updateProduct = async (req, res) => {
 
     updateData.images = [...oldImages, ...uploadedImages];
 
-    const updatedProduct = await ProductService.updateProduct(
-      productId,
-      updateData
-    );
+    if (updateData.nameProduct) {
+      updateData.slug = slugify(updateData.nameProduct, { lower: true });
+    }
+
+    const updatedProduct = await ProductService.updateProduct(productId, updateData);
 
     if (!updatedProduct) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Product not found" });
+      return res.status(404).json({ status: false, message: 'Product not found' });
     }
 
     res.status(200).json({
       status: true,
-      message: "Product updated successfully",
-      product: updatedProduct,
+      message: 'Product updated successfully',
+      product: updatedProduct
     });
+
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error updating product",
-        error: err.message,
-      });
+    res.status(500).json({ status: false, message: 'Error updating product', error: err.message });
   }
 };
 
@@ -282,58 +271,63 @@ exports.deleteProduct = async (req, res) => {
     const deletedProduct = await ProductService.deleteProduct(productId);
 
     if (!deletedProduct) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Product not found" });
+      return res.status(404).json({ status: false, message: 'Product not found' });
     }
 
-    res
-      .status(200)
-      .json({ status: true, message: "Product deleted successfully" });
+    res.status(200).json({ status: true, message: 'Product deleted successfully' });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error deleting product",
-        error: err.message,
-      });
+    res.status(500).json({ status: false, message: 'Error deleting product', error: err.message });
   }
 };
 
 // Add a comment to a product
-// POST/products/:id/comments
-exports.addComment = async (req, res) => {
+// POST/products/:id/comment
+exports.addProductComment = async (req, res) => {
+  const { productId } = req.params;
+  const { content, rating } = req.body;
+  const userId = req.user._id;
+
   try {
-    const productId = req.params.id;
-    const { user, content } = req.body;
-
-    if (!user || !content) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User and content are required" });
-    }
-
-    const updatedProduct = await ProductService.addComment(productId, {
-      user,
+    const io = req.app.get('io');
+    const product = await ProductService.addCommentToProduct(
+      productId,
+      userId,
       content,
-    });
+      rating,
+      io
+    );
 
-    res.status(200).json({
-      status: true,
-      message: "Comment added successfully",
-      product: updatedProduct,
-    });
+    res.status(200).json({ message: "Comment added", product });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error adding comment",
-        error: err.message,
-      });
+    console.error(err);
+    res.status(400).json({ message: err.message });
   }
 };
+
+
+exports.getProductComments = async (req, res) => {
+  const { productId } = req.params;
+
+  try {
+    const comments = await ProductService.getCommentsByProductId(productId);
+    res.status(200).json({ comments });
+  } catch (error) {
+    res.status(404).json({ message: "Can't get comment:" + error.message });
+  }
+};
+
+//GET /api/products/search/by-rating?minRating=4
+exports.getProductsByRating = async (req, res) => {
+  const { minRating } = req.query;
+
+  try {
+    const products = await ProductService.getProductsByRating(minRating);
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // Update a comment
 // PATCH/products/:id/comments/:commentId
@@ -344,56 +338,35 @@ exports.updateComment = async (req, res) => {
     const { newContent } = req.body;
 
     if (!newContent) {
-      return res
-        .status(400)
-        .json({ status: false, message: "New content is required" });
+      return res.status(400).json({ status: false, message: 'New content is required' });
     }
 
-    const updatedProduct = await ProductService.updateComment(
-      productId,
-      commentId,
-      newContent
-    );
+    const updatedProduct = await ProductService.updateComment(productId, commentId, newContent);
 
     res.status(200).json({
       status: true,
-      message: "Comment updated successfully",
-      product: updatedProduct,
+      message: 'Comment updated successfully',
+      product: updatedProduct
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error updating comment",
-        error: err.message,
-      });
+    res.status(500).json({ status: false, message: 'Error updating comment', error: err.message });
   }
-};
+}
 
 exports.deleteComment = async (req, res) => {
   try {
     const productId = req.params.id;
     const commentId = req.params.commentId;
 
-    const updatedProduct = await ProductService.deleteComment(
-      productId,
-      commentId
-    );
+    const updatedProduct = await ProductService.deleteComment(productId, commentId);
 
     res.status(200).json({
       status: true,
-      message: "Comment deleted successfully",
-      product: updatedProduct,
+      message: 'Comment deleted successfully',
+      product: updatedProduct
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Error deleting comment",
-        error: err.message,
-      });
+    res.status(500).json({ status: false, message: 'Error deleting comment', error: err.message });
   }
 };
 
@@ -402,25 +375,20 @@ exports.decreaseInventory = async (req, res) => {
     const { productId, quantity, variantId } = req.body;
 
     if (!productId || !quantity) {
-      return res
-        .status(400)
-        .json({ message: "productId and quantity are required" });
+      return res.status(400).json({ message: 'productId and quantity are required' });
     }
 
-    const updatedProduct = await ProductService.decreaseInventory(
-      productId,
-      quantity,
-      variantId
-    );
+    const updatedProduct = await ProductService.decreaseInventory(productId, quantity, variantId);
 
     res.status(200).json({
-      message: "Inventory updated successfully",
-      product: updatedProduct,
+      message: 'Inventory updated successfully',
+      product: updatedProduct
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.getProductVariants = async (req, res) => {
   try {
@@ -430,43 +398,5 @@ exports.getProductVariants = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+}
 
-exports.getProductByFilter = async (req, res) => {
-  try {
-    const { type } = req.query;
-    let products;
-
-    switch (type) {
-      case "best_sellers":
-        products = await ProductService.getBestSellers();
-        break;
-      case "new_arrivals":
-        products = await ProductService.getNewArrivals();
-        break;
-      default:
-        products = await ProductService.getAllProducts();
-    }
-    res.status(200).json({ status: true, products });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.getBestSellers = async (req, res) => {
-  try {
-    const bestSellers = await ProductService.getBestSellers();
-    res.status(200).json(bestSellers);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.getNewArrivals = async (req, res) => {
-  try {
-    const newArrivals = await ProductService.getNewArrivals();
-    res.status(200).json(newArrivals);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};

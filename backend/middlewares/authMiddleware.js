@@ -3,7 +3,7 @@ const User = require('../models/User');
 
 exports.authMiddleware = async (req, res, next) => {
   const token = req.cookies.token; // lấy token từ cookie
-
+  //console.log("Cookies:", req.cookies);
   if (!token) {
     return res.status(401).json({ message: "No token" });
   }
