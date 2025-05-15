@@ -157,3 +157,8 @@ exports.deleteInfo = async (guestId) => {
   const key = `guest_info:${guestId}`;
   await client.del(key);
 };
+
+exports.cleanUp = async(guestId) => {
+  await this.deleteCart(guestId);
+  await this.deleteInfo(guestId);
+}

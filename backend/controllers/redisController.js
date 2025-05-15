@@ -24,6 +24,7 @@ exports.getOrders = async (req, res) => {
 exports.addAddress = async (req, res) => {
   try {
     const guestId = req.body?.userInfo?.userId;
+    console.log(req.body);
     const order = await redisService.addGuestAddress(guestId, req.body);
     res.json(order);
   } catch (error) {

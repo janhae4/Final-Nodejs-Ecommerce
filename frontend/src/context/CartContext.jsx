@@ -67,7 +67,7 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     try {
       if (!userInfo?.id) return;
-      if (isLoggedIn) {
+      if (isLoggedIn && !userInfo?.id.includes("guest")) {
         const response = await axios.get(`${API_URL}/users/cart`, {
           withCredentials: true,
         });
@@ -90,7 +90,7 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     if (userInfo?.id) fetchCart();
-  }, [isLoggedIn, userInfo.id]);
+  }, [userInfo.id]);
 
   useEffect(() => {
     console.log(cartItems);

@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const user = await getUserInfo();
-      console.log(12321, user);
       setUserInfo(user);
       setAddresses(user.addresses || []);
     };
@@ -97,11 +96,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { address, userInfo: user } = shippingForm;
       if (!isLoggedIn) {
-        console.log(321321);
-        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, {
-          shippingForm,
-        });
-        setUserInfo(user);
+        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, shippingForm);
+        setUserInfo(r2.data);
+        setAddresses(r2.data.addresses);
       } else {
         const r1 = await axios.post(
           `${API_URL}/users/shipping-addresses`,
