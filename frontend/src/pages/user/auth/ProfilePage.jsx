@@ -94,9 +94,13 @@ const fetchAddresses = async () => {
   // Handle password change
   const handlePasswordChange = async (values) => {
     setFormLoading(true);
+ 
     try {
       const token = localStorage.getItem('authToken');
-      await axios.put('http://localhost:3000/api/users/change-password', values, {
+      await axios.put('http://localhost:3000/api/users/change-password', {
+        currentPassword: values.oldPassword,
+        newPassword: values.newPassword,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });

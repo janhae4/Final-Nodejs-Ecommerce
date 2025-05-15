@@ -12,6 +12,7 @@ const addressSchema = new mongoose.Schema({
   ward: String,
   wardCode: String,
   _id: String,
+  
 });
 
 const userSchema = new mongoose.Schema(
@@ -24,6 +25,7 @@ const userSchema = new mongoose.Schema(
     isBanned: { type: Boolean, default: false },
     addresses: [addressSchema],
     loyaltyPoints: { type: Number, default: 0 },
+    isDefaultPassword: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

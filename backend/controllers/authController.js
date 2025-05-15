@@ -30,10 +30,14 @@ exports.logout = (req, res) => {
 
 exports.changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ message: "Missing old or new password" });
+  }
   try {
     await authService.changeUserPassword(req.user.id, oldPassword, newPassword);
     res.json({ message: "Password changed successfully" });
   } catch (err) {
+    console.error("Error in changePassword:", err);
     res.status(400).json({ message: err.message });
   }
 };

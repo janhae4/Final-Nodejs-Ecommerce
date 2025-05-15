@@ -24,9 +24,8 @@ exports.registerUser = async (data) => {
   if (existingUser) throw new Error("Email already exists");
   const addresses = (await redisService.getInfo(userInfo.userId)).addresses || [];
   addresses.push(address);
-
   if (!userInfo.password) {
-    userInfo.password = generateRandomPassword();
+    userInfo.password = "Password123";
   }
 
   const newUser = new User({
@@ -92,6 +91,13 @@ exports.loginUser = async ({ email, password }, res) => {
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  if (!user.password) {
+    throw new Error("User does not have a password set");
+  }
+
   const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) throw new Error("Old password is incorrect");
 
@@ -101,7 +107,7 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   try {
     const passwordChangedEvent = {
       user: {
-        userId: user._id.toString(),
+        userId: user.id.toString(),
         email: user.email,
         fullName: user.fullName,
       },
