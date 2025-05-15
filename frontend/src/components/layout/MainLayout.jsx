@@ -68,7 +68,7 @@ const MainLayout = () => {
 
   const getSearchResults = async (query) => {
     try {
-      const res = await axios.get(`${API_URL}/products/?nameProduct=${query}`);
+      const res = await axios.get(`${API_URL}/products/search/?keyword=${query}`);
       console.log(res.data);
       setSearchResults(res.data.products);
     } catch (err) {

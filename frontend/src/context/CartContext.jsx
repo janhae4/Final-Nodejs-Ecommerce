@@ -114,8 +114,8 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchCart();
-  }, [isLoggedIn, userInfo]);
+    if (userInfo?.id) fetchCart();
+  }, [isLoggedIn, userInfo.id]);
 
   useEffect(() => {
     console.log(cartItems);
@@ -125,7 +125,7 @@ export const CartProvider = ({ children }) => {
     if (loading) return;
     if (!userInfo?.id) return;
     try {
-      if (isLoggedIn) {
+      if (isLoggedIn && userInfo?.id) {
         await axios.put(
           `${API_URL}/users/cart`,
           {
@@ -134,7 +134,6 @@ export const CartProvider = ({ children }) => {
           { withCredentials: true }
         );
       } else {
-        console.log(cartItems);
         const guestId = userInfo.id;
         await axios.put(`${API_URL}/guests/cart/${guestId}`, {
           data: cartItems,
