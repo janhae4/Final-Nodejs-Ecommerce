@@ -2,6 +2,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const authService = require("../services/authService");
 
+
 exports.register = async (req, res) => {
   try {
     const user = await authService.registerUser(req.body);
@@ -26,6 +27,19 @@ exports.login = async (req, res) => {
     res.json({ user });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const message = await authService.forgotPassword(req.body.email);
+    res.json({ message });
+  } catch (error) {
+    if (error.message === 'No user found with that email.') {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error.' });
   }
 };
 
@@ -54,7 +68,7 @@ exports.changePassword = async (req, res) => {
 };
 
 // Google callback route
-exports.googleCallback = async (req, res) => {
+ exports.googleCallback = async (req, res) => {
   try {
     const { token, encodedUser } = await authService.handleGoogleCallback(
       req.user

@@ -1,10 +1,12 @@
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto');
 const User = require("../models/User");
 const redisService = require("./redisService");
 const orderService = require("./orderService");
 const emailService = require("./emailService");
+const sendResetEmail = require('../utils/sendResetEmail');
 const { publishToExchange } = require("../database/rabbitmqConnection");
 const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
 const ORDER_EVENT_EXCHANGE = "order_events_exchange";
@@ -47,14 +49,9 @@ exports.registerUser = async (data) => {
         fullName: savedUser.fullName,
       },
       password: userInfo.password,
+      oldUserId: userInfo.userId,
     }
     await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.registered", registrationEmailEvent);
-
-    const orderConverterEvent = {
-      oldId: userInfo.id,
-      newId: savedUser._id,
-    }
-    await publishToExchange(ORDER_EVENT_EXCHANGE, "order.converter", orderConverterEvent);
   } catch (error) {
     console.error("Error publishing events:", error);
   }
@@ -74,6 +71,23 @@ exports.loginUser = async ({ email, password }) => {
     console.error("Login error:", error);
     throw error; // Ném lỗi cho phía gọi API xử lý
   }
+};
+
+exports.forgotPassword = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) throw new Error('No user found with that email.');
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = Date.now() + 3600000; // 1 hour
+
+  user.resetPasswordToken = token;
+  user.resetPasswordExpires = expires;
+  await user.save();
+
+  const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
+  await sendResetEmail(user.email, resetLink);
+
+  return 'Reset email sent successfully.';
 };
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
@@ -107,6 +121,8 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
 
   return savedUser.toObject();
 };
+
+
 
 ///////////////////////////////////
 // Social login (Google/Facebook)

@@ -22,7 +22,7 @@ const handleLoyalty = async (eventData) => {
 
 const start = async () => {
   await consumeFromQueue(
-    QUEUE_NAME,
+    "loyalty_queue",
     ORDER_EVENT_EXCHANGE,
     "order.created",
     handleLoyalty

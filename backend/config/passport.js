@@ -11,20 +11,23 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: 'http://localhost:3000/api/auth/google/callback',
 },
-function(accessToken, refreshToken, profile, done) {
-    // console.log("Google profile:", profile); // Log profile của người dùng
-    const { email, given_name, family_name } = profile._json; // Lấy email và tên người dùng
+async function(accessToken, refreshToken, profile, done) {
+  try {
+    const { email, given_name, family_name } = profile._json;
     const fullName = `${given_name} ${family_name}`;
 
-    const user = { 
+    // Gọi service tạo hoặc lấy user
+    const user = await authService.googleLogin({
       email,
       fullName,
       googleId: profile.id,
-    };
+    });
 
     return done(null, user);
+  } catch (error) {
+    return done(error, null);
   }
-));
+}));
 
 // Cấu hình Route cho Google OAuth
 app.get('/auth/google', passport.authenticate('google', {
@@ -32,17 +35,15 @@ app.get('/auth/google', passport.authenticate('google', {
 }));
 
 app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: '/login',session: false }),
   function(req, res) {
     // Sau khi xác thực thành công, lưu thông tin người dùng vào session
-    req.login(req.user, (err) => {
-      if (err) {
-        return res.redirect('/');  // Redirect về trang login nếu có lỗi
-      }
-      console.log("User authenticated successfully, redirecting to home...");
-      res.redirect('/');  // Chuyển hướng tới trang chủ
+    const user = req.user;
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Redirect với URL chứa token và userId
+    res.redirect(`http://localhost:3000/success?token=${token}&userId=${user._id}`);
     });
-  });
 
 // Cấu hình Passport Facebook OAuth
 
@@ -84,10 +85,14 @@ app.get('/auth/facebook',
 );
 
 // Route callback từ Facebook
-app.get('/facebook/callback',
+app.get('/api/auth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/'); 
-  }
-);
+  function(req, res) {
+    // Sau khi xác thực thành công, tạo JWT token
+    const user = req.user;
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Redirect về homepage với URL chứa token và userId
+    res.redirect(`http://localhost:3000/?token=${token}&userId=${user._id}`);
+  });
 

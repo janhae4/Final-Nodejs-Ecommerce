@@ -1,27 +1,24 @@
 const { consumeFromQueue } = require("../database/rabbitmqConnection");
 const orderService = require("../services/orderService");
-const ORDER_EVENT_EXCHANGE = "order_events_exchange";
+const AUTH_EVENTS_EXCHANGE = "auth_events_exchange";
 const QUEUE_NAME = "order_id_queue";
 
 const handleUpdateOrderId = async (eventData) => {
-  console.log(
-    "[OrderConsumer] Processing order.created event:",
-    eventData.orderCode
-  );
+  console.log("[OrderConsumer] Processing auth.user.registered event:");
   await orderService.updateOrderUserId(
     eventData.oldUserId,
-    eventData.newUserId
+    eventData.user.id
   );
   console.log(
-    `[OrderConsumer] Order ID updated for order ${eventData.orderCode}`
+    `[OrderConsumer] Order ID updated for user ${eventData.user.id}`
   );
 };
 
 const start = async () => {
   await consumeFromQueue(
-    QUEUE_NAME,
-    ORDER_EVENT_EXCHANGE,
-    "order.converter",
+    "register_success_queue",
+    AUTH_EVENTS_EXCHANGE,
+    "auth.user.registered",
     handleUpdateOrderId
   );
 };

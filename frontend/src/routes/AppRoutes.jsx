@@ -23,7 +23,7 @@ import MainLayout from "../components/layout/MainLayout";
 import OrderPage from "../pages/user/order/OrderPage";
 import SocialLoginSuccess from "../pages/user/auth/SocialLoginSuccess";
 import RegisterPage from "../pages/user/auth/Register";
-
+import ForgotPasswordPage from "../pages/user/auth/ForgotPasswordPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -32,6 +32,7 @@ export default function AppRoutes() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="oauth-success" element={<SocialLoginSuccess />} />
       </Route>
 

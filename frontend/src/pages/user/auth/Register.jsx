@@ -21,9 +21,9 @@ const RegisterPage = () => {
     try {
       // Send registration request to backend
       await axios.post('http://localhost:3000/api/auth/register', values);
-
-      // Show success message
-      messageApi.success('Registration successful! Please check your email to verify your account.');
+      setTimeout(() => {
+        messageApi.success('Registration successful! Please check your email to verify your account.');
+      }, 1000);
 
       // Redirect to login page after successful registration
       navigate('/auth/login');

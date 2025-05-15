@@ -91,7 +91,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
               onChange={(value) => {
                 setSelectedProvince(value);
                 setSelectedDistrict(null);
-                addressForm.setFieldsValue({
+                form.setFieldsValue({
                   district: null,
                   ward: null,
                 });
@@ -123,7 +123,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
               onChange={(value) => {
                 setSelectedDistrict(value);
                 // Sửa setFieldValue thành setFieldsValue
-                addressForm.setFieldsValue({ ward: null });
+                form.setFieldsValue({ ward: null });
               }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
@@ -175,7 +175,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
               value={street}
               onChange={(e) => {
                 setStreet(e.target.value);
-                addressForm.setFieldsValue({ street: e.target.value });
+                form.setFieldsValue({ street: e.target.value });
               }}
               placeholder="Enter your full address"
             />

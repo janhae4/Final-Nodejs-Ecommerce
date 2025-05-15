@@ -19,7 +19,6 @@ router.delete('/cart', redisController.deleteUserCart);
 router.get('/profile', profileController.getProfile);
 router.put('/profile', profileController.updateProfile);
 router.put('/change-password', profileController.changePassword);
-    
 // Order
 router.get('/orders', orderController.getUserOrders);
 router.post('/orders', orderController.createOrder);
