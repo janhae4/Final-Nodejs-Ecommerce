@@ -15,7 +15,6 @@ const ReviewsSection = ({ productId }) => {
   const [formLoading, setFormLoading] = useState(false);
   const { isLoggedIn, userInfo, logout, login } = useAuth();
 
-  const user = { _id: 'userId123', fullName: 'Current User' }; // TODO: Replace with actual user data
   console.log('User: ', userInfo._id);
   console.log('Product ID:', productId);
   // --- Fetch Product Reviews on mount ---

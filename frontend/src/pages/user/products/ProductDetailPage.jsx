@@ -120,10 +120,13 @@ const ProductDetailPage = () => {
       </div>
     );
 
-  const avgRating = product.comments?.length
-    ? product.comments.reduce((acc, c) => acc + c.rating, 0) /
-    product.comments.length
+  const ratedComments = product.comments?.filter(c => c.rating !== undefined && c.rating !== null);
+
+  const avgRating = ratedComments && ratedComments.length > 0
+    ? ratedComments.reduce((acc, c) => acc + c.rating, 0) / ratedComments.length
     : 0;
+
+  const numRatedComments = ratedComments ? ratedComments.length : 0;
 
   const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
 
@@ -206,8 +209,8 @@ const ProductDetailPage = () => {
                       <div
                         key={idx}
                         className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${idx === selectedImageIndex
-                            ? "border-2 border-blue-500 shadow-md scale-110"
-                            : "border border-gray-200 hover:scale-105"
+                          ? "border-2 border-blue-500 shadow-md scale-110"
+                          : "border border-gray-200 hover:scale-105"
                           }`}
                         onClick={() => {
                           setSelectedImageIndex(idx);
@@ -313,8 +316,7 @@ const ProductDetailPage = () => {
                               className="text-base"
                             />
                             <Text className="ml-2">
-                              {avgRating.toFixed(1)}/5 (
-                              {product.comments?.length || 0} reviews)
+                              {avgRating.toFixed(1)}/5 ({numRatedComments} reviews)
                             </Text>
                           </span>
                         </Title>
@@ -380,14 +382,14 @@ const ProductDetailPage = () => {
                         {/* Description Panel with Animation */}
                         <div
                           className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${showDescription
-                              ? "max-h-96 opacity-100"
-                              : "max-h-0 opacity-0"
+                            ? "max-h-96 opacity-100"
+                            : "max-h-0 opacity-0"
                             }`}
                         >
                           <div
                             className={`p-4 transform transition-all duration-500 ${showDescription
-                                ? "translate-y-0"
-                                : "-translate-y-4"
+                              ? "translate-y-0"
+                              : "-translate-y-4"
                               }`}
                           >
                             <Paragraph className="text-base whitespace-pre-line">
@@ -418,7 +420,7 @@ const ProductDetailPage = () => {
           <Divider className="my-4" />
 
           {/* Comments list */}
-        
+
         </Card>
       </Card>
       {/* Description - Removed since it's now in General Info */}
