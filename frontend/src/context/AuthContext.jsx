@@ -16,12 +16,10 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (userInfo?.id?.includes("guest")) {
-      setIsLoggedIn(false);
-    } else {
-      setIsLoggedIn(true);
+    if (typeof userInfo?.id === "string") {
+      setIsLoggedIn(!userInfo?.id.includes("guest"));
     }
-  }, [userInfo.id]);
+  }, [userInfo?.id]);
 
   const guestLogin = () => {
     const id = `guest-${uuidv4()}`;
@@ -30,10 +28,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const init = async () => {
-      const user = await getUserInfo();
-      console.log(12321, user);
-      setUserInfo(user);
-      setAddresses(user.addresses || []);
+      await getUserInfo();
     };
     init();
   }, [userInfo.id, isLoggedIn]);
@@ -57,7 +52,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, data, {withCredentials: true});
+      const response = await axios.post(`${API_URL}/auth/login`, data, {
+        withCredentials: true,
+      });
       const user = response.data.user;
       if (user.isBanned) {
         console.log("User is banned:", user.isBanned);
@@ -67,16 +64,18 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify({ id: user._id }));
       localStorage.removeItem("isCreateCart");
       messageApi.success("Login successful!");
+      setIsLoggedIn(true);
 
       if (user.role === "admin") {
         navigate("/admin");
       } else {
         navigate("/");
       }
-      setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      messageApi.error(error.response.data.message ||"Login failed, please try again!");
+      messageApi.error(
+        error.response.data.message || "Login failed, please try again!"
+      );
     }
   };
 
@@ -94,17 +93,12 @@ export const AuthProvider = ({ children }) => {
 
   const addAddress = async (shippingForm) => {
     try {
-      if (!isLoggedIn) {
-        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, shippingForm);
-        setUserInfo(r2.data.userInfo);
-      } else {
-        const r1 = await axios.post(
-          `${API_URL}/users/shipping-addresses`,
-          shippingForm,
-          { withCredentials: true }
-        );
-        setUserInfo(r1.data.userInfo);
-      }
+      const r1 = await axios.post(
+        `${API_URL}/users/shipping-addresses`,
+        shippingForm,
+        { withCredentials: true }
+      );
+      setUserInfo(r1.data.userInfo);
     } catch (error) {
       console.error("Add address failed:", error);
       messageApi.error("Failed to add address.");
@@ -113,43 +107,23 @@ export const AuthProvider = ({ children }) => {
 
   const updateAddress = async (data) => {
     try {
-      const { userInfo, address } = data;
-      let response;
-      if (!isLoggedIn) {
-        response = await axios.put(
-          `${API_URL}/guests/shipping-addresses/${userInfo.id}`,
-          address
-        );
-      } else {
-        response = await axios.put(
-          `${API_URL}/users/shipping-addresses/`,
-          address,
-          {
-            withCredentials: true,
-          }
-        );
-      }
-      setAddresses(response.data.addresses);
+      await axios.put(`${API_URL}/users/shipping-addresses/${data._id}`, data, {
+        withCredentials: true,
+      });
+      await getUserInfo();
       messageApi.success("Address updated successfully.");
     } catch (error) {
       messageApi.error("Failed to update address.");
     }
   };
 
-  const deleteAddress = async (id = null, addressId) => {
+  const deleteAddress = async (id) => {
     try {
-      let response;
-      if (!isLoggedIn) {
-        response = await axios.delete(
-          `${API_URL}/guests/shipping-addresses/${id}/${addressId}`
-        );
-      } else {
-        (response = await axios.delete(
-          `${API_URL}/users/shipping-addresses/${addressId}`
-        )),
-          { withCredentials: true };
-      }
-      setAddresses(response.data.addresses);
+      const response = await axios.delete(
+        `${API_URL}/users/shipping-addresses/${id}`,
+        { withCredentials: true }
+      );
+      await getUserInfo();
       messageApi.success("Address deleted successfully.");
     } catch (error) {
       messageApi.error("Failed to delete address.");
@@ -163,32 +137,20 @@ export const AuthProvider = ({ children }) => {
   const getUserInfo = async () => {
     try {
       const id = JSON.parse(localStorage.getItem("user"))?.id;
-      console.log(id);
       let response;
-      console.log("id", id)
       if (!id?.includes("guest")) {
         response = await axios.get(`${API_URL}/users/profile`, {
           withCredentials: true,
         });
+        setIsLoggedIn(true);
       } else if (id.includes("guest")) {
-        console.log("innnnn")
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
       setUserInfo({ id, ...response?.data });
+      setAddresses(response?.data?.addresses);
       return { id, ...response?.data };
     } catch (error) {
       console.error("Error fetching user info:", error);
-      return {};
-    }
-  };
-
-  const updateInfo = async (id, data) => {
-    try {
-      const response = await axios.put(`${API_URL}/guests/info/${id}`, data);
-      setUserInfo(response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error updating user info:", error);
       return {};
     }
   };
@@ -204,27 +166,53 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const getAddresses = async () => {
+  const setDefaultAddress = async (addressId) => {
     try {
-      console.log(userInfo);
-      if (!userInfo?.id) return;
-      if (isLoggedIn) {
-        const response = await axios.get(
-          `${API_URL}/users/shipping-addresses`,
-          {
-            withCredentials: true,
-          }
-        );
-        return response.data;
-      } else {
-        const response = await axios.get(
-          `${API_URL}/guests/shipping-addresses/${userInfo.id}`
-        );
-        return response.data;
-      }
+      await axios.put(
+        `http://localhost:3000/api/users/shipping-addresses/${addressId}/set-default`,
+        null,
+        {
+          withCredentials: true,
+        }
+      );
+      setAddresses((prev) =>
+        prev.map((addr) => ({ ...addr, isDefault: addr._id === addressId }))
+      );
+      message.success("Default address updated!");
     } catch (error) {
-      console.error("Error fetching addresses:", error);
-      return [];
+      message.error("Failed to set default address.");
+    }
+  };
+
+  const updateInfo = async (values) => {
+    try {
+      await axios.put("http://localhost:3000/api/users/profile", values, {
+        withCredentials: true,
+      });
+      message.success("Profile updated successfully!");
+    } catch (error) {
+      message.error(error.response.data.message || "Failed to update profile.");
+    }
+  };
+
+  const changePassword = async (values) => {
+    try {
+      await axios.put(
+        "http://localhost:3000/api/users/change-password",
+        {
+          currentPassword: values.oldPassword,
+          newPassword: values.newPassword,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      message.success("Password changed successfully!");
+      await getUserInfo();
+    } catch (error) {
+      message.error(
+        error.response?.data?.message || "Failed to change password."
+      );
     }
   };
 
@@ -237,17 +225,18 @@ export const AuthProvider = ({ children }) => {
         setAddresses,
         addInfoToUser,
         addInfo,
+        updateInfo,
+        changePassword,
         addAddress,
         updateAddress,
         deleteAddress,
+        setDefaultAddress,
         getUserInfo,
-        getAddresses,
         addOrderToUser,
         login,
         logout,
       }}
     >
-      {contextHolder}
       {children}
     </AuthContext.Provider>
   );

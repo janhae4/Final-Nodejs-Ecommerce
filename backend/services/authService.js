@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const crypto = require('crypto');
+const crypto = require("crypto");
 const User = require("../models/User");
 const rabbitService = require("./rabbitService");
 
@@ -24,7 +24,7 @@ const generateRandomPassword = () => {
 exports.registerUser = async (data) => {
   try {
     const { userInfo, address } = data;
-    console.log("registerUser", data)
+    console.log("registerUser", data);
     const existingUser = await User.findOne({ email: userInfo.email });
     if (existingUser) throw new Error("Email already exists");
 
@@ -66,34 +66,37 @@ exports.loginUser = async ({ email, password }) => {
 
 exports.forgotPassword = async (email) => {
   const user = await User.findOne({ email });
-  if (!user) throw new Error('No user found with that email.');
+  if (!user) throw new Error("No user found with that email.");
 
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = crypto.randomBytes(32).toString("hex");
   const expires = Date.now() + 3600000; // 1 hour
 
   user.resetPasswordToken = token;
   user.resetPasswordExpires = expires;
-  await user.save();
+  const savedUser = await user.save();
 
   const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
-  await sendResetEmail(user.email, resetLink);
+  await rabbitService.publishUserForgotPassword(
+    { user: { email: savedUser.email, fullName: savedUser.fullName } },
+    resetLink
+  );
 
-  return 'Reset email sent successfully.';
+  return "Reset email sent successfully.";
 };
 
 exports.resetPassword = async (token, password) => {
   if (!token || !password) {
-    throw new Error('Token and password are required');
+    throw new Error("Token and password are required");
   }
 
   try {
     const user = await User.findOne({ resetPasswordToken: token });
     if (!user) {
-      throw new Error('Invalid or expired token');
+      throw new Error("Invalid or expired token");
     }
 
     if (user.resetPasswordExpires && user.resetPasswordExpires < Date.now()) {
-      throw new Error('Token expired');
+      throw new Error("Token expired");
     }
 
     // Gán password plaintext, middleware sẽ hash
@@ -102,16 +105,14 @@ exports.resetPassword = async (token, password) => {
     user.resetPasswordExpires = null;
 
     await user.save();
-    console.log('User after save:', user); // Debug
+    console.log("User after save:", user); // Debug
 
-    return { message: 'Password reset successful' };
+    return { message: "Password reset successful" };
   } catch (err) {
     console.error(err);
-    throw new Error('Server error');
+    throw new Error("Server error");
   }
 };
-
-
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   const user = await User.findById(userId);
@@ -128,30 +129,17 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   user.password = await bcrypt.hash(newPassword, 10);
   const savedUser = await user.save();
 
-  try {
-    const passwordChangedEvent = {
-      user: {
-        userId: user.id.toString(),
-        email: user.email,
-        fullName: user.fullName,
-      },
-      password: newPassword,
-    };
-    await publishToExchange(
-      AUTH_EVENT_EXCHANGE,
-      "auth.password.changed",
-      passwordChangedEvent
-    );
-  } catch (amqpError) {
-    console.error(
-      `Failed to publish password changed event for user ${user.email}: ${amqpError.message}`
-    );
-  }
-
+  const passwordChangedEvent = {
+    user: {
+      userId: user.id.toString(),
+      email: user.email,
+      fullName: user.fullName,
+    },
+    password: newPassword,
+  };
+  await rabbitService.publishUserRecoveryPassword(passwordChangedEvent);
   return savedUser.toObject();
 };
-
-
 
 ///////////////////////////////////
 // Social login (Google/Facebook)

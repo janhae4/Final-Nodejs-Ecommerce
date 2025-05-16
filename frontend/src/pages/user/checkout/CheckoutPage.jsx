@@ -22,6 +22,9 @@ import { useCart } from "../../../context/CartContext";
 import { useAuth } from "../../../context/AuthContext";
 import AddressForm from "../../../components/checkout/AddressForm";
 import AddressSelector from "../../../components/checkout/AddressSelector";
+import provinces from "hanhchinhvn/dist/tinh_tp.json";
+import districts from "hanhchinhvn/dist/quan_huyen.json";
+import wards from "hanhchinhvn/dist/xa_phuong.json";
 const { Step } = Steps;
 const { Title } = Typography;
 const { Option } = Select;
@@ -36,23 +39,16 @@ const CheckoutPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingForm] = Form.useForm();
+  const [addressForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
   const { cartItems, total, cartItemCount, discountInfo, placeOrder } =
     useCart();
-  const {
-    isLoggedIn,
-    userInfo,
-    updateAddress,
-    addAddress,
-    deleteAddress,
-    addresses,
-  } = useAuth();
+  const { isLoggedIn, userInfo, addresses } = useAuth();
   const navigate = useNavigate();
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressMode, setAddressMode] = useState("select");
-  const [editingAddress, setEditingAddress] = useState(null);
   const [fullName, setFullName] = useState(null);
   const [email, setEmail] = useState(null);
 
@@ -64,102 +60,180 @@ const CheckoutPage = () => {
     }
   }, [isLoggedIn, cartItemCount, currentStep, navigate]);
 
-  useEffect(() => {
-    shippingForm.setFieldsValue({
-      fullName: userInfo?.fullName,
-      email: userInfo?.email,
-    });
-  }, [userInfo?.id]);
+  const [selectedProvince, setSelectedProvince] = useState();
+  const [selectedDistrict, setSelectedDistrict] = useState();
+  const [selectedWard, setSelectedWard] = useState();
+  const [street, setStreet] = useState();
 
-  const handleAddNewAddress = () => {
-    setAddressMode("new");
-    const currentValues = shippingForm.getFieldsValue(true);
-    shippingForm.setFieldsValue({
-      ...currentValues,
-      address: undefined,
-    });
-  };
+  const provinceList = Object.values(provinces);
+  const districtList = Object.values(districts);
+  const wardList = Object.values(wards);
 
-  const handleEditAddress = (address) => {
-    setEditingAddress(address);
-    setAddressMode("edit");
-  };
+  const filteredDistricts = selectedProvince
+    ? districtList
+        .filter((d) => d.parent_code === selectedProvince)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
-  const handleSaveAddress = async (newAddress) => {
+  const filteredWards = selectedDistrict
+    ? wardList
+        .filter((w) => w.parent_code === selectedDistrict)
+        .sort((a, b) => a.code.localeCompare(b.code))
+    : [];
+  const handleSubmit = async () => {
     try {
-      if (addressMode === "edit") {
-        await updateAddress(newAddress);
-      } else {
-        console.log("CHECKOUT", newAddress);
-        await addAddress(newAddress);
-      }
+      await shippingForm.validateFields();
 
-      setAddressMode("select");
-      setEditingAddress(null);
+      const province = provinces[selectedProvince];
+      const district = districts[selectedDistrict];
+      const ward = wards[selectedWard];
 
-      const savedAddress = addresses.find(
-        (a) => a.fullAddress === newAddress.fullAddress
-      );
-      if (savedAddress) {
-        shippingForm.setFieldValue("address", savedAddress._id);
-      }
+      addressForm.setFieldsValue({
+        street: street,
+        ward: ward.name_with_type,
+        wardCode: selectedWard,
+        district: district.name_with_type,
+        districtCode: selectedDistrict,
+        province: province.name_with_type,
+        provinceCode: selectedProvince,
+        fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
+        userId: userInfo?._id || userInfo?.id,
+        fullName: shippingForm.getFieldValue("fullName"),
+        email: shippingForm.getFieldValue("email"),
+      });
+
+      console.log("Address form data:", addressForm.getFieldsValue());
     } catch (error) {
-      messageApi.error("Failed to save address");
-    }
-  };
-
-  const handleDeleteAddress = async (userId, addressId) => {
-    try {
-      await deleteAddress(userId, addressId);
-    } catch (error) {
-      messageApi.error("Failed to delete address");
+      console.error("Error submitting address:", error);
+      message.error("Failed to save address");
+    } finally {
+      setLoadingAddresses(false);
     }
   };
 
   const renderAddressSelector = () => {
-    switch (addressMode) {
-      case "new": {
-        return (
-          <AddressForm
-            form={shippingForm}
-            onSubmit={handleSaveAddress}
-            onCancel={() => setAddressMode("select")}
-            loadingAddresses={loadingAddresses}
-            setLoadingAddresses={setLoadingAddresses}
-          />
-        );
-      }
-      case "edit": {
-        return (
-          <AddressForm
-            form={shippingForm}
-            initialValues={editingAddress}
-            onSubmit={handleSaveAddress}
-            onCancel={() => setAddressMode("select")}
-            loadingAddresses={loadingAddresses}
-            setLoadingAddresses={setLoadingAddresses}
-          />
-        );
-      }
-      default:
-        return (
-          <AddressSelector
-            form={shippingForm}
-            addresses={addresses}
-            loading={loadingAddresses}
-            onSelect={(value) =>
-              shippingForm.setFieldsValue({ address: value })
-            }
-            onAddNew={handleAddNewAddress}
-            onEdit={handleEditAddress}
-            onDelete={handleDeleteAddress}
-          />
-        );
+    if (!isLoggedIn) {
+      return (
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={8} md={8}>
+            <Form.Item
+              name="province"
+              label="Province"
+              rules={[{ required: true, message: "Please select a province" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select a province"
+                optionFilterProp="children"
+                onChange={(value) => {
+                  setSelectedProvince(value);
+                  setSelectedDistrict(null);
+                  shippingForm.setFieldsValue({
+                    district: null,
+                    ward: null,
+                  });
+                }}
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {provinceList.map((province) => (
+                  <Option key={province.code} value={province.code}>
+                    {province.name_with_type}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={8} md={8}>
+            <Form.Item
+              name="district"
+              label="District"
+              rules={[{ required: true, message: "Please select a district" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select a district"
+                optionFilterProp="children"
+                disabled={!selectedProvince}
+                onChange={(value) => {
+                  setSelectedDistrict(value);
+                  shippingForm.setFieldsValue({ ward: null });
+                }}
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {filteredDistricts.map((district) => (
+                  <Option key={district.code} value={district.code}>
+                    {district.name_with_type}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={8} md={8}>
+            <Form.Item
+              name="ward"
+              label="Ward"
+              rules={[{ required: true, message: "Please select a ward" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select a ward"
+                optionFilterProp="children"
+                disabled={!selectedDistrict}
+                value={selectedWard}
+                onChange={(value) => setSelectedWard(value)}
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {filteredWards.map((ward) => (
+                  <Option key={ward.code} value={ward.code}>
+                    {ward.name_with_type}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={24} md={24}>
+            <Form.Item
+              name="street"
+              label="Address street"
+              rules={[{ required: true, message: "Please enter your address" }]}
+            >
+              <Input
+                type="text"
+                value={street}
+                onChange={(e) => {
+                  setStreet(e.target.value);
+                  // Cập nhật giá trị form
+                  addressForm.setFieldsValue({ street: e.target.value });
+                }}
+                placeholder="Enter your full address"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      );
+    } else {
+      return (
+        <AddressSelector
+          form={shippingForm}
+          addresses={addresses}
+          loading={loadingAddresses}
+        />
+      );
     }
   };
 
   const handleNext = async () => {
     if (currentStep === 0) {
+      await handleSubmit();
       setEmail(shippingForm.getFieldValue("email"));
       setFullName(shippingForm.getFieldValue("fullName"));
       setCurrentStep(currentStep + 1);
@@ -198,8 +272,9 @@ const CheckoutPage = () => {
           },
           date: new Date().toLocaleDateString(),
         };
-        
+
         console.log(mockOrder);
+        return;
         const ordersData = await placeOrder(mockOrder);
 
         setOrderDetails(ordersData);

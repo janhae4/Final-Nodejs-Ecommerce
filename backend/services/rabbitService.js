@@ -8,5 +8,9 @@ exports.publishUserCreated = async (user) =>
 exports.publishOrderCreated = async (order) =>
   await publishToExchange(ORDER_EVENT_EXCHANGE, "order.created", order);
 
+
 exports.publishUserRecoveryPassword = async (user) =>
   await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.changed", user);
+
+exports.publishUserForgotPassword = async (user, resetLink) =>
+  await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.changed", { user, resetLink });

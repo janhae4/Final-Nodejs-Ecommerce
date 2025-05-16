@@ -84,9 +84,8 @@ const AddressForm = ({
           userId: userInfo._id || userInfo.id,
           fullName: fieldsValue.fullName,
           email: fieldsValue.email,
-        }
+        },
       };
-      console.log(123, fullAddress);
       await onSubmit(fullAddress);
     } catch (error) {
       console.error("Error submitting address:", error);
@@ -97,122 +96,112 @@ const AddressForm = ({
   };
 
   return (
-    <Form form={addressForm}>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8} md={8}>
-          <Form.Item
-            name="province"
-            label="Province"
-            rules={[{ required: true, message: "Please select a province" }]}
+    <Row gutter={[16, 16]}>
+      <Col xs={24} sm={8} md={8}>
+        <Form.Item
+          name="province"
+          label="Province"
+          rules={[{ required: true, message: "Please select a province" }]}
+        >
+          <Select
+            showSearch
+            placeholder="Select a province"
+            optionFilterProp="children"
+            onChange={(value) => {
+              setSelectedProvince(value);
+              setSelectedDistrict(null);
+              addressForm.setFieldsValue({
+                district: null,
+                ward: null,
+              });
+            }}
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
           >
-            <Select
-              showSearch
-              placeholder="Select a province"
-              optionFilterProp="children"
-              onChange={(value) => {
-                setSelectedProvince(value);
-                setSelectedDistrict(null);
-                addressForm.setFieldsValue({
-                  district: null,
-                  ward: null,
-                });
-              }}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {provinceList.map((province) => (
-                <Option key={province.code} value={province.code}>
-                  {province.name_with_type}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
+            {provinceList.map((province) => (
+              <Option key={province.code} value={province.code}>
+                {province.name_with_type}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+      </Col>
 
-        <Col xs={24} sm={8} md={8}>
-          <Form.Item
-            name="district"
-            label="District"
-            rules={[{ required: true, message: "Please select a district" }]}
+      <Col xs={24} sm={8} md={8}>
+        <Form.Item
+          name="district"
+          label="District"
+          rules={[{ required: true, message: "Please select a district" }]}
+        >
+          <Select
+            showSearch
+            placeholder="Select a district"
+            optionFilterProp="children"
+            disabled={!selectedProvince}
+            onChange={(value) => {
+              setSelectedDistrict(value);
+              // Sửa setFieldValue thành setFieldsValue
+              addressForm.setFieldsValue({ ward: null });
+            }}
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
           >
-            <Select
-              showSearch
-              placeholder="Select a district"
-              optionFilterProp="children"
-              disabled={!selectedProvince}
-              onChange={(value) => {
-                setSelectedDistrict(value);
-                // Sửa setFieldValue thành setFieldsValue
-                addressForm.setFieldsValue({ ward: null });
-              }}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {filteredDistricts.map((district) => (
-                <Option key={district.code} value={district.code}>
-                  {district.name_with_type}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
+            {filteredDistricts.map((district) => (
+              <Option key={district.code} value={district.code}>
+                {district.name_with_type}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+      </Col>
 
-        <Col xs={24} sm={8} md={8}>
-          <Form.Item
-            name="ward"
-            label="Ward"
-            rules={[{ required: true, message: "Please select a ward" }]}
+      <Col xs={24} sm={8} md={8}>
+        <Form.Item
+          name="ward"
+          label="Ward"
+          rules={[{ required: true, message: "Please select a ward" }]}
+        >
+          <Select
+            showSearch
+            placeholder="Select a ward"
+            optionFilterProp="children"
+            disabled={!selectedDistrict}
+            value={selectedWard}
+            onChange={(value) => setSelectedWard(value)}
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
           >
-            <Select
-              showSearch
-              placeholder="Select a ward"
-              optionFilterProp="children"
-              disabled={!selectedDistrict}
-              value={selectedWard}
-              onChange={(value) => setSelectedWard(value)}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {filteredWards.map((ward) => (
-                <Option key={ward.code} value={ward.code}>
-                  {ward.name_with_type}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
+            {filteredWards.map((ward) => (
+              <Option key={ward.code} value={ward.code}>
+                {ward.name_with_type}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+      </Col>
 
-        <Col xs={24} sm={24} md={24}>
-          <Form.Item
-            name="street"
-            label="Address street"
-            rules={[{ required: true, message: "Please enter your address" }]}
-          >
-            <Input
-              type="text"
-              value={street}
-              onChange={(e) => {
-                setStreet(e.target.value);
-                // Cập nhật giá trị form
-                addressForm.setFieldsValue({ street: e.target.value });
-              }}
-              placeholder="Enter your full address"
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-      <Form.Item>
-        <Space className="flex items-center mt-8">
-          <Button type="primary" onClick={handleSubmit} loading={loadingAddresses}>
-            {initialValues ? "Update Address" : "Save Address"}
-          </Button>
-          {onCancel && <Button onClick={onCancel}>Cancel</Button>}
-        </Space>
-      </Form.Item>
-    </Form>
+      <Col xs={24} sm={24} md={24}>
+        <Form.Item
+          name="street"
+          label="Address street"
+          rules={[{ required: true, message: "Please enter your address" }]}
+        >
+          <Input
+            type="text"
+            value={street}
+            onChange={(e) => {
+              setStreet(e.target.value);
+              // Cập nhật giá trị form
+              addressForm.setFieldsValue({ street: e.target.value });
+            }}
+            placeholder="Enter your full address"
+          />
+        </Form.Item>
+      </Col>
+    </Row>
   );
 };
 

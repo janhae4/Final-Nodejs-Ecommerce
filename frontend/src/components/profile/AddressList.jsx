@@ -4,7 +4,6 @@ import { EditOutlined, DeleteOutlined, StarOutlined, CheckCircleOutlined, } from
 import { CheckCircleFilled } from '@ant-design/icons';
 
 const AddressList = ({ addresses, onEdit, onDelete, onSetDefault }) => {
-  // Sắp xếp để địa chỉ mặc định lên đầu
   const sortedAddresses = [...addresses]
     .filter(address => address)
     .sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
@@ -17,11 +16,7 @@ const AddressList = ({ addresses, onEdit, onDelete, onSetDefault }) => {
           return (
             <div
               key={address._id || address.id}
-              className={`address-item p-4 mb-4 rounded-lg border transition-all`}
-              style={{
-                borderColor: isDefault ? 'green' : '#d9d9d9',
-                backgroundColor: isDefault ? '#f6ffed' : '#fff',
-              }}
+              className="p-4 mb-4 rounded-lg border transition-all"
             >
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold">
