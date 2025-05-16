@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { message } from "antd";
+import { ConfigProvider, message } from "antd";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 import { v4 as uuidv4 } from "uuid";
@@ -31,8 +31,15 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
 
+  message.config({
+    top: 100,
+    duration: 2,
+    maxCount: 3,
+    rtl: true,
+    prefixCls: "my-message",
+  });
   useEffect(() => {
-    if (!localStorage.getItem("isCreateCart")) {
+    if (!localStorage.getItem("isCreateCart") && createCart) {
       createGuestCart();
       localStorage.setItem("isCreateCart", true);
     }
@@ -76,7 +83,6 @@ export const CartProvider = ({ children }) => {
         const guestId = userInfo.id;
         const response = await axios.get(`${API_URL}/guests/cart/${guestId}`);
         const cartData = response.data;
-        console.log(123, cartItems);
         const normalizedData = cartData.data ? cartData.data : cartData;
         setCartItems(normalizedData || []);
       }
@@ -90,7 +96,7 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     if (userInfo?.id) fetchCart();
-  }, [userInfo.id]);
+  }, [userInfo.id, isLoggedIn]);
 
   useEffect(() => {
     console.log(cartItems);

@@ -4,17 +4,12 @@ const ORDER_EVENT_EXCHANGE = "order_events_exchange";
 const QUEUE_NAME = "redis_queue";
 
 const handleOrderCreated = async (eventData) => {
-  if (!eventData.isGuest) {
-    return;
-  }
+  if (!eventData.guestId) return
   console.log(
     "[RedisConsumer] Processing order.created for redis update:",
     eventData.orderCode
   );
-  await redisService.createOrder({
-    userId: eventData.userId,
-    loyaltyPoints: eventData.loyaltyPointsEarned,
-  });
+  await redisService.cleanUp(eventData.guestId);
   console.log(`[RedisConsumer] Updated redis for order ${eventData.orderCode}`);
 };
 

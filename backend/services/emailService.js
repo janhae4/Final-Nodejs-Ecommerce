@@ -165,6 +165,7 @@ exports.sendOrderConfirmation = async (order) => {
           <div class="order-details">
             <p class="order-number">Order Code: ${order.orderCode}</p>
             <p><strong>Purchase Date:</strong> ${order.purchaseDate}</p>
+            <p><strong>Shipping Address:</strong> ${order.shippingAddress}</p>
             <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status?.toUpperCase()}</span></p>
           </div>
           
@@ -227,10 +228,10 @@ exports.sendOrderConfirmation = async (order) => {
   await transporter.sendMail(mailOptions);
 };
 
-exports.sendRegisterConfirmation = async (user, password) => {
+exports.sendRegisterConfirmation = async (fullName, email, password) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: user.email,
+    to: email,
     subject: `CONFIRM YOUR REGISTRATION - SHOP`,
     html: `
       <!DOCTYPE html>
@@ -336,14 +337,14 @@ exports.sendRegisterConfirmation = async (user, password) => {
         </div>
         <div class="content">
           <div class="user-details">
-            <h2>Hi, ${user.fullName},</h2>
+            <h2>Hi, ${fullName},</h2>
             <p>Thank you for registering with us. Here are your login credentials:</p>
           </div>
           
           <div class="credential-box">
             <div class="credential-item">
               <span class="credential-label">username:</span>
-              <div class="credential-value">${user.email}</div>
+              <div class="credential-value">${email}</div>
             </div>
             <div class="credential-item">
               <span class="credential-label">password:</span>

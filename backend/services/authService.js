@@ -3,13 +3,11 @@ const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const redisService = require("./redisService");
-const orderService = require("./orderService");
-const emailService = require("./emailService");
-const { publishToExchange } = require("../database/rabbitmqConnection");
-const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
-const ORDER_EVENT_EXCHANGE = "order_events_exchange";
+const rabbitService = require("./rabbitService");
+
 const generateRandomPassword = () => {
-  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const characters =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let password = "";
   for (let i = 0; i < 8; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
@@ -19,38 +17,28 @@ const generateRandomPassword = () => {
 };
 
 exports.registerUser = async (data) => {
-  const { userInfo, address } = data;
-  const existingUser = await User.findOne({ email: userInfo.email });
-  if (existingUser) throw new Error("Email already exists");
-  const addresses = (await redisService.getInfo(userInfo.userId)).addresses || [];
-  addresses.push(address);
-
-  if (!userInfo.password) {
-    userInfo.password = generateRandomPassword();
-  }
-
-  const newUser = new User({
-    fullName: userInfo.fullName,
-    email: userInfo.email,
-    password: userInfo.password,
-    addresses,
-    provider: "local",
-    role: userInfo.role || "user",
-  });
-
-  const savedUser = await newUser.save();
-
   try {
-    const registrationEmailEvent = {
-      user: {
-        id: savedUser._id.toString(),
-        email: savedUser.email,
-        fullName: savedUser.fullName,
-      },
-      password: userInfo.password,
-      oldUserId: userInfo.userId,
+    const { userInfo, address } = data;
+    console.log("registerUser", data)
+    const existingUser = await User.findOne({ email: userInfo.email });
+    if (existingUser) throw new Error("Email already exists");
+
+    if (!userInfo.password) {
+      userInfo.password = generateRandomPassword();
     }
-    await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.user.registered", registrationEmailEvent);
+
+    const newUser = new User({
+      fullName: userInfo.fullName,
+      email: userInfo.email,
+      password: userInfo.password,
+      addresses: [address],
+      provider: "local",
+      role: userInfo.role || "user",
+    });
+
+    const savedUser = await newUser.save();
+    await rabbitService.publishUserCreated(userInfo);
+    return savedUser.toObject();
   } catch (error) {
     console.error("Error publishing events:", error);
   }
@@ -100,11 +88,17 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
         email: user.email,
         fullName: user.fullName,
       },
-      password: newPassword
+      password: newPassword,
     };
-    await publishToExchange(AUTH_EVENT_EXCHANGE, "auth.password.changed", passwordChangedEvent);
+    await publishToExchange(
+      AUTH_EVENT_EXCHANGE,
+      "auth.password.changed",
+      passwordChangedEvent
+    );
   } catch (amqpError) {
-    console.error(`Failed to publish password changed event for user ${user.email}: ${amqpError.message}`);
+    console.error(
+      `Failed to publish password changed event for user ${user.email}: ${amqpError.message}`
+    );
   }
 
   return savedUser.toObject();
@@ -208,7 +202,6 @@ const generateToken = (user) => {
   });
 };
 
-
 exports.addLoyaltyPoints = async (userId, points) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -216,4 +209,4 @@ exports.addLoyaltyPoints = async (userId, points) => {
   }
   user.loyaltyPoints += points;
   await user.save();
-}
+};

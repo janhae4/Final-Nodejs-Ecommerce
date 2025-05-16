@@ -22,16 +22,17 @@ const handleOrderCreated = async (eventData) => {
 const handleRegisterSuccess = async (eventData) => {
   console.log(
     "[NotificationConsumer] Processing auth.user.created event:",
-    eventData.user
+    eventData.email
   );
 
   await emailService.sendRegisterConfirmation(
-    eventData.user,
+    eventData.fullName,
+    eventData.email,
     eventData.password
   );
 
   console.log(
-    `[NotificationConsumer] Confirmation register email sent for ${eventData.user.fullName}`
+    `[NotificationConsumer] Confirmation register email sent for ${eventData.fullName}`
   );
 };
 
@@ -45,7 +46,7 @@ const handleRecoveryPassword = async (eventData) => {
 
   console.log(
     `[NotificationConsumer] Confirmation email sent for recovery ${eventData.user}`
-  )
+  );
 };
 
 const start = async () => {

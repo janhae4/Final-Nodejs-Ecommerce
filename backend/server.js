@@ -5,7 +5,6 @@ const cors = require("cors");
 const { connectRabbitMQ } = require("./database/rabbitmqConnection");
 const inventoryConsumer = require("./consumers/inventoryConsumer");
 const emailConsumer = require("./consumers/emailConsumer");
-const orderIdConsumer = require("./consumers/orderIdConsumer");
 const loyaltyConsumer = require("./consumers/loyaltyConsumer");
 const redisConsumer = require("./consumers/redisConsumer");
 
@@ -61,7 +60,6 @@ async function start() {
     inventoryConsumer.start();
     loyaltyConsumer.start();
     emailConsumer.start();
-    orderIdConsumer.start();
     redisConsumer.start();
 
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -102,12 +102,6 @@ const MainLayout = () => {
     navigate("/auth/login");
   };
 
-  useEffect(() => {
-    console.log(isLoggedIn)
-  }, [isLoggedIn]);
-
-  useEffect(() => console.log(userInfo), [userInfo]);
-
   const userMenu = [
     {
       key: "1",
@@ -217,7 +211,7 @@ const MainLayout = () => {
                 cartItemCount={cartItemCount}
               />
 
-              {isLoggedIn ? (
+              {isLoggedIn && userInfo.fullName ? (
                 <Dropdown menu={{ items: userMenu }}>
                   <a
                     onClick={(e) => e.preventDefault()}

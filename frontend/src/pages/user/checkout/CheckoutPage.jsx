@@ -53,8 +53,8 @@ const CheckoutPage = () => {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressMode, setAddressMode] = useState("select");
   const [editingAddress, setEditingAddress] = useState(null);
-
-  console.log(userInfo)
+  const [fullName, setFullName] = useState(null);
+  const [email, setEmail] = useState(null);
 
   // Load cart and address data
   useEffect(() => {
@@ -63,7 +63,6 @@ const CheckoutPage = () => {
       navigate("/cart");
     }
   }, [isLoggedIn, cartItemCount, currentStep, navigate]);
-
 
   useEffect(() => {
     shippingForm.setFieldsValue({
@@ -161,12 +160,15 @@ const CheckoutPage = () => {
 
   const handleNext = async () => {
     if (currentStep === 0) {
+      setEmail(shippingForm.getFieldValue("email"));
+      setFullName(shippingForm.getFieldValue("fullName"));
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 1) {
       try {
         setOrderProcessing(true);
 
         const shippingValues = shippingForm.getFieldsValue();
+
         let shippingAddress;
 
         if (addressMode === "select") {
@@ -181,12 +183,12 @@ const CheckoutPage = () => {
         const mockOrder = {
           userInfo: {
             userId: userInfo._id || userInfo.id,
-            fullName: userInfo.fullName,
-            email: userInfo.email,
+            fullName: fullName,
+            email: email,
           },
           products: cartItems,
           totalAmount: Number(total),
-          shippingAddress: shippingAddress.fullAddress,
+          shippingAddress,
           paymentMethod: paymentForm.getFieldValue("paymentMethod"),
           discountInfo: discountInfo && {
             discountId: discountInfo._id,
@@ -196,7 +198,8 @@ const CheckoutPage = () => {
           },
           date: new Date().toLocaleDateString(),
         };
-
+        
+        console.log(mockOrder);
         const ordersData = await placeOrder(mockOrder);
 
         setOrderDetails(ordersData);
@@ -204,7 +207,9 @@ const CheckoutPage = () => {
         console.log(23, ordersData);
       } catch (error) {
         console.log("Validation Failed:", error);
-        messageApi.error(error.response.data?.message || error.response.message);
+        messageApi.error(
+          error.response.data?.message || error.response.message
+        );
         setOrderProcessing(false);
       } finally {
         setOrderProcessing(false);
@@ -285,11 +290,6 @@ const CheckoutPage = () => {
                 value={paymentForm.getFieldValue("paymentMethod")}
                 onChange={(e) => {
                   paymentForm.setFieldsValue({ paymentMethod: e.target.value });
-                  console.log("getFieldsValue", paymentForm.getFieldsValue());
-                  console.log(
-                    "getFieldValue",
-                    paymentForm.getFieldValue("paymentMethod")
-                  );
                 }}
               >
                 {paymentMethods.map((method) => (
