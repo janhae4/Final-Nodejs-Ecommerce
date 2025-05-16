@@ -53,12 +53,7 @@ exports.getAllOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    let order;
-    if (req.body.isGuest) {
-      order = await orderService.createOrder(true, req.body);
-    } else {
-      order = await orderService.createOrder(null, req.body);
-    }
+    const order = await orderService.createOrder(req.body);
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });

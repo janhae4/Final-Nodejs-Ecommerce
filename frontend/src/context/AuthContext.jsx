@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [userInfo, setUserInfo] = useState({});
-  const [messageApi, contextHolder] = message.useMessage();
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -20,6 +19,12 @@ export const AuthProvider = ({ children }) => {
       setIsLoggedIn(!userInfo?.id.includes("guest"));
     }
   }, [userInfo?.id]);
+
+  useEffect(() => {
+    if (userInfo?.addresses) {
+      setAddresses(userInfo.addresses);
+    }
+  }, [userInfo?.addresses]);
 
   const guestLogin = () => {
     const id = `guest-${uuidv4()}`;
@@ -31,11 +36,7 @@ export const AuthProvider = ({ children }) => {
       await getUserInfo();
     };
     init();
-  }, [userInfo.id, isLoggedIn]);
-
-  useEffect(() => {
-    console.log("Addresses changed:", addresses);
-  }, [addresses]);
+  }, [userInfo?.id, isLoggedIn]);
 
   useEffect(() => {
     if (!localStorage.getItem("user")) guestLogin();
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       }
       localStorage.setItem("user", JSON.stringify({ id: user._id }));
       localStorage.removeItem("isCreateCart");
-      messageApi.success("Login successful!");
+      message.success("Login successful!");
       setIsLoggedIn(true);
 
       if (user.role === "admin") {
@@ -73,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      messageApi.error(
+      message.error(
         error.response.data.message || "Login failed, please try again!"
       );
     }
@@ -101,7 +102,7 @@ export const AuthProvider = ({ children }) => {
       setUserInfo(r1.data.userInfo);
     } catch (error) {
       console.error("Add address failed:", error);
-      messageApi.error("Failed to add address.");
+      message.error("Failed to add address.");
     }
   };
 
@@ -111,9 +112,9 @@ export const AuthProvider = ({ children }) => {
         withCredentials: true,
       });
       await getUserInfo();
-      messageApi.success("Address updated successfully.");
+      message.success("Address updated successfully.");
     } catch (error) {
-      messageApi.error("Failed to update address.");
+      message.error("Failed to update address.");
     }
   };
 
@@ -124,9 +125,9 @@ export const AuthProvider = ({ children }) => {
         { withCredentials: true }
       );
       await getUserInfo();
-      messageApi.success("Address deleted successfully.");
+      message.success("Address deleted successfully.");
     } catch (error) {
-      messageApi.error("Failed to delete address.");
+      message.error("Failed to delete address.");
     }
   };
 
@@ -175,9 +176,7 @@ export const AuthProvider = ({ children }) => {
           withCredentials: true,
         }
       );
-      setAddresses((prev) =>
-        prev.map((addr) => ({ ...addr, isDefault: addr._id === addressId }))
-      );
+      await getUserInfo();
       message.success("Default address updated!");
     } catch (error) {
       message.error("Failed to set default address.");

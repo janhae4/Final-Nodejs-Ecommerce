@@ -94,7 +94,7 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (shouldFetchCart && userInfo?.id && isLoggedIn) {
+    if (shouldFetchCart && userInfo?.id) {
       fetchCart();
     }
   }, [userInfo.id, isLoggedIn, shouldFetchCart]);
@@ -123,15 +123,15 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    let debounceTimer    
-    if(createCart) {
+    let debounceTimer;
+    if (createCart) {
       debounceTimer = setTimeout(updateCartInRedis, 500);
     }
     return () => clearTimeout(debounceTimer);
   }, [cartItems, loading]);
 
   const addItemToCart = (product, variant = null, quantity = 1) => {
-    console.log(product)
+    console.log(product);
     setCreateCart(true);
     setCartItems((prevItems) => {
       const itemKey = variant ? `${product._id}-${variant._id}` : product._id;
@@ -146,7 +146,7 @@ export const CartProvider = ({ children }) => {
 
         const inventory = variant?.inventory || product.inventory;
         if (newQuantity > inventory) {
-          messageApi.warning(
+          message.warning(
             `Không thể thêm. Chỉ còn ${inventory} sản phẩm ${
               product.nameProduct
             }${variant ? ` (${variant.name})` : ""} trong kho.`
@@ -159,7 +159,7 @@ export const CartProvider = ({ children }) => {
       } else {
         const inventory = variant?.inventory || product.inventory;
         if (quantity > inventory) {
-          messageApi.warning(
+          message.warning(
             `Cannot add ${quantity}. Only ${inventory} available.`
           );
           quantity = inventory;
@@ -185,7 +185,7 @@ export const CartProvider = ({ children }) => {
         ];
       }
     });
-    messageApi.success(`Added into cart!`);
+    message.success(`Added into cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {
@@ -198,7 +198,7 @@ export const CartProvider = ({ children }) => {
 
           if (newQuantity < 1) return { ...item, quantity: 1 };
           if (inventory !== undefined && newQuantity > inventory) {
-            messageApi.warning(`Only ${inventory} available.`);
+            message.warning(`Only ${inventory} available.`);
             return { ...item, quantity: inventory };
           }
           return { ...item, quantity: newQuantity };
@@ -228,7 +228,7 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) =>
       prevItems.filter((item) => item.key !== itemKey)
     );
-    messageApi.info("Deleted!.");
+    message.info("Deleted!.");
   };
 
   const clearCart = async () => {
@@ -300,7 +300,7 @@ export const CartProvider = ({ children }) => {
 
   const removeDiscountCode = () => {
     setDiscountInfo(null);
-    messageApi.info("Deleted!");
+    message.info("Deleted!");
   };
 
   const cartItemCount = useMemo(() => {
@@ -344,7 +344,6 @@ export const CartProvider = ({ children }) => {
   const placeOrder = async (orderData) => {
     try {
       let response;
-      console.log(orderData);
       if (isLoggedIn) {
         response = await axios.post(`${API_URL}/orders`, orderData, {
           withCredentials: true,
@@ -352,23 +351,7 @@ export const CartProvider = ({ children }) => {
       } else {
         response = await axios.post(`${API_URL}/guests/orders`, orderData);
       }
-      messageApi.success("Order placed successfully.");
-
-      const earnedPoints = response.data.loyaltyPointsEarned || 0;
-      const usedPoints = response.data.loyaltyPointsUsed || 0;
-
-      if (isLoggedIn) {
-        try {
-          await axios.post(`${API_URL}/users/${userInfo._id}/loyalty-points`, {
-            loyaltyPoints:
-              (userInfo.loyaltyPoints || 0) + earnedPoints - usedPoints,
-          });
-          setLoyaltyPoints((prev) => prev + earnedPoints - usedPoints);
-        } catch (error) {
-          console.error("Failed to update loyalty points:", error);
-        }
-      }
-
+      message.success("Order placed successfully.");
       clearCart();
       return response.data;
     } catch (error) {
@@ -376,7 +359,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const [messageApi, contextHolder] = message.useMessage();
   return (
     <CartContext.Provider
       value={{
@@ -401,7 +383,6 @@ export const CartProvider = ({ children }) => {
         getCartForOrder,
       }}
     >
-      {contextHolder}
       {children}
     </CartContext.Provider>
   );

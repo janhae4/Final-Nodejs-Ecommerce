@@ -80,6 +80,16 @@ const CheckoutPage = () => {
         .filter((w) => w.parent_code === selectedDistrict)
         .sort((a, b) => a.code.localeCompare(b.code))
     : [];
+
+  useEffect(() => {
+    if (userInfo) {
+      shippingForm.setFieldsValue({
+        fullName: userInfo.fullName,
+        email: userInfo.email,
+        address: userInfo.addresses[0]._id,
+      });
+    }
+  })
   const handleSubmit = async () => {
     try {
       await shippingForm.validateFields();
@@ -233,7 +243,7 @@ const CheckoutPage = () => {
 
   const handleNext = async () => {
     if (currentStep === 0) {
-      await handleSubmit();
+      handleSubmit();
       setEmail(shippingForm.getFieldValue("email"));
       setFullName(shippingForm.getFieldValue("fullName"));
       setCurrentStep(currentStep + 1);
@@ -263,7 +273,7 @@ const CheckoutPage = () => {
           },
           products: cartItems,
           totalAmount: Number(total),
-          shippingAddress: addressForm.getFieldValue("fullAddress"),
+          shippingAddress: addressForm.getFieldValue("fullAddress") || shippingAddress,
           paymentMethod: paymentForm.getFieldValue("paymentMethod"),
           discountInfo: discountInfo && {
             discountId: discountInfo._id,
@@ -274,8 +284,6 @@ const CheckoutPage = () => {
           date: new Date().toLocaleDateString(),
         };
 
-        console.log(mockOrder);
-        return;
         const ordersData = await placeOrder(mockOrder);
 
         setOrderDetails(ordersData);

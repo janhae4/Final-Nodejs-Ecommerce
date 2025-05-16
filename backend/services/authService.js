@@ -60,7 +60,7 @@ exports.loginUser = async ({ email, password }) => {
     return user;
   } catch (error) {
     console.error("Login error:", error);
-    throw error; // Ném lỗi cho phía gọi API xử lý
+    throw error;
   }
 };
 
@@ -151,17 +151,15 @@ exports.googleLogin = async ({ email, fullName, googleId }) => {
   }
 
   let user = await User.findOne({ email });
-
   if (!user) {
-    user = await User.create({
-      email,
-      fullName,
-      googleId,
-      password: null, // Hoặc random nếu schema yêu cầu
-      isSocial: true,
+    await this.registerUser({
+      userInfo: {
+        email,
+        fullName,
+      },
+      address: {},
     });
   }
-
   return user;
 };
 
@@ -190,7 +188,6 @@ exports.handleGoogleCallback = async (user) => {
   if (!user || !user.email || !user.fullName) {
     throw new Error("Missing required information from Google profile.");
   }
-  // console.log("✅ Google user info:", user);
   const token = jwt.sign(
     { id: user._id, rold: user.role },
     process.env.JWT_SECRET,
@@ -198,13 +195,11 @@ exports.handleGoogleCallback = async (user) => {
       expiresIn: "1d",
     }
   );
-  // console.log("token google: ", token);
   const encodedUser = encodeURIComponent(JSON.stringify(user));
 
   return { token, encodedUser };
 };
 
-// Hàm xử lý Facebook callback
 exports.handleFacebookCallback = async (user) => {
   if (!user) {
     throw new Error("Không tìm thấy người dùng sau xác thực Facebook");

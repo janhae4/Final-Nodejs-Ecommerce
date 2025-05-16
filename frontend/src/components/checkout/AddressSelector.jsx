@@ -26,74 +26,46 @@ const AddressSelector = ({
   };
 
   return (
-    <>
-      {editingAddress ? (
-        <Col span={24} className="mb-4">
-          <AddressForm
-            initialValues={editingAddress}
-            onCancel={handleCancelEdit}
-            onSubmit={(values) => {
-              onEdit(values);
-              setEditingAddress(null);
-            }}
+    <Row gutter={[16, 16]} align="middle">
+      <Col flex="auto">
+        <Form.Item
+          name="address"
+          label="Saved Addresses"
+          rules={[{ required: true, message: "Please select an address" }]}
+        >
+          <Select
+            showSearch
+            placeholder="Select a saved address"
+            onChange={onSelect}
+            value={form.getFieldValue("address")}
+            loading={loading}
+          >
+            {addresses?.map((address) => (
+              <Option key={address._id} value={address._id}>
+                {address.fullAddress}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+      </Col>
+      <Col flex="none">
+        <Space>
+          <Button
+            onClick={() =>
+              handleEdit(
+                addresses.find((a) => a._id === form.getFieldValue("address"))
+              )
+            }
+            icon={<EditOutlined />}
           />
-        </Col>
-      ) : (
-        <Row gutter={[16, 16]} align="middle">
-          <Col flex="auto">
-            <Form.Item
-              name="address"
-              label="Saved Addresses"
-              rules={[{ required: true, message: "Please select an address" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Select a saved address"
-                onChange={onSelect}
-                value={form.getFieldValue("address")}
-                loading={loading}
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    <Divider className="my-2" />
-                    <div className="p-2 cursor-pointer" onClick={onAddNew}>
-                      <Button type="link">+ Add new address</Button>
-                    </div>
-                  </>
-                )}
-              >
-                {addresses?.map((address) => (
-                  <Option key={address._id} value={address._id}>
-                    {address.fullAddress}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col flex="none">
-            <Space>
-              <Button
-                onClick={() =>
-                  handleEdit(
-                    addresses.find(
-                      (a) => a._id === form.getFieldValue("address")
-                    )
-                  )
-                }
-                icon={<EditOutlined />}
-              />
-              <Button
-                icon={<DeleteOutlined />}
-                danger
-                onClick={() =>
-                  onDelete(userInfo.id, form.getFieldValue("address"))
-                }
-              />
-            </Space>
-          </Col>
-        </Row>
-      )}
-    </>
+          <Button
+            icon={<DeleteOutlined />}
+            danger
+            onClick={() => onDelete(userInfo.id, form.getFieldValue("address"))}
+          />
+        </Space>
+      </Col>
+    </Row>
   );
 };
 
