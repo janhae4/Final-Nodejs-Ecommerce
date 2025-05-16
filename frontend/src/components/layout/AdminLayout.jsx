@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Layout,
   Menu,
@@ -250,16 +251,19 @@ const AdminLayout = () => {
   };
 
   // Handle user dropdown menu
-  const handleUserMenuClick = ({ key }) => {
-    if (key === "logout") {
-      // Handle logout
-      console.log("Logout clicked");
-    } else if (key === "profile") {
-      navigate("/admin/profile");
-    } else if (key === "settings") {
-      navigate("/admin/settings");
-    }
-  };
+const { logout } = useAuth();
+
+const handleUserMenuClick = ({ key }) => {
+  if (key === "logout") {
+    logout();            // Reset trạng thái và xóa phiên
+    navigate("/");  // Chuyển về trang đăng nhập
+  } else if (key === "profile") {
+    navigate("/admin/profile");
+  } else if (key === "settings") {
+    navigate("/admin/settings");
+  }
+};
+
 
   return (
     <Layout className="min-h-screen">

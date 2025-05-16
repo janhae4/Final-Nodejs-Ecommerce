@@ -11,8 +11,8 @@ const addressSchema = new mongoose.Schema({
   street: String,
   ward: String,
   wardCode: String,
-  _id: String,
-  
+  // _id: String,
+  isDefault: { type: Boolean, default: false },
 });
 
 const userSchema = new mongoose.Schema(

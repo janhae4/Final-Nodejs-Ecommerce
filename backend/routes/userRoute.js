@@ -28,6 +28,6 @@ router.get('/shipping-addresses', profileController.getAddresses);
 router.post('/shipping-addresses', profileController.addAddress);
 router.put('/shipping-addresses/:addressId', profileController.updateAddress);
 router.delete('/shipping-addresses/:addressId', profileController.deleteAddress);
-
+router.put('/shipping-addresses/:addressId/set-default', authMiddleware, profileController.setDefaultAddress);
 
 module.exports = router;

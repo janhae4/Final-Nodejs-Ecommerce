@@ -35,3 +35,12 @@ exports.unbanUser = async (req, res) => {
     res.status(error.message === 'User not found' ? 404 : 500).json({ message: error.message });
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    await adminService.deleteUserById(req.params.userId);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(error.message === 'User not found' ? 404 : 500).json({ message: error.message });
+  }
+};

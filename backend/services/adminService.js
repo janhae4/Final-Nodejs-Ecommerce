@@ -28,3 +28,8 @@ exports.unbanUserById = async (userId) => {
   user.isBanned = false;
   await user.save();
 };
+
+exports.deleteUserById = async (userId) => {
+  const user = await User.findByIdAndDelete(userId);
+  if (!user) throw new Error('User not found');
+};

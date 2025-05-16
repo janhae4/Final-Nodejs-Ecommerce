@@ -30,7 +30,8 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
 
   const handleSubmit = async () => {
     setLoading(true);
-    form.validateFields();
+    await form.validateFields();
+
     const province = provinces[selectedProvince];
     const district = districts[selectedDistrict];
     const ward = wards[selectedWard];
@@ -45,7 +46,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
         province: province.name_with_type,
         provinceCode: selectedProvince,
         fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
-        _id: Date.now(),
+        // _id: Date.now(),
       },
       userInfo: {
         userId: userInfo._id || userInfo.id,
