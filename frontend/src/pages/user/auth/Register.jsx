@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Typography, Divider, message, Layout, Form, Input, Button } from "antd";
+import {
+  Typography,
+  Divider,
+  message,
+  Layout,
+  Form,
+  Input,
+  Button,
+} from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import SocialAuthButtons from "../../../components/auth/SocialAuthButton";
 import axios from "axios";
@@ -20,16 +28,20 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       // Send registration request to backend
-      await axios.post('http://localhost:3000/api/auth/register', values);
+      await axios.post("http://localhost:3000/api/auth/register", values);
+      messageApi.success(
+        "Registration successful! Please check your email to verify your account."
+      );
 
-      // Show success message
-      messageApi.success('Registration successful! Please check your email to verify your account.');
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 3000);
 
-      // Redirect to login page after successful registration
-      navigate('/auth/login');
     } catch (error) {
       console.error("Registration error:", error);
-      messageApi.error(error.response.data.message || "Registration failed, please try again!");
+      messageApi.error(
+        error.response.data.message || "Registration failed, please try again!"
+      );
     } finally {
       setLoading(false);
     }
@@ -42,16 +54,18 @@ const RegisterPage = () => {
   };
 
   return (
-    <Layout
-      className="flex items-center justify-center"
-    >
+    <Layout className="flex items-center justify-center p-5 max-h-fit">
       {contextHolder}
       <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-xl ">
         <Title level={2} className="text-center">
           Create Account
         </Title>
-        
-        <RegisterForm onFinish={handleRegister} setLoading={setLoading} loading={loading} />
+
+        <RegisterForm
+          onFinish={handleRegister}
+          setLoading={setLoading}
+          loading={loading}
+        />
 
         <Divider>Or register with</Divider>
         <SocialAuthButtons

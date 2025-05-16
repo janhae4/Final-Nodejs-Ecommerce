@@ -2,11 +2,13 @@ const { consumeFromQueue } = require("../database/rabbitmqConnection");
 const emailService = require("../services/emailService");
 const ORDER_EVENT_EXCHANGE = "order_events_exchange";
 const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
-const QUEUE_NAME = "notification_queue";
+const NOTIFICATION_ORDER_CREATED_QUEUE = "notification_order_created_queue";
+const NOTIFICATION_REGISTER_QUEUE = "notification_register_queue";
+const NOTIFICATION_RECOVERY_QUEUE = "notification_recovery_queue";
 
 const handleOrderCreated = async (eventData) => {
   console.log(
-    "[NotificationConsumer] Processing order.created event:",
+    "[NotificationConsumer] Processing order.created event: ",
     eventData.orderCode
   );
 
@@ -20,50 +22,52 @@ const handleOrderCreated = async (eventData) => {
 const handleRegisterSuccess = async (eventData) => {
   console.log(
     "[NotificationConsumer] Processing auth.user.created event:",
-    eventData.user
+    eventData.email
   );
 
   await emailService.sendRegisterConfirmation(
-    eventData.user,
+    eventData.fullName,
+    eventData.email,
     eventData.password
   );
 
   console.log(
-    `[NotificationConsumer] Confirmation email sent for order ${eventData.orderCode}`
+    `[NotificationConsumer] Confirmation register email sent for ${eventData.fullName}`
   );
 };
 
 const handleRecoveryPassword = async (eventData) => {
   console.log(
-    "[NotificationConsumer] Processing auth.user.recovery event:",
+    "[NotificationConsumer] Processing auth.user.changed event:",
     eventData.user
   );
 
   await emailService.sendRevoveryPassword(eventData.user, eventData.password);
 
   console.log(
-    `[NotificationConsumer] Confirmation email sent for order ${eventData.orderCode}`
-  )
+    `[NotificationConsumer] Confirmation email sent for recovery ${eventData.user}`
+  );
 };
 
 const start = async () => {
   await consumeFromQueue(
-    QUEUE_NAME,
+    NOTIFICATION_ORDER_CREATED_QUEUE,
     ORDER_EVENT_EXCHANGE,
     "order.created",
     handleOrderCreated
   );
+
   await consumeFromQueue(
-    QUEUE_NAME,
+    NOTIFICATION_REGISTER_QUEUE,
     AUTH_EVENT_EXCHANGE,
-    "auth.user.created",
+    "auth.user.registered",
     handleRegisterSuccess
   );
 
   await consumeFromQueue(
-    QUEUE_NAME,
+    NOTIFICATION_RECOVERY_QUEUE,
     AUTH_EVENT_EXCHANGE,
-    "auth.user.recovery",
+    "auth.user.changed",
     handleRecoveryPassword
   );
 };

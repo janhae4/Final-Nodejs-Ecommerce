@@ -26,7 +26,7 @@ const statusLabels = {
 
 const OrderPage = () => {
   const API_URL = import.meta.env.VITE_API_URL;
-  const { userInfo } = useAuth();
+  const { userInfo, isLoggedIn } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeKeys, setActiveKeys] = useState({});
@@ -34,6 +34,7 @@ const OrderPage = () => {
   useEffect(() => {
     const getOrders = async () => {
       try {
+        if (!userInfo?.id) return;
         setLoading(true);
         console.log(userInfo);
         const response = await axios.get(

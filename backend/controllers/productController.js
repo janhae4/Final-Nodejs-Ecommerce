@@ -470,3 +470,41 @@ exports.getNewArrivals = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+exports.syncAllProductsToElasticsearch = async (req, res) => {
+  try {
+    const syncResult = await ProductService.syncAllProductToElastic();
+    res.status(200).json(syncResult);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.searchProductsByElasticSearch = async (req, res) => {
+  try {
+    const {
+      keyword,
+      minPrice,
+      maxPrice,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    const result = await ProductService.searchProductsByElasticSearch({
+      keyword,
+      minPrice: Number(minPrice),
+      maxPrice: Number(maxPrice),
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder,
+    });
+
+    res.status(200).json({ status: true, ...result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

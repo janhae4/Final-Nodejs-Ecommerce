@@ -1,11 +1,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
 const { connectRabbitMQ } = require("./database/rabbitmqConnection");
 const inventoryConsumer = require("./consumers/inventoryConsumer");
 const emailConsumer = require("./consumers/emailConsumer");
-const orderIdConsumer = require("./consumers/orderIdConsumer");
 const loyaltyConsumer = require("./consumers/loyaltyConsumer");
+const redisConsumer = require("./consumers/redisConsumer");
 
 //Routes
 const orderRoutes = require("./routes/orderRoute");
@@ -52,24 +53,20 @@ app.use("/api/chatbot", chatbotRoutes);
 
 async function start() {
   const PORT = process.env.PORT || 3000;
-
   try {
-    await connectRabbitMQ(); 
+    await connectRabbitMQ();
     console.log("RabbitMQ connected");
 
-    
     inventoryConsumer.start();
     loyaltyConsumer.start();
     emailConsumer.start();
-    orderIdConsumer.start();
+    redisConsumer.start();
 
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
   } catch (err) {
     console.error("❌ Failed to start server:", err.message || err);
     process.exit(1);
   }
 }
 
-start()
-
+start();

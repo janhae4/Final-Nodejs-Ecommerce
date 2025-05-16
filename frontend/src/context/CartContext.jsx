@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { message } from "antd";
+import { ConfigProvider, message } from "antd";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 import { v4 as uuidv4 } from "uuid";
@@ -31,8 +31,15 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
 
+  message.config({
+    top: 100,
+    duration: 2,
+    maxCount: 3,
+    rtl: true,
+    prefixCls: "my-message",
+  });
   useEffect(() => {
-    if (!localStorage.getItem("isCreateCart")) {
+    if (!localStorage.getItem("isCreateCart") && createCart) {
       createGuestCart();
       localStorage.setItem("isCreateCart", true);
     }
@@ -67,7 +74,7 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     try {
       if (!userInfo?.id) return;
-      if (isLoggedIn) {
+      if (isLoggedIn && !userInfo?.id.includes("guest")) {
         const response = await axios.get(`${API_URL}/users/cart`, {
           withCredentials: true,
         });
@@ -76,34 +83,8 @@ export const CartProvider = ({ children }) => {
         const guestId = userInfo.id;
         const response = await axios.get(`${API_URL}/guests/cart/${guestId}`);
         const cartData = response.data;
-        console.log(123, cartItems);
         const normalizedData = cartData.data ? cartData.data : cartData;
         setCartItems(normalizedData || []);
-      }
-
-      if (isLoggedIn && userInfo?._id) {
-        try {
-          const pointsResponse = await axios.get(`${API_URL}/users/profile`, {
-            withCredentials: true,
-          });
-          setLoyaltyPoints(pointsResponse.data.loyaltyPoints || 0);
-        } catch (error) {
-          console.error("Failed to fetch loyalty points:", error);
-        }
-      } else {
-        console.log(userInfo);
-        const guestId = userInfo.id;
-        try {
-          const guestInfoResponse = await axios.get(
-            `${API_URL}/guests/info/${guestId}`
-          );
-          setAddresses(guestInfoResponse.data.addresses);
-          if (guestInfoResponse.data && guestInfoResponse.data.loyaltyPoints) {
-            setLoyaltyPoints(guestInfoResponse.data.loyaltyPoints);
-          }
-        } catch (error) {
-          console.error("Failed to fetch guest loyalty points:", error);
-        }
       }
     } catch (error) {
       console.error("Failed to fetch cart:", error);
@@ -114,8 +95,8 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchCart();
-  }, [isLoggedIn, userInfo]);
+    if (userInfo?.id) fetchCart();
+  }, [userInfo.id, isLoggedIn]);
 
   useEffect(() => {
     console.log(cartItems);
@@ -125,7 +106,7 @@ export const CartProvider = ({ children }) => {
     if (loading) return;
     if (!userInfo?.id) return;
     try {
-      if (isLoggedIn) {
+      if (isLoggedIn && userInfo?.id) {
         await axios.put(
           `${API_URL}/users/cart`,
           {
@@ -134,7 +115,6 @@ export const CartProvider = ({ children }) => {
           { withCredentials: true }
         );
       } else {
-        console.log(cartItems);
         const guestId = userInfo.id;
         await axios.put(`${API_URL}/guests/cart/${guestId}`, {
           data: cartItems,

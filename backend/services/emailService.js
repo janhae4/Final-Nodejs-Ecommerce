@@ -8,28 +8,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-exports.toEmailDTO = (order) => {
-  return {
-    email: order.userInfo.email,
-    orderCode: order.orderCode,
-    purchaseDate: order.purchaseDate,
-    status: order.status,
-    totalAmount: order.totalAmount,
-    loyaltyPointsEarned: order.loyaltyPointsEarned,
-    products: order.products.map((p) => ({
-      productName: p.productName,
-      productImage: p.productImage,
-      variantName: p.variantName,
-      quantity: p.quantity,
-      price: p.price,
-    })),
-  };
-};
-
 exports.sendOrderConfirmation = async (order) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: order.userInfo.email,
+    to: order.email,
     subject: `Order Confirmation - ${order.orderCode}`,
     html: `
       <!DOCTYPE html>
@@ -182,7 +164,8 @@ exports.sendOrderConfirmation = async (order) => {
         <div class="content">
           <div class="order-details">
             <p class="order-number">Order Code: ${order.orderCode}</p>
-            <p><strong>Purchase Date:</strong> ${order.date}</p>
+            <p><strong>Purchase Date:</strong> ${order.purchaseDate}</p>
+            <p><strong>Shipping Address:</strong> ${order.shippingAddress}</p>
             <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">${order.status?.toUpperCase()}</span></p>
           </div>
           
@@ -192,12 +175,6 @@ exports.sendOrderConfirmation = async (order) => {
                 .map(
                   (p) => `
                 <div class="product-item">
-                  <img src="${
-                    p.productImage ||
-                    "https://via.placeholder.com/60?text=Product"
-                  }" 
-                      alt="${p.productName}" 
-                      class="product-image">
                   <div class="product-info">
                     <div class="product-name">${p.productName}</div>
                     ${
@@ -251,10 +228,10 @@ exports.sendOrderConfirmation = async (order) => {
   await transporter.sendMail(mailOptions);
 };
 
-exports.sendRegisterConfirmation = async (user, password) => {
+exports.sendRegisterConfirmation = async (fullName, email, password) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: user.email,
+    to: email,
     subject: `CONFIRM YOUR REGISTRATION - SHOP`,
     html: `
       <!DOCTYPE html>
@@ -312,7 +289,7 @@ exports.sendRegisterConfirmation = async (user, password) => {
             color: #555;
           }
           .credential-value {
-            background-color:#4CAF50;
+            background-color:#f5f5f5;
             padding: 8px 12px;
             border-radius: 4px;
             font-family: monospace;
@@ -360,14 +337,14 @@ exports.sendRegisterConfirmation = async (user, password) => {
         </div>
         <div class="content">
           <div class="user-details">
-            <h2>Hi, ${user.fullName},</h2>
+            <h2>Hi, ${fullName},</h2>
             <p>Thank you for registering with us. Here are your login credentials:</p>
           </div>
           
           <div class="credential-box">
             <div class="credential-item">
               <span class="credential-label">username:</span>
-              <div class="credential-value">${user.email}</div>
+              <div class="credential-value">${email}</div>
             </div>
             <div class="credential-item">
               <span class="credential-label">password:</span>
@@ -457,7 +434,7 @@ exports.sendRevoveryPassword = async (user, password) => {
             color: #555;
           }
           .credential-value {
-            background-color:#4CAF50;
+            background-color: #f5f5f5;
             padding: 8px 12px;
             border-radius: 4px;
             font-family: monospace;
@@ -535,6 +512,5 @@ exports.sendRevoveryPassword = async (user, password) => {
       </html>
     `,
   };
-
   await transporter.sendMail(mailOptions);
 };

@@ -68,7 +68,7 @@ const MainLayout = () => {
 
   const getSearchResults = async (query) => {
     try {
-      const res = await axios.get(`${API_URL}/products/?nameProduct=${query}`);
+      const res = await axios.get(`${API_URL}/products/search/?keyword=${query}`);
       console.log(res.data);
       setSearchResults(res.data.products);
     } catch (err) {
@@ -101,12 +101,6 @@ const MainLayout = () => {
   const handleLogin = () => {
     navigate("/auth/login");
   };
-
-  useEffect(() => {
-    console.log(isLoggedIn)
-  }, [isLoggedIn]);
-
-  useEffect(() => console.log(userInfo), [userInfo]);
 
   const userMenu = [
     {
@@ -217,7 +211,7 @@ const MainLayout = () => {
                 cartItemCount={cartItemCount}
               />
 
-              {isLoggedIn ? (
+              {isLoggedIn && userInfo.fullName ? (
                 <Dropdown menu={{ items: userMenu }}>
                   <a
                     onClick={(e) => e.preventDefault()}

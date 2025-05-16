@@ -1,12 +1,7 @@
-const DiscountCode = require("../models/DiscountCode");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const User = require("../models/User");
-const emailService = require("./emailService");
-const redisService = require("./redisService");
-const { publishToExchange } = require("../database/rabbitmqConnection");
-
-const ORDER_EVENT_EXCHANGE = "order_events_exchange";
+const userSerivce = require("./userService");
+const rabbitService = require("./rabbitService");
 
 const generateOrderCode = () => {
   const timestamp = Date.now();
@@ -14,20 +9,29 @@ const generateOrderCode = () => {
   return `ORDER${timestamp}${random}`;
 };
 
-exports.createOrder = async (isGuest = null, orderData) => {
-  const orderSession = await Order.startSession();
+exports.createOrder = async (guestId=null, orderData) => {
+  const user = await userSerivce.createUserForGuest({
+    userInfo: orderData.userInfo,
+    address: orderData.shippingAddress,
+  });
+
   const productSession = await Product.startSession();
-  
-  orderSession.startTransaction();
-  productSession.startTransaction();
+  const orderSession = await Order.startSession();
   try {
+    orderSession.startTransaction();
+    productSession.startTransaction();
     // Order
     const order = new Order({
       ...orderData,
+      userInfo: {
+        userId: user._id.toString(),
+        fullName: user.fullName,
+        email: user.email,
+      },
+      shippingAddress: orderData.shippingAddress.fullAddress,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });
-
     // Product
     for (const product of orderData.products) {
       const productData = await Product.findById(product.productId).session(
@@ -57,22 +61,17 @@ exports.createOrder = async (isGuest = null, orderData) => {
 
     const saved_order = await order.save({ session: orderSession });
 
-    if (isGuest) {
-      await redisService.createOrder(order);
-    }
-
     await orderSession.commitTransaction();
-
     const orderCreatedEvent = {
       orderId: saved_order._id.toString(),
       orderCode: saved_order.orderCode,
-      userId: saved_order.userInfo.userId
-        ? saved_order.userInfo.userId.toString()
-        : null,
-      isGuest: !!isGuest,
-      customerEmail: saved_order.userInfo.email,
-      customerName: saved_order.userInfo.name,
+      userId: saved_order.userInfo?.userId?.toString(),
+      guestId: orderData?.userInfo?.userId,
+      email: saved_order.userInfo.email,
+      fullName: saved_order.userInfo.fullName,
       products: saved_order.products.map((p) => ({
+        productName: p.productName,
+        variantName: p.variantName,
         productId: p.productId.toString(),
         variantId: p.variantId.toString(),
         quantity: p.quantity,
@@ -83,20 +82,14 @@ exports.createOrder = async (isGuest = null, orderData) => {
       loyaltyPointsUsed: saved_order.loyaltyPointsUsed,
       discountInfo: saved_order.discountInfo,
       purchaseDate: saved_order.purchaseDate,
+      status: saved_order.status,
     };
 
-    await publishToExchange(
-      ORDER_EVENT_EXCHANGE,
-      "order_created",
-      orderCreatedEvent
-    );
-    console.log(
-      `Order ${saved_order.orderCode} created successfully and event published.`
-    );
+    await rabbitService.publishOrderCreated(orderCreatedEvent);
     return saved_order;
   } catch (error) {
-    if (orderSession.inTransaction()) await orderSession.abortTransaction();
-    if (productSession.inTransaction()) await productSession.abortTransaction();
+    await orderSession.abortTransaction();
+    await productSession.abortTransaction();
     throw error;
   } finally {
     orderSession.endSession();

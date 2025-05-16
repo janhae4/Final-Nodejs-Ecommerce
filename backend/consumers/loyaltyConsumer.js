@@ -1,7 +1,8 @@
 const { consumeFromQueue } = require("../database/rabbitmqConnection");
 const authService = require("../services/authService");
+const redisService = require("../services/redisService");
 const ORDER_EVENT_EXCHANGE = "order_events_exchange";
-const QUEUE_NAME = "loyalty_queue";
+const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
 
 const handleLoyalty = async (eventData) => {
   console.log(
@@ -20,13 +21,14 @@ const handleLoyalty = async (eventData) => {
   );
 };
 
+
 const start = async () => {
   await consumeFromQueue(
-    QUEUE_NAME,
+    "loyalty_queue",
     ORDER_EVENT_EXCHANGE,
     "order.created",
     handleLoyalty
   );
-};
+}
 
 module.exports = { start };
