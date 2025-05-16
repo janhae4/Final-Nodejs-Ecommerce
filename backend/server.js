@@ -76,7 +76,16 @@ app.set("io", io);
 
 // Lắng nghe kết nối từ client
 io.on("connection", (socket) => {
+  socket.on("connect", () => {
+    console.log("Connected to socket server. Socket ID:", socket.id);
+  });
   console.log("Client connected via socket.io");
+
+  // Nghe event từ client
+  socket.on('new-comment', (data) => {
+    // Broadcast cho mọi client khác
+    socket.broadcast.emit('receive-comment', data);
+  });
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
@@ -95,7 +104,7 @@ async function start() {
       emailConsumer.start();
       redisConsumer.start();
 
-      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+      server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     } catch (err) {
       console.error("❌ Failed to start server:", err.message || err);
       process.exit(1);

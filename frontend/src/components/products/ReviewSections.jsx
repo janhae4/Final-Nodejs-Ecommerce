@@ -5,6 +5,11 @@ import ReviewForm from './ReviewForm';
 import StarRatingDisplay from '../StartRatingDisplay';
 import { useAuth } from "../../context/AuthContext";
 import axios from 'axios';
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:3000", {
+  withCredentials: true,
+});
 
 const { Title, Text } = Typography;
 
@@ -38,6 +43,19 @@ const ReviewsSection = ({ productId }) => {
     fetchReviews();
   }, [productId]);
 
+  useEffect(() => {
+    const handleReceiveComment = (data) => {
+      console.log("New comment from user:", data);
+      setReviews((prev) => [data, ...prev]);
+    };
+
+    socket.on("receive-comment", handleReceiveComment);
+
+    return () => {
+      socket.off("receive-comment", handleReceiveComment); 
+    };
+  }, []);
+
   // Send comments without rating, no token needed
   const handleCommentSubmit = async (comment) => {
     setFormLoading(true);
@@ -48,11 +66,14 @@ const ReviewsSection = ({ productId }) => {
       );
 
       const newReview = res.data.product.comments;
-      const latestReview = newReview[newReview.length - 1]; 
+      const latestReview = newReview[newReview.length - 1];
       console.log('New review:', latestReview);
 
       // Cập nhật UI
       setReviews(prev => [latestReview, ...prev]);
+
+      socket.emit("new-comment", latestReview);
+
       message.success('Comment submitted!');
     } catch (error) {
       console.error('Comment submit error:', error);
@@ -62,7 +83,7 @@ const ReviewsSection = ({ productId }) => {
     }
   };
 
-  // --- Handle new review submission ---
+  // Send rating and comment, requires token
   const handleRatingSubmit = async (comment, rating) => {
     if (!isLoggedIn) {
       message.error('You must be logged in to submit a review.');
@@ -81,11 +102,13 @@ const ReviewsSection = ({ productId }) => {
       // console.log('Response data:', res.data);
 
       const newReview = res.data.product.comments;
-      const latestReview = newReview[newReview.length - 1]; 
+      const latestReview = newReview[newReview.length - 1];
       console.log('New review:', latestReview);
 
       // Cập nhật UI
       setReviews(prev => [latestReview, ...prev]);
+
+      socket.emit("new-comment", latestReview);
 
       // Optionally re-fetch full product if ratingAverage not trả về
       const updatedProduct = await axios.get(`http://localhost:3000/api/products/${productId}`);

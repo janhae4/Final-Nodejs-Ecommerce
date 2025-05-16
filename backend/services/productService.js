@@ -147,6 +147,7 @@ exports.searchProducts = async ({
             .skip(skip)
             .limit(limit);
 
+        console.log('Products found:', products);
         return { products, totalProducts, totalPages, currentPage: page };
     } catch (err) {
         throw new Error("Error searching products: " + err.message);
