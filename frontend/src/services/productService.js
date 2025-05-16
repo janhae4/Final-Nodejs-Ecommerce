@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export const fetchProductById = async (slug) => {
-    const response = await axios.get(`http://localhost:3000/api/products/slug/${slug}`);
+    const response = await axios.get(`http://localhost:3000/api/products/${slug}`);
     return response.data.product;
 };
 

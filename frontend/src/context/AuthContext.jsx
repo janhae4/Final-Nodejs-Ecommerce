@@ -28,14 +28,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify({ id }));
   };
 
-  useEffect(() => {
-    const init = async () => {
-      const user = await getUserInfo();
-      setUserInfo(user);
-      setAddresses(user.addresses || []);
-    };
-    init();
-  }, [userInfo.id, isLoggedIn]);
+  // useEffect(() => {
+  //   const init = async () => {
+  //     const user = await getUserInfo();
+  //     setUserInfo(user);
+  //     setAddresses(user.addresses || []);
+  //   };
+  //   init();
+  // }, [userInfo.id, isLoggedIn]);
 
   useEffect(() => {
     console.log("Addresses changed:", addresses);
@@ -163,17 +163,16 @@ export const AuthProvider = ({ children }) => {
 
   const getUserInfo = async () => {
     try {
-      const id = JSON.parse(localStorage.getItem("user"))?.id;
+      const id = JSON.parse(localStorage.getItem("user") || [])?.id;
       let response;
-      console.log("id", id)
       if (!id?.includes("guest")) {
         response = await axios.get(`${API_URL}/users/profile`, {
           withCredentials: true,
         });
       } else if (id.includes("guest")) {
-        console.log("innnnn")
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
+      console.log(response)
       setUserInfo({ id, ...response?.data });
       return { id, ...response?.data };
     } catch (error) {

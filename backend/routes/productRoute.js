@@ -5,6 +5,7 @@ const {authMiddleware} = require('../middlewares/authMiddleware');
 
 //Create and find products
 router.get('/sync', ProductController.syncAllProductsToElasticsearch)
+router.get('/filter', ProductController.getProductByFilter)
 router.get('/search/', ProductController.searchProductsByElasticSearch);
 router.get('/searchByName', ProductController.searchProductByName);
 router.get('/searchByBrand', ProductController.searchProductByBrand);
@@ -14,11 +15,11 @@ router.get('/searchByPrice', ProductController.searchByPrice);
 router.get('/search/by-rating', ProductController.getProductsByRating);
 router.get("/categories", ProductController.getCategories);
 router.get("/brands", ProductController.getBrands);
-router.get('/slug/:slug', ProductController.getProductBySlug);
 router.get('/:id', ProductController.getProductByIdWithVariants);
 router.post('/create', upload.array('images'), ProductController.createProduct);
 router.get('/', ProductController.searchProducts);
 router.get("/variants/:id", ProductController.getProductVariants);
+router.get('/slug/:slug', ProductController.getProductBySlug);
 
 
 //Update product

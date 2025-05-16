@@ -420,6 +420,7 @@ exports.getBestSellers = async () => {
     const bestSellers = await Product.find()
       .sort({ soldQuantity: -1 })
       .limit(4);
+    console.log(bestSellers);
     return bestSellers;
   } catch (err) {
     throw new Error("Error fetching best sellers: " + err.message);

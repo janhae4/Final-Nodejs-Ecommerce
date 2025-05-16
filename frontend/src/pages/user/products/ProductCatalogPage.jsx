@@ -1,6 +1,6 @@
 // src/pages/ProductCatalogPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Input, Row, Col, Typography, Button, Spin, Layout } from 'antd';
+import { Input, Row, Col, Typography, Button, Spin, Layout, message } from 'antd';
 import { AppstoreOutlined, BarsOutlined } from '@ant-design/icons';
 import ProductList from '../../../components/products/ProductList';
 import ProductFilter from '../../../components/products/ProductFilter';
@@ -22,6 +22,8 @@ const ProductCatalogPage = () => {
   const [sortOption, setSortOption] = useState('relevance'); // Default sort
   const [filters, setFilters] = useState({}); // { category: 'electronics', minPrice: 50, brand: ['sony'] }
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+
+  const [messageApi, contextHolder] = message.useMessage();
 
   const fetchAndFilterProducts = useCallback(() => {
     setLoading(true);
@@ -100,6 +102,7 @@ const ProductCatalogPage = () => {
 
   return (
     <Layout>
+      {contextHolder}
       <div className="container mx-auto p-4 md:p-8">
         <Title level={2} className="mb-6 text-center md:text-left">Product Catalog</Title>
         

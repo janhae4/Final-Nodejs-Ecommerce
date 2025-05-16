@@ -1,22 +1,27 @@
+require("dotenv").config();
 const express = require("express");
-const swaggerUi = require("swagger-ui-express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
+const {connectRabbitMQ} = require("./database/rabbitmqConnection");
+const inventoryConsumer = require("./consumers/inventoryConsumer");
+const loyaltyConsumer = require("./consumers/loyaltyConsumer");
+const redisConsumer = require("./consumers/redisConsumer");
+const emailConsumer = require("./consumers/emailConsumer");
+//Routes
 const orderRoutes = require("./routes/orderRoute");
 const discountCodeRoutes = require("./routes/discountRoute");
 const productRoutes = require("./routes/productRoute");
 const chatbotRoutes = require("./routes/chatbotRoute");
-
-//Routes
-const authRoutes = require('./routes/authRoute');
-const adminRoutes = require('./routes/adminRoute');
-const userRoutes = require('./routes/userRoute');
+const authRoutes = require("./routes/authRoute");
+const adminRoutes = require("./routes/adminRoute");
+const userRoutes = require("./routes/userRoute");
 
 const app = express();
 const port = 3000;
-const passport = require('passport');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
+const passport = require("passport");
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
 
 // Cấu hình CORS cho phép gửi cookie
 const corsOptions = {
@@ -32,31 +37,29 @@ app.use(passport.initialize());
 require("./config/passport");
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
-app.use(cookieparser());
+app.use(cookieParser());
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/users', userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
+app.use("/api/orders", orderRoutes);
+app.use("/api/discount-codes", discountCodeRoutes);
+app.use("/api/products", productRoutes);
 
-app.use('/api/orders', orderRoutes);
-app.use('/api/discount-codes', discountCodeRoutes);
-app.use('/api/products', productRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
-
-app.use('/api/chatbot', chatbotRoutes);
-
-const http = require('http');
+const http = require("http");
 const server = http.createServer(app);
 
 // Tạo socket server
-const { Server } = require('socket.io');
+const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173", // frontend
@@ -77,22 +80,24 @@ io.on("connection", (socket) => {
   });
 });
 
+async function start() {
+  if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    try {
+      await connectRabbitMQ();
+      console.log("RabbitMQ connected");
 
+      inventoryConsumer.start();
+      loyaltyConsumer.start();
+      emailConsumer.start();
+      redisConsumer.start();
 
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  try {
-    await connectRabbitMQ();
-    console.log("RabbitMQ connected");
-
-    inventoryConsumer.start();
-    loyaltyConsumer.start();
-    emailConsumer.start();
-    redisConsumer.start();
-
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  } catch (err) {
-    console.error("❌ Failed to start server:", err.message || err);
-    process.exit(1);
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    } catch (err) {
+      console.error("❌ Failed to start server:", err.message || err);
+      process.exit(1);
+    }
   }
 }
+
+start()

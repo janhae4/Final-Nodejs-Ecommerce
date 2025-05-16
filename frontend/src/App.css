@@ -5,3 +5,30 @@
     width: 100%;
 }
 
+.product-carousel .slick-slide {
+  padding: 0 5px;
+}
+
+.carousel-item-container {
+  padding: 10px;
+}
+
+.description-panel {
+  transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  overflow: hidden;
+}
+
+/* Thumbnail hover effect */
+.thumbnail-container {
+  transition: all 0.3s;
+}
+
+.thumbnail-container:hover {
+  transform: scale(1.05);
+}
+
+.thumbnail-container.active {
+  transform: scale(1.1);
+  border: 2px solid #1890ff;
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.5);
+}

@@ -32,6 +32,7 @@ const productSchema = new mongoose.Schema(
     comments: [commentSchema],
     ratingAverage: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    soldQuantity: { type: Number, default: 0 },
   },
   {
     timestamps: true,

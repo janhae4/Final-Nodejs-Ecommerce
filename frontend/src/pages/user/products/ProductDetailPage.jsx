@@ -1,221 +1,494 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 import {
-  Row,
-  Col,
-  Typography,
+  Card,
+  Image,
+  Select,
+  Rate,
+  List,
+  Divider,
   Tag,
-  Button,
   Spin,
   message,
-  Descriptions,
-  Breadcrumb,
-  Layout,
-  InputNumber,
   Collapse,
-  Divider,
+  Typography,
+  Row,
+  Col,
+  Breadcrumb,
+  Space,
+  Statistic,
+  Carousel,
+  Layout,
+  Tooltip,
+  Form,
 } from "antd";
+import { Button, Modal } from "antd";
+import { useNavigate } from "react-router-dom";
+
+import { Comment } from "@ant-design/compatible";
+
 import {
+  EditOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined,
+  ShoppingOutlined,
+  TagOutlined,
+  StarOutlined,
   HomeOutlined,
-  ShoppingCartOutlined,
+  AppstoreOutlined,
+  LeftOutlined,
+  RightOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import TextArea from "antd/es/input/TextArea";
 
-import ImageGallery from "../../../components/ImageGallery";
-import VariantSelector from "../../../components/products/VariantSelector";
-import ReviewsSection from "../../../components/products/ReviewSections";
-import StarRatingDisplay from "../../../components/StartRatingDisplay";
-import { fetchProductById } from "../../../services/productService"; // ✅ Gọi API thật
-import { useCart } from "../../../context/CartContext"; // ✅ Hook cho giỏ hàng
-
-const { Title, Paragraph, Text } = Typography;
 const { Panel } = Collapse;
-
+const { Option } = Select;
+const { Title, Text, Paragraph } = Typography;
+const { confirm } = Modal;
+dayjs.extend(relativeTime);
 const ProductDetailPage = () => {
-  const { slug } = useParams();
+  console.log(useParams());
+  const { slug: productId } = useParams();
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
+  const carouselRef = useRef();
+  const navigate = useNavigate();
+  const [form] = Form.useForm();
+  const [rating, setRating] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-  const { addItemToCart } = useCart(); // ✅ hook từ context
+  const handleSubmit = async () => {
+    await form.validateFields();
+    console.log(form.getFieldsValue());
+  };
 
   useEffect(() => {
-    setLoading(true);
-    fetchProductById(slug)
-      .then((data) => {
-        setProduct(data);
-        console.log(data);
-        if (data && data.variants && data.variants.length > 0) {
-          const firstAvailable = data.variants.find((v) => v.inventory > 0);
-          setSelectedVariant(firstAvailable || data.variants[0]);
-        }
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:3000/api/products/${productId}`
+        );
+        setProduct(res.data.product);
+        setSelectedVariant(res.data.product.variants[0]?._id);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        message.error("Cannot get product!");
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        messageApi.error("Failed to load product details.");
-        console.error(err);
-        setLoading(false);
-      });
-  }, [slug]);
+      }
+    };
 
-  const handleVariantSelect = (variantId) => {
-    const variant = product.variants.find((v) => v._id === variantId);
-    setSelectedVariant(variant);
-    setQuantity(1);
-    console.log('Selected variant:', variant);
-  };
+    fetchProduct();
+  }, [productId]);
 
-  const handleAddToCart = () => {
-    if (!selectedVariant) {
-      messageApi.error("Please select a variant.");
-      return;
-    }
-    if (selectedVariant.inventory === 0) {
-      messageApi.warn("This variant is currently out of stock.");
-      return;
-    }
-    if (quantity > selectedVariant.inventory) {
-      messageApi.warn(
-        `Only ${selectedVariant.inventory} items available for this variant.`
-      );
-      return;
-    }
-
-    addItemToCart(product, selectedVariant, quantity);
-  };
-
-  if (loading) {
+  if (loading)
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <Spin size="large" />
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" tip="Loading..." />
+      </div>
     );
-  }
 
-  if (!product) {
+  if (!product)
     return (
-      <Layout>
-        <div className="text-center p-10">
-          Product not found or failed to load.{" "}
-          <Link to="/products">Go to Catalog</Link>
-        </div>
-      </Layout>
+      <div className="text-center mt-24">
+        <Title level={3}>Product not found!</Title>
+        <Button type="primary" onClick={() => navigate("/admin/products")}>
+          Back to catalog
+        </Button>
+      </div>
     );
-  }
 
-  const currentPrice = product.price + (selectedVariant?.priceModifier || 0);
+  const avgRating = product.comments?.length
+    ? product.comments.reduce((acc, c) => acc + c.rating, 0) /
+      product.comments.length
+    : 0;
+
+  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
 
   return (
-    <Layout>
-      {contextHolder}
-      <div className="container mx-auto p-4 md:p-8">
-        <Breadcrumb className="mb-6">
-          <Breadcrumb.Item href="/">
-            <HomeOutlined />
-          </Breadcrumb.Item>
-          <Breadcrumb.Item href="/products">
-            <span>Products</span>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>{product.name}</Breadcrumb.Item>
-        </Breadcrumb>
+    <Layout className="site-content px-6 pb-6">
+      <Breadcrumb className="my-4">
+        <Breadcrumb.Item>
+          <HomeOutlined /> Home
+        </Breadcrumb.Item>
+        <Breadcrumb.Item>
+          <AppstoreOutlined /> Products
+        </Breadcrumb.Item>
+        <Breadcrumb.Item>{product.nameProduct}</Breadcrumb.Item>
+      </Breadcrumb>
 
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={12} lg={14}>
-            <ImageGallery images={product.images} />
-          </Col>
-          <Col xs={24} md={12} lg={10}>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <Text strong className="block text-base">
-                Category: <span className="text-blue-600 font-bold">{product.category}</span>
-              </Text>
-              <div>
-                <Title level={2} className="mb-2">
-                  {product.nameProduct}
-                </Title>
-              </div>
+      <Card
+        variant="borderless"
+        className="card-shadow shadow-none rounded-2xl"
+        title={
+          <div className="flex justify-between items-center">
+            <Title level={3} className="m-0">
+              {product.nameProduct}
+            </Title>
+          </div>
+        }
+      >
+        <Row gutter={[32, 24]}>
+          {/* Product Images */}
+          <Col xs={24} md={12}>
+            <Card
+              variant="borderless"
+              className="inner-card shadow-none bg-gray-50 rounded-lg"
+            >
+              {product.images.length > 0 ? (
+                <>
+                  <div className="relative mb-4">
+                    <Carousel
+                      ref={carouselRef}
+                      afterChange={(current) => setSelectedImageIndex(current)}
+                      dots={false}
+                      className="product-carousel"
+                    >
+                      {product.images.map((img, idx) => (
+                        <div key={idx} className="carousel-item-container">
+                          <Image
+                            src={img}
+                            width="100%"
+                            height={400}
+                            className="object-contain cursor-pointer rounded-lg bg-white p-3 shadow-sm transition-all duration-500"
+                            alt={`main-${idx}`}
+                            preview={false}
+                            onClick={() => setPreviewVisible(true)}
+                          />
+                        </div>
+                      ))}
+                    </Carousel>
 
-              <div className="mb-3">
-                <StarRatingDisplay
-                  rating={product.averageRating}
-                  count={product.totalReviews}
-                  size="medium"
-                />
-              </div>
+                    {/* Carousel Navigation Buttons */}
+                    <Button
+                      icon={<LeftOutlined />}
+                      className="absolute left-2 top-1/2 z-10 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 border-0 shadow-md rounded-full flex items-center justify-center"
+                      onClick={() => carouselRef.current.prev()}
+                      size="large"
+                    />
+                    <Button
+                      icon={<RightOutlined />}
+                      className="absolute right-2 top-1/2 z-10 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 border-0 shadow-md rounded-full flex items-center justify-center"
+                      onClick={() => carouselRef.current.next()}
+                      size="large"
+                    />
+                  </div>
 
-              <Text strong className="block text-base text-blue-600 mb-1">
-                {new Intl.NumberFormat("vi-VN").format(currentPrice)} VNĐ
-              </Text>
+                  {/* Preview group (hidden) */}
+                  <Image.PreviewGroup
+                    preview={{
+                      visible: previewVisible,
+                      onVisibleChange: (vis) => setPreviewVisible(vis),
+                      current: selectedImageIndex,
+                      onChange: (index) => setSelectedImageIndex(index),
+                    }}
+                  >
+                    {product.images.map((img, idx) => (
+                      <Image key={idx} src={img} className="hidden" />
+                    ))}
+                  </Image.PreviewGroup>
 
-              <div className="mb-2">
-                <Text strong className="block mb-2">
-                  Brand: <span className="text-blue-600 font-bold">{product.brand}</span>
-                </Text>
-                {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 max-h-12 overflow-hidden">
-                    {product.tags.map((tag, index) => (
-                      <Tag color="blue" key={index} className="text-xs">
-                        {tag}
-                      </Tag>
+                  {/* Thumbnail image group */}
+                  <div className="flex overflow-x-auto py-2 gap-2 justify-center">
+                    {product.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${
+                          idx === selectedImageIndex
+                            ? "border-2 border-blue-500 shadow-md scale-110"
+                            : "border border-gray-200 hover:scale-105"
+                        }`}
+                        onClick={() => {
+                          setSelectedImageIndex(idx);
+                          carouselRef.current.goTo(idx);
+                        }}
+                      >
+                        <Image
+                          src={img}
+                          width={60}
+                          height={60}
+                          className="object-cover rounded"
+                          preview={false}
+                          alt={`thumb-${idx}`}
+                        />
+                      </div>
                     ))}
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="text-center text-gray-400 p-10 bg-white rounded-lg border border-dashed border-gray-300">
+                  <p>No product images available</p>
+                </div>
+              )}
+            </Card>
+          </Col>
 
-              <VariantSelector
-                variants={product.variants}
-                selectedVariantId={selectedVariant?._id}
-                onSelectVariant={handleVariantSelect}
-              />
+          {/* Product Information */}
+          <Col xs={24} md={12}>
+            <Card
+              variant="borderless"
+              className="inner-card shadow-none rounded-lg"
+            >
+              <Row gutter={[16, 24]}>
+                {/* Main Details */}
+                <Col span={24}>
+                  <Card
+                    variant="borderless"
+                    className="detail-section shadow-none rounded-lg"
+                  >
+                    <Title level={4}>General Information</Title>
 
-              <div className="my-4">
-                <Text strong className="block mb-2">Quantity:</Text>
-                <InputNumber
-                  min={1}
-                  max={selectedVariant?.inventory || 1}
-                  value={quantity}
-                  onChange={(value) => setQuantity(value)}
-                />
-              </div>
+                    <Row gutter={[16, 16]}>
+                      <Col span={12}>
+                        <Statistic
+                          title="Brand"
+                          value={product.brand || "Not specified"}
+                          valueStyle={{ fontSize: "16px" }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Category"
+                          value={product.category || "Uncategorized"}
+                          valueStyle={{ fontSize: "16px" }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Base Price"
+                          value={`${product.price.toLocaleString()} VNĐ`}
+                          valueStyle={{
+                            color: "#cf1322",
+                            fontSize: "16px",
+                            fontWeight: "bold",
+                          }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Total Stock"
+                          value={totalStock}
+                          suffix="items"
+                          valueStyle={{ fontSize: "16px" }}
+                          prefix={<ShoppingOutlined />}
+                        />
+                      </Col>
+                      <Col span={24}>
+                        <div>
+                          <Title level={5} className="mb-2">
+                            <TagOutlined /> Tags:
+                          </Title>
+                          <div>
+                            {product.tags.length > 0 ? (
+                              product.tags.map((tag, index) => (
+                                <Tag color="blue" key={index} className="m-1">
+                                  {tag}
+                                </Tag>
+                              ))
+                            ) : (
+                              <Text type="secondary">No tags</Text>
+                            )}
+                          </div>
+                        </div>
+                      </Col>
+                      <Col span={24}>
+                        <Title level={5} className="mb-2">
+                          <StarOutlined /> Rating:
+                          <span className="ml-2">
+                            <Rate
+                              allowHalf
+                              disabled
+                              value={avgRating}
+                              className="text-base"
+                            />
+                            <Text className="ml-2">
+                              {avgRating.toFixed(1)}/5 (
+                              {product.comments?.length || 0} reviews)
+                            </Text>
+                          </span>
+                        </Title>
+                      </Col>
 
-              <Button
-                type="primary"
-                icon={<ShoppingCartOutlined />}
-                block
-                size="large"
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || selectedVariant.inventory === 0}
-              >
-                Add to Cart
-              </Button>
-            </div>
+                      {/* Product Description Button */}
+                      <Col span={24} className="mt-4">
+                        <Button
+                          type="primary"
+                          icon={<InfoCircleOutlined />}
+                          onClick={() => setShowDescription(!showDescription)}
+                          className="w-full"
+                        >
+                          {showDescription
+                            ? "Hide Description"
+                            : "Show Description"}
+                        </Button>
+
+                        {/* Description Panel with Animation */}
+                        <div
+                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${
+                            showDescription
+                              ? "max-h-96 opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          <div
+                            className={`p-4 transform transition-all duration-500 ${
+                              showDescription
+                                ? "translate-y-0"
+                                : "-translate-y-4"
+                            }`}
+                          >
+                            <Paragraph className="text-base whitespace-pre-line">
+                              {product.shortDescription ||
+                                "No description available for this product."}
+                            </Paragraph>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+
+                {/* Variants */}
+                <Col span={24}>
+                  <Card
+                    variant="borderless"
+                    className="detail-section shadow-none rounded-lg"
+                  >
+                    <Title level={4}>Product Variants</Title>
+
+                    <Select
+                      className="w-full"
+                      placeholder="Select variant"
+                      value={selectedVariant}
+                      onChange={setSelectedVariant}
+                      optionLabelProp="label"
+                    >
+                      {product.variants.map((v) => (
+                        <Option key={v._id} value={v._id} label={v.name}>
+                          <div className="flex justify-between">
+                            <span>{v.name}</span>
+                            <span>
+                              <Text
+                                className={
+                                  v.inventory > 0
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                }
+                              >
+                                {v.inventory > 0
+                                  ? `${v.inventory} in stock`
+                                  : "Out of stock"}
+                              </Text>
+                              <Text strong className="ml-2">
+                                {v.price.toLocaleString()} VNĐ
+                              </Text>
+                            </span>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
+                  </Card>
+                </Col>
+              </Row>
+            </Card>
           </Col>
         </Row>
-        <Divider />
-        <Collapse ghost>
-          <Panel
-            header={<strong style={{ fontSize: 20 }}>Description</strong>}
-            key="1"
-            style={{ fontFamily: 'inherit', fontSize: 16 }}
-          >
-            <div style={{ whiteSpace: 'pre-line' }}>
-              {product.shortDescription}
-            </div>
-          </Panel>
-        </Collapse>
-        <Divider />
+        {/* Comments */}
+        <Card variant="borderless" className="rounded-2xl shadow-none">
+          <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
 
-        <div className="mt-12">
-          <ReviewsSection
-            productId={product._id}
-            // reviews={product.comments}
-            // averageRating={product.ratingAverage}
-            // ratingCount={product.ratingCount}
-          />
-        </div>
-      </div>
+          {/* New comment form */}
+          <Card className="bg-gray-50 rounded-lg mb-6">
+            <Form form={form} onFinish={handleSubmit}>
+              <Form.Item
+                name="comment"
+                rules={[
+                  { required: true, message: "Please write your comment" },
+                ]}
+              >
+                <TextArea
+                  rows={4}
+                  placeholder="Share your experience with this product..."
+                  className="rounded-lg"
+                />
+              </Form.Item>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">Your rating:</span>
+                  <Rate value={rating} onChange={setRating} />
+                </div>
+                <Form.Item className="mb-0">
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={submitting}
+                    className="rounded-lg px-6"
+                  >
+                    Post Review
+                  </Button>
+                </Form.Item>
+              </div>
+            </Form>
+          </Card>
+
+          <Divider className="my-4" />
+
+          {/* Comments list */}
+          <div className="space-y-4">
+            {product.comments && product.comments.length > 0 ? (
+              product.comments.map((comment, index) => (
+                <Card
+                  key={index}
+                  className="rounded-xl bg-white border border-gray-100 hover:border-blue-100 transition-all"
+                >
+                  <Comment
+                    author={
+                      <span className="font-medium text-gray-900">
+                        {comment.userFullName}
+                      </span>
+                    }
+                    content={
+                      <div className="mt-2">
+                        <Rate
+                          disabled
+                          value={comment.rating}
+                          className="text-sm"
+                        />
+                        <p className="mt-2 text-gray-700">{comment.content}</p>
+                      </div>
+                    }
+                    datetime={
+                      <Tooltip
+                        title={dayjs(comment.createdAt).format(
+                          "YYYY-MM-DD HH:mm:ss"
+                        )}
+                      >
+                        <span className="text-gray-500 text-sm">
+                          {dayjs(comment.createdAt).fromNow()}
+                        </span>
+                      </Tooltip>
+                    }
+                  />
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No reviews yet. Be the first to share your experience!
+              </div>
+            )}
+          </div>
+        </Card>
+      </Card>
+      {/* Description - Removed since it's now in General Info */}
     </Layout>
   );
 };

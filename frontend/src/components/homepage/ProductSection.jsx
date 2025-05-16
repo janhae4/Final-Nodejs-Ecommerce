@@ -22,7 +22,7 @@ const ProductSection = ({ action, title, products, icon, description, isNew=fals
           </Text>
         )}
         <Link
-          href="#"
+          href="/products"
           className="ml-auto text-brand-primary hover:text-red-700 font-medium mt-2 md:mt-0"
         >
           View All <span aria-hidden="true">→</span>
