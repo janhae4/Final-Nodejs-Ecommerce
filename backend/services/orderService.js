@@ -336,3 +336,15 @@ exports.updateOrderUserId = async (oldUserId, newUserId) => {
     throw new Error("Error updating order user ID: " + error.message);
   }
 };
+
+exports.findProductOrderUser= async (userId, productId) => {
+  try {
+    const orders = await Order.find({ "userInfo.userId": userId, "products.productId": productId });
+    if (!orders) {
+      throw new Error("Orders not found");
+    }
+    return orders;
+  } catch (error) {
+    throw new Error("Error fetching orders by user: " + error.message);
+  }
+}

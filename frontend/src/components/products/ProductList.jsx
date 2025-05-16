@@ -9,7 +9,7 @@ const ProductList = ({ products, loading, viewMode = 'grid' }) => {
     return (
       <Row gutter={[16, 16]}>
         {[...Array(8)].map((_, index) => (
-          <Col key={index} xs={24} sm={12} md={8} lg={viewMode === 'grid' ? 6 : 24}>
+          <Col key={index} xs={24} sm={24} md={24} lg={viewMode === 'grid' ? 24 : 24}>
             <div className="bg-gray-200 h-80 rounded-lg animate-pulse"></div>
           </Col>
         ))}
@@ -24,7 +24,7 @@ const ProductList = ({ products, loading, viewMode = 'grid' }) => {
   if (viewMode === 'list') {
     return (
       <List
-        itemLayout="vertical" // Or horizontal for a different list style
+        itemLayout="vertical"
         dataSource={products}
         renderItem={product => (
           <List.Item key={product.id} className="p-0 mb-4 border-0"> {/* Remove default List.Item padding/border */}
@@ -39,7 +39,7 @@ const ProductList = ({ products, loading, viewMode = 'grid' }) => {
   return (
     <Row gutter={[16, 24]}> {/* Horizontal and vertical gutters */}
       {products.map(product => (
-        <Col key={product.id} xs={24} sm={12} md={8} lg={6}> {/* Responsive grid */}
+        <Col key={product.id} xs={24} sm={12} md={12} lg={12} xl={6}> {/* Responsive grid */}
           <ProductCard product={product} viewMode="grid" />
         </Col>
       ))}

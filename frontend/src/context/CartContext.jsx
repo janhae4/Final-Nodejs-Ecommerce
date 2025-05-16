@@ -186,7 +186,6 @@ export const CartProvider = ({ children }) => {
       }
     });
     message.success(`Added into cart!`);
-    message.success(`Added into cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {

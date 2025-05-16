@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const elasticSearch = require("./elasticService");
+const orderService = require("./orderService");
 const User = require("../models/User");
 
 exports.getAllProducts = async () => {
@@ -330,7 +331,6 @@ exports.addCommentToProduct = async (
     userId,
     content,
     rating,
-    io
 ) => {
     const product = await Product.findById(productId);
     if (!product) throw new Error("Product not found");
@@ -352,11 +352,14 @@ exports.addCommentToProduct = async (
         userFullName = user.fullName;
     }
 
+    const isBuy = !await orderService.findProductOrderUser(userId, productId) == null;
+
     const newComment = {
         user: userId,
         userFullName,
         content,
         createdAt: new Date(),
+        isBuy: isBuy
     };
 
     // Nếu có rating (chỉ user login mới có)
@@ -368,18 +371,9 @@ exports.addCommentToProduct = async (
     }
 
     product.comments.push(newComment);
-
     await product.save();
-
-    // Emit socket if nessesary
-    if (io) {
-        io.emit("newComment", {
-            productId,
-            comment: newComment,
-        });
-    }
-
-    return product;
+    
+    return newComment;
 };
 
 exports.getCommentsByProductId = async (productId) => {
@@ -411,7 +405,7 @@ exports.updateComment = async (productId, commentId, newContent) => {
 
         comment.content = newContent;
         await product.save();
-        return product;
+        return comment;
     } catch (err) {
         throw err;
     }

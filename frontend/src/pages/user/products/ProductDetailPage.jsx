@@ -47,98 +47,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import TextArea from "antd/es/input/TextArea";
 import { useCart } from "../../../context/CartContext";
 import ReviewsSection from "../../../components/products/ReviewSections";
-<<<<<<< HEAD
-import StarRatingDisplay from "../../../components/StartRatingDisplay";
-// import { fetchProductById } from '../../../services/productService'; // API call
-
-const { Title, Paragraph, Text } = Typography;
-
-// MOCK DATA (replace with API call)
-const getMockProductById = (id) => {
-  const baseId = parseInt(id.replace("prod", ""), 10);
-  if (isNaN(baseId) || baseId < 1 || baseId > 50) return null;
-
-  const i = baseId - 1; //
-  return {
-    id: `prod${baseId}`,
-    name: `Detailed Product ${baseId}: The Ultimate Gadget`,
-    price: parseFloat((Math.random() * 200 + 50).toFixed(2)),
-    brand: {
-      id: `brand${(i % 3) + 1}`,
-      name: ["Innovatech", "QuantumLeap", "Evergreen Co."][i % 3],
-    },
-    images: [
-      // Minimum 3 images
-      {
-        url: `https://picsum.photos/seed/detail${baseId}_1/800/600`,
-        alt: `Product ${baseId} view 1`,
-      },
-      {
-        url: `https://picsum.photos/seed/detail${baseId}_2/800/600`,
-        alt: `Product ${baseId} view 2`,
-      },
-      {
-        url: `https://picsum.photos/seed/detail${baseId}_3/800/600`,
-        alt: `Product ${baseId} view 3`,
-      },
-      {
-        url: `https://picsum.photos/seed/detail${baseId}_4/800/600`,
-        alt: `Product ${baseId} view 4`,
-      },
-    ],
-    // Short description of at least 5 lines
-    shortDescription: `Experience the pinnacle of innovation with the Detailed Product ${baseId}. 
-    This marvel of engineering combines sleek design with powerful performance, tailored for your modern lifestyle. 
-    Crafted from premium materials, it promises durability and a sophisticated aesthetic. 
-    Its intuitive interface makes it a joy to use, whether you're a beginner or a seasoned pro. 
-    Unlock new possibilities and elevate your daily routine with this exceptional product.`,
-    category: {
-      id: `cat${(i % 4) + 1}`,
-      name: ["Gadgets", "Lifestyle", "Outdoor", "Productivity"][i % 4],
-    },
-    tags: [["Bestseller", "Eco-Friendly", "Smart Home"][i % 3]],
-    averageRating: parseFloat((Math.random() * 2 + 3).toFixed(1)), // e.g. 3.0 to 5.0
-    totalReviews: Math.floor(Math.random() * 100 + 5),
-    variants: [
-      {
-        id: `var${baseId}a`,
-        name: "Crimson Red / 64GB",
-        stock: Math.floor(Math.random() * 8),
-        priceModifier: 0,
-      },
-      {
-        id: `var${baseId}b`,
-        name: "Ocean Blue / 128GB",
-        stock: Math.floor(Math.random() * 12),
-        priceModifier: 20,
-      },
-      {
-        id: `var${baseId}c`,
-        name: "Midnight Black / 256GB",
-        stock: 0,
-        priceModifier: 50,
-      }, // Example out of stock
-    ],
-    // Mock reviews for the product
-    reviews: Array.from(
-      { length: Math.floor(Math.random() * 5 + 2) },
-      (_, k) => ({
-        id: `rev${baseId}_${k}`,
-        author: ["Alice", "Bob", "Charlie", "Diana", "Edward"][k % 5],
-        avatarUrl: `https://i.pravatar.cc/40?u=user${k}`,
-        content: `This is a truly fantastic product, exceeded all my expectations for product ${baseId}! Highly recommended. I've been using it for a while now and it's ${
-          ["great", "okay", "decent", "superb"][k % 4]
-        }.`,
-        datetime: new Date(
-          Date.now() - Math.random() * 1000000000
-        ).toISOString(),
-        rating: Math.floor(Math.random() * 3 + 3), // 3 to 5 stars
-      })
-    ),
-  };
-};
-=======
->>>>>>> origin/khuong/comment
 
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -147,7 +55,7 @@ const { confirm } = Modal;
 dayjs.extend(relativeTime);
 const ProductDetailPage = () => {
   const { addItemToCart } = useCart();
-  const { slug: productId } = useParams();
+  const { slug } = useParams();
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -167,7 +75,7 @@ const ProductDetailPage = () => {
 
   const handleAddCart = async () => {
     try {
-      const res = await axios.get(`${API_URL}/products/${productId}`);
+      const res = await axios.get(`${API_URL}/products/${slug}`);
       addItemToCart(res.data.product, selectedVariant);
     } catch (err) {
       console.error(err);
@@ -180,7 +88,7 @@ const ProductDetailPage = () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:3000/api/products/${productId}`
+          `http://localhost:3000/api/products/${slug}`
         );
         setProduct(res.data.product);
         setSelectedVariant(res.data.product.variants[0]?._id);
@@ -193,7 +101,7 @@ const ProductDetailPage = () => {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, []);
 
   if (loading)
     return (
@@ -206,7 +114,7 @@ const ProductDetailPage = () => {
     return (
       <div className="text-center mt-24">
         <Title level={3}>Product not found!</Title>
-        <Button type="primary" onClick={() => navigate("/admin/products")}>
+        <Button type="primary" onClick={() => navigate("/products")}>
           Back to catalog
         </Button>
       </div>
@@ -501,11 +409,10 @@ const ProductDetailPage = () => {
         {/* Comments */}
         <Card variant="borderless" className="rounded-2xl shadow-none">
           <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
-
           {/* New comment form */}
           <div className="mt-12">
             <ReviewsSection
-              productId={product._id}
+              slug={product._id}
             />
           </div>
 

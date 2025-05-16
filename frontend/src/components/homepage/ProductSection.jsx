@@ -1,7 +1,7 @@
 import React from "react";
 import { Row, Col, Card, Typography, Tag, Button, message } from "antd";
-import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
+import { Link } from "react-router-dom";
 const { Title, Text } = Typography;
 const ProductSection = ({ action, title, products, icon, description, isNew=false, isBestSeller=false}) => {
   return (
@@ -22,7 +22,7 @@ const ProductSection = ({ action, title, products, icon, description, isNew=fals
           </Text>
         )}
         <Link
-          href="/products"
+          to="/products"
           className="ml-auto text-brand-primary hover:text-red-700 font-medium mt-2 md:mt-0"
         >
           View All <span aria-hidden="true">→</span>

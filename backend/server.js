@@ -3,7 +3,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-const {connectRabbitMQ} = require("./database/rabbitmqConnection");
+const { init } = require("./database/socketConnection");
+
+const { connectRabbitMQ } = require("./database/rabbitmqConnection");
 const inventoryConsumer = require("./consumers/inventoryConsumer");
 const loyaltyConsumer = require("./consumers/loyaltyConsumer");
 const redisConsumer = require("./consumers/redisConsumer");
@@ -46,7 +48,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use("/api/guests", guestRoutes)
+app.use("/api/guests", guestRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -60,28 +62,7 @@ app.use("/api/chatbot", chatbotRoutes);
 
 const http = require("http");
 const server = http.createServer(app);
-
-// Tạo socket server
-const { Server } = require("socket.io");
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173", // frontend
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-  },
-});
-
-// Gắn io vào app để dùng trong controller
-app.set("io", io);
-
-// Lắng nghe kết nối từ client
-io.on("connection", (socket) => {
-  console.log("Client connected via socket.io");
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-});
+const io = init(server);
 
 async function start() {
   if (require.main === module) {
@@ -95,7 +76,10 @@ async function start() {
       emailConsumer.start();
       redisConsumer.start();
 
-      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`Socket.IO running on port ${port}`);
+      });
     } catch (err) {
       console.error("❌ Failed to start server:", err.message || err);
       process.exit(1);
@@ -103,4 +87,4 @@ async function start() {
   }
 }
 
-start()
+start();

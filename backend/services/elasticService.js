@@ -31,6 +31,7 @@ exports.createIndexIfNotExists = async () => {
             price: { type: "float" },
             createdAt: { type: "date" },
             image: { type: "text" },
+            slug: {type:"text"}
           },
         },
       },
@@ -52,6 +53,7 @@ exports.indexProduct = async (product) => {
         price: product.price,
         createdAt: product.createdAt,
         image: product.images[0],
+        slug: product.slug
       },
     });
   } catch (err) {

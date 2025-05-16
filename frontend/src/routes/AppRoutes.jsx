@@ -46,14 +46,10 @@ export default function AppRoutes() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/products" element={<ProductCatalogPage />} />
-<<<<<<< HEAD
         <Route
-          path="/products/detail/:productId"
+          path="/products/detail/:slug"
           element={<ProductDetailPage />}
         />
-=======
-        <Route path="/products/detail/:slug" element={<ProductDetailPage />}/>
->>>>>>> origin/khuong/comment
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/myorder" element={<OrderPage />} />

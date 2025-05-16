@@ -77,7 +77,7 @@ const ProductCard = ({
         <Meta
           title={
             <Link
-              href={`/product/detail/${product._id}`}
+              to={`/products/detail/${product.slug}`}
               className="block text-gray-800 hover:text-brand-primary text-base font-semibold
               line-clamp-2 whitespace-normal break-words"
               style={{ minHeight: "80px" }}
