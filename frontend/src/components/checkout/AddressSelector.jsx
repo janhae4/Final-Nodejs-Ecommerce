@@ -62,7 +62,7 @@ const AddressSelector = ({
                   </>
                 )}
               >
-                {addresses.map((address) => (
+                {addresses?.map((address) => (
                   <Option key={address._id} value={address._id}>
                     {address.fullAddress}
                   </Option>

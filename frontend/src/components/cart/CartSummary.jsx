@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import DiscountCodeInput from "./DiscountCodeInput";
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
 
 const { Title, Text } = Typography;
 
@@ -25,11 +26,13 @@ const CartSummary = ({ showCheckoutButton = true }) => {
     discountAmount,
     total,
     cartItemCount,
-    loyaltyPoints,
     applyLoyaltyPoints,
     removeLoyaltyPoints,
   } = useCart();
 
+  const {userInfo} = useAuth();
+
+  const [loyaltyPoints] = useState(userInfo?.loyaltyPoints || 0);
   const [usePoints, setUsePoints] = useState(false);
   const [pointsToUse, setPointsToUse] = useState(0);
   const [maxPointsToUse] = useState(

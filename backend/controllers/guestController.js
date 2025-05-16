@@ -2,7 +2,8 @@ const redisService = require("../services/redisService");
 const orderService = require("../services/orderService");
 exports.createOrder = async (req, res) => {
   try {
-    const order = await orderService.createOrder(true, req.body);
+    const {guestId, ...orderData} = req.body
+    const order = await orderService.createOrder(guestId, orderData);
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -24,6 +25,7 @@ exports.getOrders = async (req, res) => {
 exports.addAddress = async (req, res) => {
   try {
     const guestId = req.body?.userInfo?.userId;
+    console.log(req.body);
     const order = await redisService.addGuestAddress(guestId, req.body);
     res.json(order);
   } catch (error) {

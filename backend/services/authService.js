@@ -3,11 +3,11 @@ const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const redisService = require("./redisService");
-const orderService = require("./orderService");
-const emailService = require("./emailService");
+const rabbitService = require("./rabbitService");
 
 const generateRandomPassword = () => {
-  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const characters =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let password = "";
   for (let i = 0; i < 8; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
@@ -17,31 +17,32 @@ const generateRandomPassword = () => {
 };
 
 exports.registerUser = async (data) => {
-  const { userInfo, address } = data;
-  const existingUser = await User.findOne({ email: userInfo.email });
-  if (existingUser) throw new Error("Email already exists");
-  const existingAddesses = (await redisService.getInfo(userInfo.userId)).addresses || [];
-  existingAddesses.push(address);
+  try {
+    const { userInfo, address } = data;
+    console.log("registerUser", data)
+    const existingUser = await User.findOne({ email: userInfo.email });
+    if (existingUser) throw new Error("Email already exists");
 
-  if (!userInfo.password) {
-    userInfo.password = generateRandomPassword();
+    if (!userInfo.password) {
+      userInfo.password = generateRandomPassword();
+    }
+
+    const newUser = new User({
+      fullName: userInfo.fullName,
+      email: userInfo.email,
+      password: userInfo.password,
+      addresses: [address],
+      provider: "local",
+      role: userInfo.role || "user",
+    });
+
+    const savedUser = await newUser.save();
+    await rabbitService.publishUserCreated(userInfo);
+    return savedUser.toObject();
+  } catch (error) {
+    console.error("Error publishing events:", error);
   }
-
-  const newUser = new User({
-    fullName: userInfo.fullName,
-    email: userInfo.email,
-    password: userInfo.password || password,
-    addresses: existingAddesses,
-    provider: "local",
-    role: userInfo.role || "user",
-  });
-  const savedUser = await newUser.save();
-  await orderService.updateOrderUserId(userInfo.id, savedUser._id);
-  redisService.deleteInfo(userInfo.userId);
-  emailService.sendRegisterConfirmation(userInfo, userInfo.password);
-
-  console.log("✅ New user registered:", newUser);
-  return existingAddesses;
+  return savedUser.toObject();
 };
 
 exports.loginUser = async ({ email, password }, res) => {
@@ -78,7 +79,29 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   if (!isMatch) throw new Error("Old password is incorrect");
 
   user.password = await bcrypt.hash(newPassword, 10);
-  await user.save();
+  const savedUser = await user.save();
+
+  try {
+    const passwordChangedEvent = {
+      user: {
+        userId: user._id.toString(),
+        email: user.email,
+        fullName: user.fullName,
+      },
+      password: newPassword,
+    };
+    await publishToExchange(
+      AUTH_EVENT_EXCHANGE,
+      "auth.password.changed",
+      passwordChangedEvent
+    );
+  } catch (amqpError) {
+    console.error(
+      `Failed to publish password changed event for user ${user.email}: ${amqpError.message}`
+    );
+  }
+
+  return savedUser.toObject();
 };
 
 ///////////////////////////////////
@@ -177,4 +200,13 @@ const generateToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
+};
+
+exports.addLoyaltyPoints = async (userId, points) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  user.loyaltyPoints += points;
+  await user.save();
 };

@@ -5,13 +5,14 @@ import ProfileUpdateForm from '../../../components/profile/ProfileUpdateForm';
 import PasswordChangeForm from '../../../components/profile/PasswordChangeForm';
 import AddressList from '../../../components/profile/AddressList';
 import AddressForm from '../../../components/profile/AddressForm';
+import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
 
 const ProfilePage = () => {
-  const [userData, setUserData] = useState(null);
+  const {userInfo} = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
@@ -81,7 +82,7 @@ const fetchAddresses = async () => {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      setUserData(response.data); // Update the userData state with the updated info
+      setUserData(response.data); // Update the userInfo state with the updated info
       message.success("Profile updated successfully!");
     } catch (error) {
       message.error("Failed to update profile.");
@@ -180,12 +181,11 @@ const fetchAddresses = async () => {
     }
   };
 
-  // Loading spinner while data is being fetched
   if (loading) {
     return <Layout><div className="flex justify-center items-center h-64"><Spin size="large" /></div></Layout>;
   }
 
-  if (!userData) {
+  if (!userInfo) {
     return <Layout><div className="text-center p-8">Failed to load user data.</div></Layout>;
   }
 
@@ -197,7 +197,7 @@ const fetchAddresses = async () => {
           <TabPane tab="Personal Information" key="1">
             <Card title="Edit Your Information" className="shadow-md">
               <ProfileUpdateForm 
-                initialValues={{ fullName: userData.fullName, email: userData.email }} 
+                initialValues={{ fullName: userInfo.fullName, email: userInfo.email }} 
                 onFinish={handleProfileUpdate}
                 loading={formLoading}
               />

@@ -53,9 +53,9 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
         email: fieldsValue.email,
       },
     };
-    console.log(fullAddress)
+    console.log(fullAddress);
     await onFinish(fullAddress);
-    setLoading(false);
+    // setLoading(false);
   };
   return (
     <Form name="register" form={form} onFinish={onFinish} layout="vertical">
@@ -91,7 +91,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
               onChange={(value) => {
                 setSelectedProvince(value);
                 setSelectedDistrict(null);
-                addressForm.setFieldsValue({
+                form.setFieldsValue({
                   district: null,
                   ward: null,
                 });
@@ -123,7 +123,7 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
               onChange={(value) => {
                 setSelectedDistrict(value);
                 // Sửa setFieldValue thành setFieldsValue
-                addressForm.setFieldsValue({ ward: null });
+                form.setFieldsValue({ ward: null });
               }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
@@ -163,25 +163,24 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
             </Select>
           </Form.Item>
         </Col>
-
-        <Col xs={24} sm={24} md={24}>
-          <Form.Item
-            name="street"
-            label="Address street"
-            rules={[{ required: true, message: "Please enter your address" }]}
-          >
-            <Input
-              type="text"
-              value={street}
-              onChange={(e) => {
-                setStreet(e.target.value);
-                addressForm.setFieldsValue({ street: e.target.value });
-              }}
-              placeholder="Enter your full address"
-            />
-          </Form.Item>
-        </Col>
       </Row>
+      <Col xs={24} sm={24} md={24}>
+        <Form.Item
+          name="street"
+          label="Address street"
+          rules={[{ required: true, message: "Please enter your address" }]}
+        >
+          <Input
+            type="text"
+            value={street}
+            onChange={(e) => {
+              setStreet(e.target.value);
+              form.setFieldsValue({ street: e.target.value });
+            }}
+            placeholder="Enter your full address"
+          />
+        </Form.Item>
+      </Col>
       <Form.Item>
         <Button
           type="primary"

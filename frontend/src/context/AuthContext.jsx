@@ -31,13 +31,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const user = await getUserInfo();
-      console.log(12321, user);
       setUserInfo(user);
-      const fetched = await getAddresses();
-      setAddresses(fetched || []);
+      setAddresses(user.addresses || []);
     };
     init();
-  }, [isLoggedIn]);
+  }, [userInfo.id, isLoggedIn]);
 
   useEffect(() => {
     console.log("Addresses changed:", addresses);
@@ -68,6 +66,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       localStorage.setItem("user", JSON.stringify({ id: user._id }));
+      localStorage.removeItem("isCreateCart");
       messageApi.success("Login successful!");
 
       if (user.role === "admin") {
@@ -96,24 +95,16 @@ export const AuthProvider = ({ children }) => {
 
   const addAddress = async (shippingForm) => {
     try {
-      const { address, userInfo: user } = shippingForm;
       if (!isLoggedIn) {
-        console.log(321321);
-        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, {
-          shippingForm,
-        });
-        setUserInfo(user);
+        const r2 = await axios.post(`${API_URL}/guests/shipping-addresses`, shippingForm);
+        setUserInfo(r2.data.userInfo);
       } else {
         const r1 = await axios.post(
           `${API_URL}/users/shipping-addresses`,
-          address,
+          shippingForm,
           { withCredentials: true }
         );
-        setAddresses(r1.data.addresses);
-
-        if (r1.data.updatedUser) {
-          setUserInfo(r1.data.updatedUser);
-        }
+        setUserInfo(r1.data.userInfo);
       }
     } catch (error) {
       console.error("Add address failed:", error);
@@ -173,18 +164,18 @@ export const AuthProvider = ({ children }) => {
   const getUserInfo = async () => {
     try {
       const id = JSON.parse(localStorage.getItem("user"))?.id;
-      console.log(id);
       let response;
-      if (isLoggedIn && !id?.includes("guest")) {
+      console.log("id", id)
+      if (!id?.includes("guest")) {
         response = await axios.get(`${API_URL}/users/profile`, {
           withCredentials: true,
         });
-      } else if (!isLoggedIn && id.includes("guest")) {
+      } else if (id.includes("guest")) {
+        console.log("innnnn")
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
-      console.log(response.data);
-      setUserInfo({ id, ...response.data });
-      return { id, ...response.data };
+      setUserInfo({ id, ...response?.data });
+      return { id, ...response?.data };
     } catch (error) {
       console.error("Error fetching user info:", error);
       return {};
@@ -215,6 +206,7 @@ export const AuthProvider = ({ children }) => {
 
   const getAddresses = async () => {
     try {
+      console.log(userInfo);
       if (!userInfo?.id) return;
       if (isLoggedIn) {
         const response = await axios.get(

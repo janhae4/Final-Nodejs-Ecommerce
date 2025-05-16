@@ -4,8 +4,8 @@ const upload = require('../middlewares/multer');
 const {authMiddleware} = require('../middlewares/authMiddleware');
 
 //Create and find products
-router.get('/', ProductController.searchProducts);
-router.get('/search', ProductController.searchProducts);
+router.get('/sync', ProductController.syncAllProductsToElasticsearch)
+router.get('/search/', ProductController.searchProductsByElasticSearch);
 router.get('/searchByName', ProductController.searchProductByName);
 router.get('/searchByBrand', ProductController.searchProductByBrand);
 router.get('/searchByCategory', ProductController.searchByCategory);
@@ -17,6 +17,7 @@ router.get("/brands", ProductController.getBrands);
 router.get('/slug/:slug', ProductController.getProductBySlug);
 router.get('/:id', ProductController.getProductByIdWithVariants);
 router.post('/create', upload.array('images'), ProductController.createProduct);
+router.get('/', ProductController.searchProducts);
 router.get("/variants/:id", ProductController.getProductVariants);
 
 

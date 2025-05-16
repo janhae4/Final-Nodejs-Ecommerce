@@ -1,35 +1,37 @@
-const DiscountCode = require("../models/DiscountCode");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const User = require("../models/User");
-const emailService = require("./emailService");
-const guestService = require("./redisService");
+const userSerivce = require("./userService");
+const rabbitService = require("./rabbitService");
+
 const generateOrderCode = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
   return `ORDER${timestamp}${random}`;
 };
 
-exports.createOrder = async (isGuest = null, orderData) => {
-  const orderSession = await Order.startSession();
+exports.createOrder = async (guestId=null, orderData) => {
+  const user = await userSerivce.createUserForGuest({
+    userInfo: orderData.userInfo,
+    address: orderData.shippingAddress,
+  });
+
   const productSession = await Product.startSession();
-  const userSession = await User.startSession();
-  const discountSession = await DiscountCode.startSession();
-  orderSession.startTransaction();
-  productSession.startTransaction();
-  userSession.startTransaction();
-  discountSession.startTransaction();
+  const orderSession = await Order.startSession();
   try {
+    orderSession.startTransaction();
+    productSession.startTransaction();
     // Order
-    console.log(orderData)
     const order = new Order({
       ...orderData,
+      userInfo: {
+        userId: user._id.toString(),
+        fullName: user.fullName,
+        email: user.email,
+      },
+      shippingAddress: orderData.shippingAddress.fullAddress,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });
-
-    console.log(order);
-
     // Product
     for (const product of orderData.products) {
       const productData = await Product.findById(product.productId).session(
@@ -37,65 +39,61 @@ exports.createOrder = async (isGuest = null, orderData) => {
       );
 
       if (!productData) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Product not found");
       }
 
       const variant = productData.variants.id(product.variantId);
       if (!variant) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Product variant not found");
       }
 
       if (variant.inventory < product.quantity) {
+        await productSession.abortTransaction();
+        await orderSession.abortTransaction();
         throw new Error("Not enough inventory for product");
       }
-
-      variant.used += product.quantity;
       await productData.save({ session: productSession });
     }
-    if (isGuest) {
-      console.log(order);
-      await guestService.createOrder(order);
-    }
-    await order.save({ session: orderSession });
-    emailService.sendOrderConfirmation(order);
 
-    // User
-    if (!isGuest) {
-      const user = await User.findById(orderData.userInfo.userId).session(
-        userSession
-      );
-      if (!user) {
-        throw new Error("User not found");
-      }
-      user.loyaltyPoints += order.loyaltyPointsEarned - order.loyaltyPointsUsed;
-      await user.save({ session: userSession });
-    }
-
-    // Discount
-    const discountCode = await DiscountCode.findOne({
-      code: orderData?.discountInfo?.code,
-    }).session(discountSession);
-    if (discountCode) {
-      discountCode.usedCount += 1;
-      await discountCode.save({ session: discountSession });
-    }
+    const saved_order = await order.save({ session: orderSession });
 
     await orderSession.commitTransaction();
-    await productSession.commitTransaction();
-    await userSession.commitTransaction();
-    await discountSession.commitTransaction();
-    return order;
+    const orderCreatedEvent = {
+      orderId: saved_order._id.toString(),
+      orderCode: saved_order.orderCode,
+      userId: saved_order.userInfo?.userId?.toString(),
+      guestId: orderData?.userInfo?.userId,
+      email: saved_order.userInfo.email,
+      fullName: saved_order.userInfo.fullName,
+      products: saved_order.products.map((p) => ({
+        productName: p.productName,
+        variantName: p.variantName,
+        productId: p.productId.toString(),
+        variantId: p.variantId.toString(),
+        quantity: p.quantity,
+        price: p.price,
+      })),
+      totalAmount: saved_order.totalAmount,
+      loyaltyPointsEarned: saved_order.loyaltyPointsEarned,
+      loyaltyPointsUsed: saved_order.loyaltyPointsUsed,
+      discountInfo: saved_order.discountInfo,
+      purchaseDate: saved_order.purchaseDate,
+      status: saved_order.status,
+    };
+
+    await rabbitService.publishOrderCreated(orderCreatedEvent);
+    return saved_order;
   } catch (error) {
     await orderSession.abortTransaction();
     await productSession.abortTransaction();
-    await userSession.abortTransaction();
-    await discountSession.abortTransaction();
     throw error;
   } finally {
     orderSession.endSession();
     productSession.endSession();
-    userSession.endSession();
-    discountSession.endSession();
   }
 };
 exports.getOrders = async (user, discountCode) => {
@@ -340,4 +338,4 @@ exports.updateOrderUserId = async (oldUserId, newUserId) => {
   } catch (error) {
     throw new Error("Error updating order user ID: " + error.message);
   }
-}
+};
