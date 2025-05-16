@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const user = await getUserInfo();
+      console.log(12321, user);
       setUserInfo(user);
       setAddresses(user.addresses || []);
     };
@@ -162,7 +163,9 @@ export const AuthProvider = ({ children }) => {
   const getUserInfo = async () => {
     try {
       const id = JSON.parse(localStorage.getItem("user"))?.id;
+      console.log(id);
       let response;
+      console.log("id", id)
       if (!id?.includes("guest")) {
         response = await axios.get(`${API_URL}/users/profile`, {
           withCredentials: true,

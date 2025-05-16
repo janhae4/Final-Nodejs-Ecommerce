@@ -175,7 +175,7 @@ const ProfilePage = () => {
         }
       );
       setAddresses((prev) =>
-        prev.map((addr) => ({ ...addr, isDefault: addr.id === addressId }))
+        prev.map((addr) => ({ ...addr, isDefault: addr._id === addressId }))
       );
       message.success("Default address updated!");
     } catch (error) {

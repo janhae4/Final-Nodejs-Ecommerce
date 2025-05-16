@@ -121,3 +121,35 @@ exports.deleteAddress = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+exports.setDefaultAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    // console.log("Received addressId:", addressId);
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Làm sạch địa chỉ null
+    user.addresses = user.addresses.filter(a => a != null);
+
+    // console.log("Available address IDs:", user.addresses.map(a => a._id));
+
+    user.addresses.forEach(addr => {
+      addr.isDefault = false;
+    });
+
+    const address = user.addresses.find(addr => addr._id == addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    address.isDefault = true;
+    await user.save();
+
+    res.status(200).json({ message: "Default address set successfully", address });
+  } catch (err) {
+    // console.log("Error in setDefaultAddress:", err);
+    res.status(400).json({ message: err.message });
+  }
+};

@@ -2,6 +2,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const authService = require("../services/authService");
 
+
 exports.register = async (req, res) => {
   try {
     const user = await authService.registerUser(req.body);
@@ -29,6 +30,35 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.forgotPassword = async (req, res) => {
+  try {
+    const message = await authService.forgotPassword(req.body.email);
+    res.json({ message });
+  } catch (error) {
+    if (error.message === 'No user found with that email.') {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const result = await authService.resetPassword(token, password);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    const statusCode = err.message === 'Token and password are required' ? 400 :
+                      err.message === 'Invalid or expired token' ? 401 :
+                      err.message === 'Token expired' ? 401 : 500;
+    res.status(statusCode).json({ message: err.message });
+  }
+};
+
+
 exports.logout = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
@@ -54,7 +84,7 @@ exports.changePassword = async (req, res) => {
 };
 
 // Google callback route
-exports.googleCallback = async (req, res) => {
+ exports.googleCallback = async (req, res) => {
   try {
     const { token, encodedUser } = await authService.handleGoogleCallback(
       req.user

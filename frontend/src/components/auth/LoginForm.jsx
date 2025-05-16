@@ -2,6 +2,7 @@
 import React from 'react';
 import { Form, Input, Button, Checkbox } from 'antd';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
 
 const LoginForm = ({ onFinish, loading }) => {
   return (
@@ -30,9 +31,9 @@ const LoginForm = ({ onFinish, loading }) => {
           <Form.Item name="remember" valuePropName="checked" noStyle>
             <Checkbox>Remember me</Checkbox>
           </Form.Item>
-          <a className="text-blue-500 hover:text-blue-700" href="/forgot-password">
+          <Link className="text-blue-500 hover:text-blue-700" to="/auth/forgot-password">
             Forgot password?
-          </a>
+          </Link>
         </div>
       </Form.Item>
 
