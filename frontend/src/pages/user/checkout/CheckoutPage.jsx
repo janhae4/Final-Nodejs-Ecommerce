@@ -275,6 +275,7 @@ const CheckoutPage = () => {
         };
 
         console.log(mockOrder);
+        return;
         const ordersData = await placeOrder(mockOrder);
 
         setOrderDetails(ordersData);

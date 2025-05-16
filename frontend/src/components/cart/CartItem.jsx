@@ -56,7 +56,11 @@ const CartItem = ({ item }) => {
           </Tag>
         )}
         <Text type="secondary" className="block text-sm">
-          Unit Price: ${unitPrice.toFixed(2)}
+          Unit Price:{" "}
+          {unitPrice.toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          })}
         </Text>
       </Col>
 
@@ -65,7 +69,7 @@ const CartItem = ({ item }) => {
           value={item?.variantId}
           onChange={handleChangeVariant}
           className="w-full"
-          defaultValue={ item?.variants && item?.variants[0]?._id || ""}
+          defaultValue={(item?.variants && item?.variants[0]?._id) || ""}
         >
           {item?.variants.map((v) => (
             <Select.Option key={v.id} value={v._id}>

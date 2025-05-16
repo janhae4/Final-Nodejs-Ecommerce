@@ -373,10 +373,10 @@ exports.sendRegisterConfirmation = async (fullName, email, password) => {
   await transporter.sendMail(mailOptions);
 };
 
-exports.sendRevoveryPassword = async (user, password) => {
+exports.sendRevoveryPassword = async (user, resetLink) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: email,
+    to: user.email,
     subject: "Recovery Password",
     html: `
       <!DOCTYPE html>
@@ -492,16 +492,10 @@ exports.sendRevoveryPassword = async (user, password) => {
               <div class="credential-value">${user.email}</div>
             </div>
             <div class="credential-item">
-              <span class="credential-label">password:</span>
-              <div class="credential-value">${password}</div>
+              <span class="credential-label">Click here to reset your password:</span>
+              <div class="credential-value">${resetLink}</div>
             </div>
-          </div>
-          
-          <div class="password-notice">
-            <span style="font-size: 18px;">🔐</span>
-            <p>Make sure to keep your password secure and not share it with anyone.</p>
-          </div>
-          
+          </div>          
           
           <div class="footer">
             <p>If you have any questions or need further assistance, please don't hesitate to contact us.</p>

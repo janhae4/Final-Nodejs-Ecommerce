@@ -1,176 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Tabs, Card, Button, Modal, message, Spin, Layout } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import ProfileUpdateForm from '../../../components/profile/ProfileUpdateForm';
-import PasswordChangeForm from '../../../components/profile/PasswordChangeForm';
-import AddressList from '../../../components/profile/AddressList';
-import AddressForm from '../../../components/profile/AddressForm';
-import { useAuth } from '../../../context/AuthContext';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import {
+  Typography,
+  Tabs,
+  Button,
+  Modal,
+  message,
+  Spin,
+  Layout,
+  Avatar,
+  Divider,
+  Badge,
+} from "antd";
+import {
+  PlusOutlined,
+  UserOutlined,
+  HomeOutlined,
+  LockOutlined,
+  EditOutlined,
+  StarOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
+import ProfileUpdateForm from "../../../components/profile/ProfileUpdateForm";
+import PasswordChangeForm from "../../../components/profile/PasswordChangeForm";
+import AddressList from "../../../components/profile/AddressList";
+import AddressForm from "../../../components/profile/AddressForm";
+import { useAuth } from "../../../context/AuthContext";
+import axios from "axios";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TabPane } = Tabs;
+const { Content } = Layout;
 
 const ProfilePage = () => {
-  const {userInfo} = useAuth();
-  const [addresses, setAddresses] = useState([]);
+  const {
+    userInfo,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress,
+    addInfo,
+    updateInfo,
+    changePassword,
+  } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("1");
 
-  // Fetch user profile
-  const fetchUserProfile = async () => {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    const response = await axios.get('http://localhost:3000/api/users/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
-    });
-
-    setUserData(response.data);
-    return response.data; // <-- Thêm dòng này
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-  }
-};
-
-
-  // Fetch user addresses
-const fetchAddresses = async () => {
-  const token = localStorage.getItem('authToken');
-  try {
-    const res = await axios.get('http://localhost:3000/api/users/shipping-addresses', {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
-    });
-    console.log("Addresses fetched:", res.data); // Log dữ liệu trả về từ API
-    return res.data;
-  } catch (error) {
-    console.error("Failed to fetch addresses:", error);
-    message.error("Failed to load addresses.");
-    return [];
-  }
-};
-
-  // Load user profile and addresses
   useEffect(() => {
-    const loadData = async () => {
-  setLoading(true);
-  try {
-    await fetchUserProfile(); // chỉ cần gọi để nó tự setUserData
-    const userAddresses = await fetchAddresses();
-    setAddresses(userAddresses);
-  } catch (error) {
-    console.error("Error loading user data:", error);
-    message.error("Failed to load user data.");
-  } finally {
-    setLoading(false);
-  }
-};
-    loadData();
-  }, []);
+    if (userInfo?.id) {
+      setLoading(false);
+    }
+  }, [userInfo?.id]);
 
-  // Handle profile update
   const handleProfileUpdate = async (values) => {
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.put('http://localhost:3000/api/users/profile', values, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      setUserData(response.data); // Update the userInfo state with the updated info
-      message.success("Profile updated successfully!");
-    } catch (error) {
-      message.error("Failed to update profile.");
+      await updateInfo(values);
+    } catch (err) {
+      setFormLoading(false);
     } finally {
       setFormLoading(false);
     }
   };
 
-  // Handle password change
   const handlePasswordChange = async (values) => {
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      await axios.put('http://localhost:3000/api/users/change-password', values, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      message.success("Password changed successfully!");
-    } catch (error) {
-      message.error("Failed to change password.");
+      await changePassword(values);
+    } catch (err) {
+      setFormLoading(false);
     } finally {
       setFormLoading(false);
     }
   };
 
-  // Open address modal for adding new address
   const handleAddAddress = () => {
     setEditingAddress(null);
     setIsAddressModalVisible(true);
   };
 
-  // Open address modal for editing an existing address
   const handleEditAddress = (address) => {
     setEditingAddress(address);
     setIsAddressModalVisible(true);
   };
 
-  // Handle address deletion
-  const handleDeleteAddress = async (addressId) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.delete(`http://localhost:3000/api/users/shipping-addresses/${addressId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      setAddresses(prev => prev.filter(addr => addr._id !== addressId));
-      message.success("Address deleted successfully!");
-    } catch (error) {
-      message.error("Failed to delete address.");
-    }
-  };
-
-  // Handle setting default address
-  const handleSetDefaultAddress = async (addressId) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.put(`http://localhost:3000/api/users/shipping-addresses/${addressId}/set-default`, null, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: addr.id === addressId })));
-      message.success("Default address updated!");
-    } catch (error) {
-      message.error("Failed to set default address.");
-    }
-  };
-
-  // Handle address form submit
   const handleAddressFormSubmit = async (values) => {
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       if (editingAddress) {
-        const response = await axios.put(`http://localhost:3000/api/users/shipping-addresses/${editingAddress.id}`, values, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        const updatedAddress = response.data.address;
-        setAddresses(prev => prev.map(addr => addr.id === updatedAddress.id ? updatedAddress : addr));
-        message.success("Address updated successfully!");
+        await updateAddress(values);
       } else {
-        const response = await axios.post('http://localhost:3000/api/users/shipping-addresses', values, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        const newAddress = response.data.address;
-        setAddresses(prev => [...prev, newAddress]);
-        message.success("Address added successfully!");
+        await addAddress(values);
       }
       setIsAddressModalVisible(false);
       setEditingAddress(null);
@@ -182,67 +104,229 @@ const fetchAddresses = async () => {
   };
 
   if (loading) {
-    return <Layout><div className="flex justify-center items-center h-64"><Spin size="large" /></div></Layout>;
+    return (
+      <Layout className="min-h-screen bg-gray-50">
+        <Content className="flex justify-center items-center h-screen">
+          <div className="flex flex-col items-center">
+            <Spin size="large" />
+            <Text className="mt-4 text-gray-500">Loading your profile...</Text>
+          </div>
+        </Content>
+      </Layout>
+    );
   }
 
   if (!userInfo) {
-    return <Layout><div className="text-center p-8">Failed to load user data.</div></Layout>;
+    return (
+      <Layout className="min-h-screen bg-gray-50">
+        <Content className="p-8">
+          <div className="text-center p-8 bg-white rounded-lg shadow-md">
+            <Title level={4} className="text-gray-700">
+              Failed to load profile data
+            </Title>
+            <Text className="text-gray-500">
+              Please try again later or contact support
+            </Text>
+            <Button
+              type="primary"
+              className="mt-4 bg-blue-500 hover:bg-blue-600"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </Content>
+      </Layout>
+    );
   }
 
-  return (
-    <Layout>
-      <div className="container mx-auto p-4 md:p-8">
-        <Title level={2} className="mb-6">My Profile</Title>
-        <Tabs defaultActiveKey="1" tabPosition="top">
-          <TabPane tab="Personal Information" key="1">
-            <Card title="Edit Your Information" className="shadow-md">
-              <ProfileUpdateForm 
-                initialValues={{ fullName: userInfo.fullName, email: userInfo.email }} 
-                onFinish={handleProfileUpdate}
-                loading={formLoading}
-              />
-            </Card>
-          </TabPane>
-          <TabPane tab="Delivery Addresses" key="2">
-            <Card title="Manage Your Addresses" className="shadow-md">
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={handleAddAddress} 
-                className="mb-4 bg-green-500 hover:bg-green-600"
-              >
-                Add New Address
-              </Button>
-              <AddressList 
-                addresses={addresses} 
-                onEdit={handleEditAddress} 
-                onDelete={handleDeleteAddress}
-                onSetDefault={handleSetDefaultAddress}
-              />
-            </Card>
-          </TabPane>
-          <TabPane tab="Change Password" key="3">
-            <Card title="Update Your Password" className="shadow-md">
-              <PasswordChangeForm onFinish={handlePasswordChange} loading={formLoading} />
-            </Card>
-          </TabPane>
-        </Tabs>
+  const formatLoyaltyPoints = (points) => {
+    return new Intl.NumberFormat().format(points);
+  };
 
-        <Modal
-          title={editingAddress ? "Edit Address" : "Add New Address"}
-          visible={isAddressModalVisible}
+  return (
+    <Layout className="min-h-screen bg-gray-50">
+      <Content className="py-8 px-4 md:px-0">
+        <div className="max-w-6xl mx-auto">
+          {/* Profile Header */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start">
+              <div className="mb-4 md:mb-0 md:mr-6">
+                <Avatar
+                  size={96}
+                  icon={<UserOutlined />}
+                  className="bg-blue-500"
+                />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <Title level={2} className="mb-1">
+                  {userInfo.fullName}
+                </Title>
+                <Text className="text-gray-500 block mb-2">
+                  {userInfo.email}
+                </Text>
+
+                <div className="mt-3 flex flex-wrap justify-center items-center md:justify-start gap-4">
+                  <div className="flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full">
+                    <EnvironmentOutlined className="mr-1" />
+                    <span>
+                      {userInfo?.addresses.length} Saved Address
+                      {userInfo?.addresses.length !== 1 ? "es" : ""}
+                    </span>
+                  </div>
+                  <Badge
+                    count={formatLoyaltyPoints(userInfo.loyaltyPoints)}
+                    overflowCount={9999999}
+                    showZero
+                  >
+                    <div className="flex items-center bg-amber-50 text-amber-700 px-4 py-3 rounded-full">
+                      <StarOutlined className="mr-1" />
+                      <span>Loyalty Points</span>
+                    </div>
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Section */}
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            type="card"
+            className="bg-white rounded-lg shadow-md profile-tabs"
+          >
+            <TabPane
+              tab={
+                <span className="px-1">
+                  <UserOutlined className="mr-2" />
+                  Personal Information
+                </span>
+              }
+              key="1"
+            >
+              <div className="p-6">
+                <Title level={4} className="mb-4 justify-center flex">
+                  Edit Your Information
+                </Title>
+                <Divider className="my-4" />
+                <div className="max-wl-lg justify-center flex">
+                  <ProfileUpdateForm
+                    initialValues={{
+                      fullName: userInfo.fullName,
+                      email: userInfo.email,
+                    }}
+                    onFinish={handleProfileUpdate}
+                    loading={formLoading}
+                  />
+                </div>
+              </div>
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span className="px-1">
+                  <HomeOutlined className="mr-2" />
+                  Delivery Addresses
+                </span>
+              }
+              key="2"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <Title level={4} className="mb-0">
+                    Manage Your Addresses
+                  </Title>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddAddress}
+                    className="bg-blue-500 hover:bg-blue-600 border-blue-500 flex items-center"
+                  >
+                    Add New Address
+                  </Button>
+                </div>
+                <Divider className="my-4" />
+                {userInfo.addresses.length > 0 ? (
+                  <AddressList
+                    addresses={userInfo.addresses}
+                    onEdit={handleEditAddress}
+                    onDelete={deleteAddress}
+                    onSetDefault={setDefaultAddress}
+                  />
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <EnvironmentOutlined className="text-4xl text-gray-400 mb-3" />
+                    <Title level={5} className="text-gray-500">
+                      No addresses saved yet
+                    </Title>
+                    <Text className="text-gray-500 block mb-4">
+                      Add your first delivery address to make checkout faster
+                    </Text>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={handleAddAddress}
+                      className="bg-blue-500 hover:bg-blue-600"
+                    >
+                      Add New Address
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span className="px-1">
+                  <LockOutlined className="mr-2" />
+                  Security
+                </span>
+              }
+              key="3"
+            >
+              <div className="p-6">
+                <Title level={4} className="mb-4 flex justify-center">
+                  Update Your Password
+                </Title>
+                <Divider className="my-4" />
+                <div className="max-w-lg mx-auto">
+                  <PasswordChangeForm
+                    onFinish={handlePasswordChange}
+                    loading={formLoading}
+                    isDefaultPassword={userInfo.isDefaultPassword}
+                  />
+                </div>
+              </div>
+            </TabPane>
+          </Tabs>
+        </div>
+      </Content>
+
+      <Modal
+        title={
+          <div className="flex items-center">
+            {editingAddress ? (
+              <EditOutlined className="mr-2" />
+            ) : (
+              <PlusOutlined className="mr-2" />
+            )}
+            {editingAddress ? "Edit Address" : "Add New Address"}
+          </div>
+        }
+        open={isAddressModalVisible}
+        onCancel={() => setIsAddressModalVisible(false)}
+        footer={null}
+        destroyOnHidden
+        width={600}
+        className="top-0 mt-7"
+      >
+        <AddressForm
+          initialValues={editingAddress}
+          onSubmit={handleAddressFormSubmit}
           onCancel={() => setIsAddressModalVisible(false)}
-          footer={null}
-          destroyOnClose
-        >
-          <AddressForm 
-            initialValues={editingAddress || { isDefault: addresses.length === 0 }}
-            onFinish={handleAddressFormSubmit}
-            onCancel={() => setIsAddressModalVisible(false)}
-            loading={formLoading}
-          />
-        </Modal>
-      </div>
+          loading={formLoading}
+        />
+      </Modal>
     </Layout>
   );
 };

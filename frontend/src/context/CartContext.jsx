@@ -9,6 +9,7 @@ import { ConfigProvider, message } from "antd";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 import { v4 as uuidv4 } from "uuid";
+import { useLocation } from "react-router-dom";
 
 const CartContext = createContext();
 
@@ -29,15 +30,13 @@ export const CartProvider = ({ children }) => {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [createCart, setCreateCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { pathname } = useLocation();
+  const shouldFetchCart =
+    pathname === "/" ||
+    pathname === "/cart" ||
+    pathname.startsWith("/products/");
   const API_URL = import.meta.env.VITE_API_URL;
 
-  message.config({
-    top: 100,
-    duration: 2,
-    maxCount: 3,
-    rtl: true,
-    prefixCls: "my-message",
-  });
   useEffect(() => {
     if (!localStorage.getItem("isCreateCart") && createCart) {
       createGuestCart();
@@ -95,12 +94,10 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (userInfo?.id) fetchCart();
-  }, [userInfo.id, isLoggedIn]);
-
-  useEffect(() => {
-    console.log(cartItems);
-  }, [cartItems]);
+    if (shouldFetchCart && userInfo?.id && isLoggedIn) {
+      fetchCart();
+    }
+  }, [userInfo.id, isLoggedIn, shouldFetchCart]);
 
   const updateCartInRedis = async () => {
     if (loading) return;

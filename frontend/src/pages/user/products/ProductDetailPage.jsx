@@ -69,7 +69,6 @@ const getMockProductById = (id) => {
     averageRating: parseFloat((Math.random() * 2 + 3).toFixed(1)), // e.g. 3.0 to 5.0
     totalReviews: Math.floor(Math.random() * 100 + 5),
     variants: [
-      // Every product must have at least two variants, each with independent inventory
       {
         id: `var${baseId}a`,
         name: "Crimson Red / 64GB",
