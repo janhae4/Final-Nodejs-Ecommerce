@@ -43,10 +43,17 @@ const ReviewsSection = ({ productId }) => {
   const handleCommentSubmit = async (comment) => {
     setFormLoading(true);
     try {
-      await axios.post(
+      const res = await axios.post(
         `http://localhost:3000/api/products/${productId}/comments_anonymous`,
         { content: comment }
       );
+
+      const newReview = res.data.product.comments;
+      const latestReview = newReview[newReview.length - 1]; 
+      console.log('New review:', latestReview);
+
+      // Cập nhật UI
+      setReviews(prev => [latestReview, ...prev]);
       message.success('Comment submitted!');
     } catch (error) {
       console.error('Comment submit error:', error);
