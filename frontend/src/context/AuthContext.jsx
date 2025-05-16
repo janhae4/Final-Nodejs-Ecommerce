@@ -103,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Add address failed:", error);
       message.error("Failed to add address.");
+      message.error("Failed to add address.");
     }
   };
 
@@ -114,6 +115,7 @@ export const AuthProvider = ({ children }) => {
       await getUserInfo();
       message.success("Address updated successfully.");
     } catch (error) {
+      message.error("Failed to update address.");
       message.error("Failed to update address.");
     }
   };
@@ -128,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       message.success("Address deleted successfully.");
     } catch (error) {
       message.error("Failed to delete address.");
+      message.error("Failed to delete address.");
     }
   };
 
@@ -137,7 +140,7 @@ export const AuthProvider = ({ children }) => {
 
   const getUserInfo = async () => {
     try {
-      const id = JSON.parse(localStorage.getItem("user"))?.id;
+      const id = JSON.parse(localStorage.getItem("user") || [])?.id;
       let response;
       if (!id?.includes("guest")) {
         response = await axios.get(`${API_URL}/users/profile`, {
@@ -147,6 +150,7 @@ export const AuthProvider = ({ children }) => {
       } else if (id.includes("guest")) {
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
+      console.log(response)
       setUserInfo({ id, ...response?.data });
       setAddresses(response?.data?.addresses);
       return { id, ...response?.data };

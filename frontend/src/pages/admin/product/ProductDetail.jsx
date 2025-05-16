@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Card, Image, Select, Rate, List, Divider, Tag, Spin, message } from 'antd';
+import { Card, Image, Select, Rate, List, Divider, Tag, Spin, message, Collapse, } from 'antd';
 import { Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
+const { Panel } = Collapse;
 const { Option } = Select;
 
 const ProductDetail = () => {
@@ -69,22 +70,27 @@ const ProductDetail = () => {
                     </div>
                 </div>
             }>
-                <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: 400 }}>
+                <div style={{ display: 'flex', gap: '30px' }}>
+                    <div style={{ maxWidth: 500, width: '100%', textAlign: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                         {product.images.length > 0 ? (
                             <>
-                                {/* Main image*/}
+                                {/* Main image */}
                                 <Image
                                     src={product.images[selectedImageIndex]}
                                     width={300}
                                     height={300}
-                                    style={{ objectFit: 'contain', marginBottom: 16, cursor: 'pointer' }}
+                                    style={{
+                                        objectFit: 'contain',
+                                        marginBottom: 16,
+                                        cursor: 'pointer',
+                                        borderRadius: 8,
+                                    }}
                                     alt={`main-${selectedImageIndex}`}
                                     preview={false}
-                                    onClick={() => setPreviewVisible(true)} // click image, open preview
+                                    onClick={() => setPreviewVisible(true)}
                                 />
 
-                                {/* Image preview group (hidden) */}
+                                {/* Preview group (hidden) */}
                                 <Image.PreviewGroup
                                     preview={{
                                         visible: previewVisible,
@@ -94,23 +100,29 @@ const ProductDetail = () => {
                                     }}
                                 >
                                     {product.images.map((img, idx) => (
-                                        <Image
-                                            key={idx}
-                                            src={img}
-                                            style={{ display: 'none' }}
-                                        />
+                                        <Image key={idx} src={img} style={{ display: 'none' }} />
                                     ))}
                                 </Image.PreviewGroup>
 
-                                {/* Thumbnail image */}
-                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                                {/* Thumbnail image group */}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        overflowX: 'auto',
+                                        paddingBottom: 10,
+                                        gap: 10,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
                                     {product.images.map((img, idx) => (
                                         <div
                                             key={idx}
                                             style={{
-                                                border: idx === selectedImageIndex ? '2px solid red' : '1px solid #ccc',
+                                                display: 'inline-block',
+                                                border: idx === selectedImageIndex ? '2px solid green' : '1px solid #ccc',
                                                 padding: 2,
                                                 cursor: 'pointer',
+                                                borderRadius: 4,
                                             }}
                                             onClick={() => setSelectedImageIndex(idx)}
                                         >
@@ -118,13 +130,17 @@ const ProductDetail = () => {
                                                 src={img}
                                                 width={60}
                                                 height={60}
-                                                style={{ objectFit: 'cover' }}
+                                                style={{
+                                                    objectFit: 'cover',
+                                                    borderRadius: 4,
+                                                }}
                                                 preview={false}
                                                 alt={`thumb-${idx}`}
                                             />
                                         </div>
                                     ))}
                                 </div>
+
                             </>
                         ) : (
                             <div style={{ textAlign: 'center', color: '#aaa', padding: 20 }}>
@@ -133,14 +149,14 @@ const ProductDetail = () => {
                         )}
                     </div>
 
+                    {/* Product Info */}
                     <div style={{ maxWidth: 500 }}>
                         <p><strong>Brand:</strong> {product.brand}</p>
                         <p><strong>Category:</strong> {product.category}</p>
                         <p><strong>Price:</strong> {product.price.toLocaleString()} VNĐ</p>
-                        <p><strong>Product Description:</strong><br />{product.shortDescription}</p>
 
                         {/* Tags */}
-                        <div style={{ marginTop: 10 }}>
+                        <div>
                             <strong>Tags:</strong>
                             <div style={{ marginTop: 5 }}>
                                 {product.tags.map((tag, index) => (
@@ -150,7 +166,7 @@ const ProductDetail = () => {
                         </div>
 
                         <div style={{ marginTop: 10 }}>
-                            <strong>Total inventory:</strong> {totalStock} product
+                            <strong>Total inventory:</strong> {totalStock} products
                         </div>
 
                         <div style={{ marginTop: 10 }}>
@@ -162,7 +178,7 @@ const ProductDetail = () => {
                             >
                                 {product.variants.map(v => (
                                     <Option key={v._id} value={v._id}>
-                                        {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} left)
+                                        {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} in stock)
                                     </Option>
                                 ))}
                             </Select>
@@ -176,6 +192,18 @@ const ProductDetail = () => {
                     </div>
                 </div>
 
+                <Divider />
+                <Collapse ghost>
+                    <Panel
+                        header={<strong style={{ fontSize: 20 }}>Description</strong>}
+                        key="1"
+                        style={{ fontFamily: 'inherit', fontSize: 16 }}
+                    >
+                        <div style={{ whiteSpace: 'pre-line' }}>
+                            {product.shortDescription}
+                        </div>
+                    </Panel>
+                </Collapse>
                 <Divider />
 
                 <div>

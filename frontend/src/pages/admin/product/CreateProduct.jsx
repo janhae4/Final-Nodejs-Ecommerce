@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Form,
     Input,
@@ -15,6 +16,7 @@ import axios from 'axios';
 const { Title } = Typography;
 
 const CreateProduct = () => {
+    const navigate = useNavigate();
     const [form] = Form.useForm();
     const [fileList, setFileList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
@@ -51,6 +53,7 @@ const CreateProduct = () => {
             antdMessage.success(res.data.message || 'Create a successful product!');
             form.resetFields();
             setFileList([]);
+            navigate('/admin/products');
         } catch (error) {
             console.error(error);
             antdMessage.error(error.response?.data?.error || 'An error occurred. Please try again.');

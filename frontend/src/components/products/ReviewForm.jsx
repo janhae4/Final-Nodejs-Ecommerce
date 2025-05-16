@@ -3,13 +3,16 @@ import { Form, Input, Button, Rate, Alert } from 'antd';
 
 const ReviewForm = ({ onSubmitComment, onSubmitRating, isLoggedIn, loading }) => {
   const [form] = Form.useForm();
+  console.log('isLoggedIn:', isLoggedIn);
 
   const handleCommentSubmit = (values) => {
+    console.log('Comment submitted:', values.comment);
     onSubmitComment(values.comment); // Only comment if not logged in
     form.resetFields(['comment']);
   };
 
   const handleRatingSubmit = (values) => {
+    console.log('Comment submitted 2:', values.comment);
     onSubmitRating(values.comment, values.rating); // Comment and rating if logged in
     form.resetFields();
   };

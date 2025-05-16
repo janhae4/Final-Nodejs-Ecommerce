@@ -1,22 +1,53 @@
-// src/pages/ProductDetailPage.jsx
-import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom"; // React Router for product ID
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 import {
-  Row,
-  Col,
-  Typography,
+  Card,
+  Image,
+  Select,
+  Rate,
+  List,
+  Divider,
   Tag,
-  Button,
   Spin,
   message,
-  Descriptions,
+  Collapse,
+  Typography,
+  Row,
+  Col,
   Breadcrumb,
+  Space,
+  Statistic,
+  Carousel,
   Layout,
+  Tooltip,
+  Form,
 } from "antd";
-import { HomeOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import ImageGallery from "../../../components/ImageGallery";
-import VariantSelector from "../../../components/products/VariantSelector";
+import { Button, Modal } from "antd";
+import { useNavigate } from "react-router-dom";
+
+import { Comment } from "@ant-design/compatible";
+
+import {
+  EditOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined,
+  ShoppingOutlined,
+  TagOutlined,
+  StarOutlined,
+  HomeOutlined,
+  AppstoreOutlined,
+  LeftOutlined,
+  RightOutlined,
+  InfoCircleOutlined,
+  ShoppingCartOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import TextArea from "antd/es/input/TextArea";
+import { useCart } from "../../../context/CartContext";
 import ReviewsSection from "../../../components/products/ReviewSections";
+<<<<<<< HEAD
 import StarRatingDisplay from "../../../components/StartRatingDisplay";
 // import { fetchProductById } from '../../../services/productService'; // API call
 
@@ -106,235 +137,385 @@ const getMockProductById = (id) => {
     ),
   };
 };
+=======
+>>>>>>> origin/khuong/comment
 
+const { Panel } = Collapse;
+const { Option } = Select;
+const { Title, Text, Paragraph } = Typography;
+const { confirm } = Modal;
+dayjs.extend(relativeTime);
 const ProductDetailPage = () => {
-  const { productId } = useParams();
+  const { addItemToCart } = useCart();
+  const { slug: productId } = useParams();
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
+  const carouselRef = useRef();
+  const navigate = useNavigate();
+  const [form] = Form.useForm();
+  const [rating, setRating] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL
+  const handleSubmit = async () => {
+    await form.validateFields();
+    console.log(form.getFieldsValue());
+  };
+
+  const handleAddCart = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/products/${productId}`);
+      addItemToCart(res.data.product, selectedVariant);
+    } catch (err) {
+      console.error(err);
+      message.error("Cannot add product to cart!");
+    }
+  }
 
   useEffect(() => {
-    setLoading(true);
-    // Simulating API call
-    const fetchedProduct = getMockProductById(productId);
-    setTimeout(() => {
-      if (fetchedProduct) {
-        setProduct(fetchedProduct);
-        // Auto-select first available variant
-        const firstAvailable = fetchedProduct.variants.find((v) => v.stock > 0);
-        setSelectedVariant(firstAvailable || fetchedProduct.variants[0]); // fallback to first if all out of stock
-      } else {
-        messageApi.error("Product not found.");
-        // navigate('/404') or similar
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:3000/api/products/${productId}`
+        );
+        setProduct(res.data.product);
+        setSelectedVariant(res.data.product.variants[0]?._id);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        message.error("Cannot get product!");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
+    };
 
-    /* // Real API Call Example:
-    fetchProductById(productId)
-      .then(data => {
-        setProduct(data);
-        if (data && data.variants && data.variants.length > 0) {
-          const firstAvailable = data.variants.find(v => v.stock > 0);
-          setSelectedVariant(firstAvailable || data.variants[0]);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        messageApi.error("Failed to load product details.");
-        console.error(err);
-        setLoading(false);
-      });
-    */
+    fetchProduct();
   }, [productId]);
 
-  const handleVariantSelect = (variantId) => {
-    const variant = product.variants.find((v) => v.id === variantId);
-    setSelectedVariant(variant);
-    setQuantity(1); // Reset quantity on variant change
-  };
-
-  const handleAddToCart = () => {
-    if (!selectedVariant) {
-      messageApi.error("Please select a variant.");
-      return;
-    }
-    if (selectedVariant.stock === 0) {
-      messageApi.warn("This variant is currently out of stock.");
-      return;
-    }
-    if (quantity > selectedVariant.stock) {
-      messageApi.warn(
-        `Only ${selectedVariant.stock} items available for this variant.`
-      );
-      return;
-    }
-    // product object itself, selectedVariant object, quantity
-    addItemToCart(product, selectedVariant, quantity);
-    // messageApi.success is now handled in CartContext
-  };
-  if (loading) {
+  if (loading)
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <Spin size="large" />
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" tip="Loading..." />
+      </div>
     );
-  }
 
-  if (!product) {
+  if (!product)
     return (
-      <Layout>
-        <div className="text-center p-10">
-          Product not found or failed to load.{" "}
-          <Link to="/products">Go to Catalog</Link>
-        </div>
-      </Layout>
+      <div className="text-center mt-24">
+        <Title level={3}>Product not found!</Title>
+        <Button type="primary" onClick={() => navigate("/admin/products")}>
+          Back to catalog
+        </Button>
+      </div>
     );
-  }
 
-  const currentPrice = product.price + (selectedVariant?.priceModifier || 0);
+  const ratedComments = product.comments?.filter(c => c.rating !== undefined && c.rating !== null);
+
+  const avgRating = ratedComments && ratedComments.length > 0
+    ? ratedComments.reduce((acc, c) => acc + c.rating, 0) / ratedComments.length
+    : 0;
+
+  const numRatedComments = ratedComments ? ratedComments.length : 0;
+
+  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
 
   return (
-    <Layout>
-      {contextHolder}
-      <div className="container mx-auto p-4 md:p-8">
-        <Breadcrumb className="mb-6">
-          <Breadcrumb.Item href="/">
-            <HomeOutlined />
-          </Breadcrumb.Item>
-          <Breadcrumb.Item href="/products">
-            <span>Products</span>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>{product.name}</Breadcrumb.Item>
-        </Breadcrumb>
-
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={12} lg={14}>
-            <ImageGallery images={product.images} />
-          </Col>
-          <Col xs={24} md={12} lg={10}>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <Tag color="blue" className="mb-2">
-                {product.category.name}
-              </Tag>
-              <Title level={2} className="mb-2">
-                {product.name}
-              </Title>
-              <div className="mb-3">
-                <StarRatingDisplay
-                  rating={product.averageRating}
-                  count={product.totalReviews}
-                  size="medium"
-                />
-              </div>
-              <Text strong className="block text-3xl text-blue-600 mb-4">
-                ${currentPrice.toFixed(2)}
-              </Text>
-
-              <Paragraph className="text-gray-600 mb-4 whitespace-pre-line leading-relaxed">
-                {product.shortDescription}
-              </Paragraph>
-
-              <Descriptions bordered column={1} size="small" className="mb-4">
-                <Descriptions.Item label="Brand">
-                  {product.brand.name}
-                </Descriptions.Item>
-                {product.tags && product.tags.length > 0 && (
-                  <Descriptions.Item label="Tags">
-                    {product.tags.map((tag) => (
-                      <Tag key={tag} color="geekblue">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </Descriptions.Item>
-                )}
-                {selectedVariant && (
-                  <Descriptions.Item label="Availability">
-                    <Text
-                      type={selectedVariant.stock > 0 ? "success" : "danger"}
+    <Layout className="site-content px-6 pb-6 mt-5">
+      <Card
+        variant="borderless"
+        className="card-shadow shadow-none rounded-2xl"
+        title={
+          <div className="flex justify-between items-center">
+            <Title level={3} className="m-0">
+              {product.nameProduct}
+            </Title>
+          </div>
+        }
+      >
+        <Row gutter={[32, 24]}>
+          {/* Product Images */}
+          <Col xs={24} md={12}>
+            <Card
+              variant="borderless"
+              className="inner-card shadow-none bg-gray-50 rounded-lg"
+            >
+              {product.images.length > 0 ? (
+                <>
+                  <div className="relative mb-4">
+                    <Carousel
+                      ref={carouselRef}
+                      afterChange={(current) => setSelectedImageIndex(current)}
+                      dots={false}
+                      className="product-carousel"
                     >
-                      {selectedVariant.stock > 0
-                        ? `${selectedVariant.stock} in stock`
-                        : "Out of Stock"}
-                    </Text>
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
+                      {product.images.map((img, idx) => (
+                        <div key={idx} className="carousel-item-container">
+                          <Image
+                            src={img}
+                            width="100%"
+                            height={400}
+                            className="object-contain cursor-pointer rounded-lg bg-white p-3 shadow-sm transition-all duration-500"
+                            alt={`main-${idx}`}
+                            preview={false}
+                            onClick={() => setPreviewVisible(true)}
+                          />
+                        </div>
+                      ))}
+                    </Carousel>
 
-              <VariantSelector
-                variants={product.variants}
-                selectedVariant={selectedVariant}
-                onSelectVariant={handleVariantSelect}
-              />
+                    {/* Carousel Navigation Buttons */}
+                    <Button
+                      icon={<LeftOutlined />}
+                      className="absolute left-2 top-1/2 z-10 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 border-0 shadow-md rounded-full flex items-center justify-center"
+                      onClick={() => carouselRef.current.prev()}
+                      size="large"
+                    />
+                    <Button
+                      icon={<RightOutlined />}
+                      className="absolute right-2 top-1/2 z-10 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 border-0 shadow-md rounded-full flex items-center justify-center"
+                      onClick={() => carouselRef.current.next()}
+                      size="large"
+                    />
+                  </div>
 
-              {selectedVariant && selectedVariant.stock > 0 && (
-                <div className="flex items-center my-4">
-                  <Text className="mr-2">Quantity:</Text>
-                  <Button
-                    size="small"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </Button>
-                  <Input
-                    value={quantity}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      if (
-                        !isNaN(val) &&
-                        val > 0 &&
-                        val <= selectedVariant.stock
-                      )
-                        setQuantity(val);
-                      else if (!isNaN(val) && val > selectedVariant.stock)
-                        setQuantity(selectedVariant.stock);
-                      else if (e.target.value === "") setQuantity(1); // Or handle empty string better
+                  {/* Preview group (hidden) */}
+                  <Image.PreviewGroup
+                    preview={{
+                      visible: previewVisible,
+                      onVisibleChange: (vis) => setPreviewVisible(vis),
+                      current: selectedImageIndex,
+                      onChange: (index) => setSelectedImageIndex(index),
                     }}
-                    className="w-16 text-center mx-2"
-                  />
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setQuantity((q) => Math.min(selectedVariant.stock, q + 1))
-                    }
-                    disabled={quantity >= selectedVariant.stock}
                   >
-                    +
-                  </Button>
+                    {product.images.map((img, idx) => (
+                      <Image key={idx} src={img} className="hidden" />
+                    ))}
+                  </Image.PreviewGroup>
+
+                  {/* Thumbnail image group */}
+                  <div className="flex overflow-x-auto py-2 gap-2 justify-center">
+                    {product.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${idx === selectedImageIndex
+                          ? "border-2 border-blue-500 shadow-md scale-110"
+                          : "border border-gray-200 hover:scale-105"
+                          }`}
+                        onClick={() => {
+                          setSelectedImageIndex(idx);
+                          carouselRef.current.goTo(idx);
+                        }}
+                      >
+                        <Image
+                          src={img}
+                          width={60}
+                          height={60}
+                          className="object-cover rounded"
+                          preview={false}
+                          alt={`thumb-${idx}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-gray-400 p-10 bg-white rounded-lg border border-dashed border-gray-300">
+                  <p>No product images available</p>
                 </div>
               )}
+            </Card>
+          </Col>
 
-              <Button
-                type="primary"
-                icon={<ShoppingCartOutlined />}
-                size="large"
-                block
-                className="bg-green-500 hover:bg-green-600 mt-4"
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || selectedVariant.stock === 0}
-              >
-                {selectedVariant && selectedVariant.stock > 0
-                  ? "Add to Cart"
-                  : "Out of Stock"}
-              </Button>
-            </div>
+          {/* Product Information */}
+          <Col xs={24} md={12}>
+            <Card
+              variant="borderless"
+              className="inner-card shadow-none rounded-lg"
+            >
+              <Row gutter={[16, 24]}>
+                {/* Main Details */}
+                <Col span={24}>
+                  <Card
+                    variant="borderless"
+                    className="detail-section shadow-none rounded-lg"
+                  >
+                    <Title level={4}>General Information</Title>
+
+                    <Row gutter={[16, 16]}>
+                      <Col span={12}>
+                        <Statistic
+                          title="Brand"
+                          value={product.brand || "Not specified"}
+                          valueStyle={{ fontSize: "16px" }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Category"
+                          value={product.category || "Uncategorized"}
+                          valueStyle={{ fontSize: "16px" }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Base Price"
+                          value={`${product.price.toLocaleString()} VNĐ`}
+                          valueStyle={{
+                            color: "#cf1322",
+                            fontSize: "16px",
+                            fontWeight: "bold",
+                          }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="Total Stock"
+                          value={totalStock}
+                          suffix="items"
+                          valueStyle={{ fontSize: "16px" }}
+                          prefix={<ShoppingOutlined />}
+                        />
+                      </Col>
+                      <Col span={24}>
+                        <div>
+                          <Title level={5} className="mb-2">
+                            <TagOutlined /> Tags:
+                          </Title>
+                          <div>
+                            {product.tags.length > 0 ? (
+                              product.tags.map((tag, index) => (
+                                <Tag color="blue" key={index} className="m-1">
+                                  {tag}
+                                </Tag>
+                              ))
+                            ) : (
+                              <Text type="secondary">No tags</Text>
+                            )}
+                          </div>
+                        </div>
+                      </Col>
+                      <Col span={24}>
+                        <Title level={5} className="mb-2">
+                          <StarOutlined /> Rating:
+                          <span className="ml-2">
+                            <Rate
+                              allowHalf
+                              disabled
+                              value={avgRating}
+                              className="text-base"
+                            />
+                            <Text className="ml-2">
+                              {avgRating.toFixed(1)}/5 ({numRatedComments} reviews)
+                            </Text>
+                          </span>
+                        </Title>
+
+                        <Title level={4}>Product Variants</Title>
+
+                        <Select
+                          className="w-full"
+                          placeholder="Select variant"
+                          value={selectedVariant}
+                          onChange={setSelectedVariant}
+                          optionLabelProp="label"
+                        >
+                          {product.variants.map((v) => (
+                            <Option key={v._id} value={v._id} label={v.name}>
+                              <div className="flex justify-between">
+                                <span>{v.name}</span>
+                                <span>
+                                  <Text
+                                    className={
+                                      v.inventory > 0
+                                        ? "text-green-500"
+                                        : "text-red-500"
+                                    }
+                                  >
+                                    {v.inventory > 0
+                                      ? `${v.inventory} in stock`
+                                      : "Out of stock"}
+                                  </Text>
+                                  <Text strong className="ml-2">
+                                    {v.price.toLocaleString()} VNĐ
+                                  </Text>
+                                </span>
+                              </div>
+                            </Option>
+                          ))}
+                        </Select>
+                      </Col>
+
+                      <Col span={24}>
+                        <Button
+                          className="w-full mx-auto bg-red-500 hover:bg-red-600 py-4 px-3 text-white font-semibold"
+                          onClick={() => handleAddCart()}
+                        >
+                          <ShoppingCartOutlined className="font-bold" /> Add to
+                          Cart
+                        </Button>
+                      </Col>
+
+                      {/* Product Description Button */}
+                      <Col span={24}>
+                        <Button
+                          type="primary"
+                          icon={<InfoCircleOutlined />}
+                          onClick={() => setShowDescription(!showDescription)}
+                          className="w-full"
+                        >
+                          {showDescription
+                            ? "Hide Description"
+                            : "Show Description"}
+                        </Button>
+
+                        {/* Description Panel with Animation */}
+                        <div
+                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${showDescription
+                            ? "max-h-96 opacity-100"
+                            : "max-h-0 opacity-0"
+                            }`}
+                        >
+                          <div
+                            className={`p-4 transform transition-all duration-500 ${showDescription
+                              ? "translate-y-0"
+                              : "-translate-y-4"
+                              }`}
+                          >
+                            <Paragraph className="text-base whitespace-pre-line">
+                              {product.shortDescription ||
+                                "No description available for this product."}
+                            </Paragraph>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+              </Row>
+            </Card>
           </Col>
         </Row>
+        {/* Comments */}
+        <Card variant="borderless" className="rounded-2xl shadow-none">
+          <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
 
-        <div className="mt-10">
-          <ReviewsSection
-            productId={product.id}
-            initialReviews={product.reviews}
-            averageRating={product.averageRating}
-            totalReviews={product.totalReviews}
-          />
-        </div>
-      </div>
+          {/* New comment form */}
+          <div className="mt-12">
+            <ReviewsSection
+              productId={product._id}
+            />
+          </div>
+
+          <Divider className="my-4" />
+
+          {/* Comments list */}
+
+        </Card>
+      </Card>
+      {/* Description - Removed since it's now in General Info */}
     </Layout>
   );
 };

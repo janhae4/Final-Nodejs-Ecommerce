@@ -63,7 +63,10 @@ const ProductCard = ({
         <Button
           type="primary"
           className="bg-brand-primary hover:bg-blue-500 hover:shadow-md hover:shadow-blue-500/50 border-brand-primary py-4"
-          onClick={() => action(product)}
+          onClick={(e) => {
+            e.preventDefault();
+            action(product);
+          }}
           icon={<ShoppingCartOutlined />}
         >
           Add to Cart
@@ -74,8 +77,8 @@ const ProductCard = ({
         <Meta
           title={
             <Link
-              href="#"
-              className="block text-gray-800 hover:text-brand-primary text-sm font-semibold
+              href={`/product/detail/${product._id}`}
+              className="block text-gray-800 hover:text-brand-primary text-base font-semibold
               line-clamp-2 whitespace-normal break-words"
               style={{ minHeight: "80px" }}
             >

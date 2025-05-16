@@ -1,101 +1,100 @@
-// src/components/products/ReviewsSection.jsx
 import React, { useState, useEffect } from 'react';
 import { List, Typography, message, Divider } from 'antd';
 import ReviewItem from './ReviewItem';
 import ReviewForm from './ReviewForm';
 import StarRatingDisplay from '../StartRatingDisplay';
-// import { useAuth } from '../../contexts/AuthContext'; // Your auth context
-// import useWebSocket from 'react-use-websocket'; // For WebSocket integration
+import { useAuth } from "../../context/AuthContext";
+import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-const ReviewsSection = ({ productId, initialReviews = [], averageRating = 0, totalReviews = 0 }) => {
-  const [reviews, setReviews] = useState(initialReviews);
-  const [avgRating, setAvgRating] = useState(averageRating);
-  const [numReviews, setNumReviews] = useState(totalReviews);
+const ReviewsSection = ({ productId }) => {
+  const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [numReviews, setNumReviews] = useState(0);
   const [formLoading, setFormLoading] = useState(false);
-  
-  // const { isLoggedIn, user } = useAuth(); // Get from your auth context
-  const isLoggedIn = true; // MOCK: Replace with actual auth check
-  const user = { name: 'Current User' }; // MOCK: Replace with actual user
+  const { isLoggedIn, userInfo, logout, login } = useAuth();
 
-  // --- WebSocket (Optional) ---
-  // const socketUrl = `wss://your-api.com/ws/products/${productId}/reviews`;
-  // const { lastMessage, readyState } = useWebSocket(socketUrl, {
-  //   onOpen: () => console.log('WebSocket connected for reviews'),
-  //   shouldReconnect: (closeEvent) => true,
-  // });
-
-  // useEffect(() => {
-  //   if (lastMessage !== null) {
-  //     const newReviewData = JSON.parse(lastMessage.data);
-  //     // Assuming newReviewData is an object with { type: 'NEW_REVIEW'/'UPDATE_RATING', payload: ... }
-  //     if (newReviewData.type === 'NEW_REVIEW') {
-  //       setReviews(prevReviews => [newReviewData.payload, ...prevReviews]); // Add to top
-  //       // Or fetch all reviews again if easier: fetchProductReviews();
-  //     }
-  //     if (newReviewData.type === 'UPDATE_RATING_STATS') {
-  //       setAvgRating(newReviewData.payload.averageRating);
-  //       setNumReviews(newReviewData.payload.totalReviews);
-  //     }
-  //     message.info('Reviews updated!');
-  //   }
-  // }, [lastMessage]);
-  // --- End WebSocket ---
-
-  // Simulate fetching reviews (normally done in ProductDetailPage)
+  console.log('User: ', userInfo._id);
+  console.log('Product ID:', productId);
+  // --- Fetch Product Reviews on mount ---
   useEffect(() => {
-    // This is where you might initially fetch reviews if not passed as props
-    // Or re-fetch if using WebSockets and a full refresh is preferred on new message.
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3000/api/products/${productId}`); // Adjust endpoint
+        const product = res.data.product;
+        console.log('Product after fetch comment:', product);
+
+        // Assumes API returns populated 'comments.user.fullName'
+        setReviews(product.comments);
+        setAvgRating(product.ratingAverage || 0);
+        setNumReviews(product.ratingCount || 0);
+      } catch (error) {
+        console.error('Error fetching product reviews:', error);
+        message.error('Failed to load product reviews');
+      }
+    };
+
+    fetchReviews();
   }, [productId]);
 
-
-  const handleCommentSubmit = async (commentText) => {
+  // Send comments without rating, no token needed
+  const handleCommentSubmit = async (comment) => {
     setFormLoading(true);
     try {
-      // API call to post comment (guest)
-      // await postGuestComment(productId, { content: commentText, author: 'Guest' });
-      const newComment = {
-        id: `comment-${Date.now()}`,
-        author: 'Guest',
-        content: commentText,
-        datetime: new Date().toISOString(),
-      };
-      setReviews(prev => [newComment, ...prev]); // Optimistic update
-      message.success('Comment submitted for moderation!');
+      const res = await axios.post(
+        `http://localhost:3000/api/products/${productId}/comments_anonymous`,
+        { content: comment }
+      );
+
+      const newReview = res.data.product.comments;
+      const latestReview = newReview[newReview.length - 1]; 
+      console.log('New review:', latestReview);
+
+      // Cập nhật UI
+      setReviews(prev => [latestReview, ...prev]);
+      message.success('Comment submitted!');
     } catch (error) {
+      console.error('Comment submit error:', error);
       message.error('Failed to submit comment.');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleRatingSubmit = async (commentText, ratingValue) => {
+  // --- Handle new review submission ---
+  const handleRatingSubmit = async (comment, rating) => {
     if (!isLoggedIn) {
-      message.error('You must be logged in to rate.');
+      message.error('You must be logged in to submit a review.');
       return;
     }
+
     setFormLoading(true);
     try {
-      // API call to post review (comment + rating, logged in user)
-      // const newReview = await postUserReview(productId, { content: commentText, rating: ratingValue, author: user.name });
-      const newReview = {
-        id: `review-${Date.now()}`,
-        author: user.name, // from auth context
-        content: commentText,
-        rating: ratingValue,
-        datetime: new Date().toISOString(),
-      };
-      setReviews(prev => [newReview, ...prev]); // Optimistic update
-      // Update average rating and count - ideally from API response or WebSocket
-      // For now, just a placeholder update
-      setNumReviews(prev => prev + 1);
-      // Recalculate avgRating (simplified)
-      const totalRatingSum = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) + ratingValue;
-      setAvgRating(totalRatingSum / (reviews.length + 1));
+      const res = await axios.post(`http://localhost:3000/api/products/${productId}/comments`, {
+        content: comment,
+        rating: rating,
+      },
+        { withCredentials: true }
+      );
+
+      // console.log('Response data:', res.data);
+
+      const newReview = res.data.product.comments;
+      const latestReview = newReview[newReview.length - 1]; 
+      console.log('New review:', latestReview);
+
+      // Cập nhật UI
+      setReviews(prev => [latestReview, ...prev]);
+
+      // Optionally re-fetch full product if ratingAverage not trả về
+      const updatedProduct = await axios.get(`http://localhost:3000/api/products/${productId}`);
+      setAvgRating(updatedProduct.data.product.ratingAverage || 0);
+      setNumReviews(updatedProduct.data.product.ratingCount || 0);
 
       message.success('Review submitted!');
     } catch (error) {
+      console.error('Review submit error:', error);
       message.error('Failed to submit review.');
     } finally {
       setFormLoading(false);
@@ -105,7 +104,7 @@ const ReviewsSection = ({ productId, initialReviews = [], averageRating = 0, tot
   return (
     <div className="mt-8">
       <Title level={3} className="mb-4">Customer Reviews & Ratings</Title>
-      
+
       {numReviews > 0 && (
         <div className="mb-6 p-4 bg-white rounded-lg shadow">
           <Text strong className="text-xl mr-2">{avgRating.toFixed(1)}</Text>
@@ -115,7 +114,7 @@ const ReviewsSection = ({ productId, initialReviews = [], averageRating = 0, tot
       )}
 
       <Divider />
-      
+
       <ReviewForm
         onSubmitComment={handleCommentSubmit}
         onSubmitRating={handleRatingSubmit}
@@ -129,8 +128,19 @@ const ReviewsSection = ({ productId, initialReviews = [], averageRating = 0, tot
         <List
           header={<Text strong>{`${reviews.length} Review(s)`}</Text>}
           itemLayout="horizontal"
-          dataSource={reviews}
-          renderItem={review => <ReviewItem review={review} />}
+          dataSource={reviews?.filter(Boolean)}
+          renderItem={review => (
+            <div key={review._id || review.id || review.createdAt}>
+              <ReviewItem
+                review={{
+                  author: review.userFullName || 'Anonymous',
+                  content: review.content,
+                  rating: review.rating,
+                  datetime: review.createdAt,
+                }}
+              />
+            </div>
+          )}
           className="bg-white p-4 rounded-lg shadow"
         />
       ) : (

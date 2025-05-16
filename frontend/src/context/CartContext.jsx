@@ -25,7 +25,7 @@ export const CartProvider = ({ children }) => {
   const { isLoggedIn, userInfo, setAddresses } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [discountInfo, setDiscountInfo] = useState(null);
-  const [shippingCost, setShippingCost] = useState(5.0);
+  const [shippingCost, setShippingCost] = useState(0);
   const [taxRate, setTaxRate] = useState(0.07);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [createCart, setCreateCart] = useState(false);
@@ -186,6 +186,7 @@ export const CartProvider = ({ children }) => {
       }
     });
     message.success(`Added into cart!`);
+    message.success(`Added into cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {
@@ -198,6 +199,7 @@ export const CartProvider = ({ children }) => {
 
           if (newQuantity < 1) return { ...item, quantity: 1 };
           if (inventory !== undefined && newQuantity > inventory) {
+            message.warning(`Only ${inventory} available.`);
             message.warning(`Only ${inventory} available.`);
             return { ...item, quantity: inventory };
           }
@@ -239,6 +241,7 @@ export const CartProvider = ({ children }) => {
         });
       } else {
         const guestId = userInfo.id;
+        console.log(userInfo);
         await axios.delete(`${API_URL}/guests/cart/${guestId}`);
       }
       setCartItems([]);
@@ -276,6 +279,10 @@ export const CartProvider = ({ children }) => {
       subtotal - discountAmount + taxes - loyaltyPoints;
     return totalBeforeShipping > 0 ? totalBeforeShipping + shippingCost : 0;
   }, [subtotal, discountAmount, taxes, shippingCost, loyaltyPoints]);
+
+  useEffect(() => {
+    setShippingCost(subtotal > 1000000 ? 0 : subtotal * 0.05);
+  }, [total]);
 
   const applyDiscountCode = async (code) => {
     try {

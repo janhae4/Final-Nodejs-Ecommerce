@@ -179,6 +179,7 @@ exports.deleteUserCart = async (req, res) => {
 
 exports.getInfo = async (req, res) => {
   try {
+    console.log(req.params)
     const guestId = req.params.guestId;
     const order = await redisService.getInfo(guestId);
     res.json(order);
