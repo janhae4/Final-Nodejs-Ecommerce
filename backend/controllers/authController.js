@@ -43,6 +43,22 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+exports.resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const result = await authService.resetPassword(token, password);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    const statusCode = err.message === 'Token and password are required' ? 400 :
+                      err.message === 'Invalid or expired token' ? 401 :
+                      err.message === 'Token expired' ? 401 : 500;
+    res.status(statusCode).json({ message: err.message });
+  }
+};
+
+
 exports.logout = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,

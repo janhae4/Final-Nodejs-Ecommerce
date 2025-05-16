@@ -5,6 +5,7 @@ const profileController = require('../controllers/profileController');
 const redisController = require('../controllers/redisController');
 const orderController = require('../controllers/orderController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
+const authController = require("../controllers/authController");
 
 // MIDDLEWARE xác thực JWT
 router.use(authMiddleware);
@@ -19,6 +20,7 @@ router.delete('/cart', redisController.deleteUserCart);
 router.get('/profile', profileController.getProfile);
 router.put('/profile', profileController.updateProfile);
 router.put('/change-password', profileController.changePassword);
+// router.post('/reset-password', authController.resetPassword);
 // Order
 router.get('/orders', orderController.getUserOrders);
 router.post('/orders', orderController.createOrder);

@@ -62,7 +62,6 @@ exports.loginUser = async ({ email, password }) => {
   try {
     const user = await User.findOne({ email });
     if (!user) throw new Error("User not found");
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid credentials");
 
@@ -89,6 +88,38 @@ exports.forgotPassword = async (email) => {
 
   return 'Reset email sent successfully.';
 };
+
+exports.resetPassword = async (token, password) => {
+  if (!token || !password) {
+    throw new Error('Token and password are required');
+  }
+
+  try {
+    const user = await User.findOne({ resetPasswordToken: token });
+    if (!user) {
+      throw new Error('Invalid or expired token');
+    }
+
+    if (user.resetPasswordExpires && user.resetPasswordExpires < Date.now()) {
+      throw new Error('Token expired');
+    }
+
+    // Gán password plaintext, middleware sẽ hash
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    await user.save();
+    console.log('User after save:', user); // Debug
+
+    return { message: 'Password reset successful' };
+  } catch (err) {
+    console.error(err);
+    throw new Error('Server error');
+  }
+};
+
+
 
 exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   const user = await User.findById(userId);
