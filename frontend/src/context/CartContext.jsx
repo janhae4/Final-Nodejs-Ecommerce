@@ -24,20 +24,13 @@ export const CartProvider = ({ children }) => {
   const { isLoggedIn, userInfo, setAddresses } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [discountInfo, setDiscountInfo] = useState(null);
-  const [shippingCost, setShippingCost] = useState(5.0);
+  const [shippingCost, setShippingCost] = useState(0);
   const [taxRate, setTaxRate] = useState(0.07);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [createCart, setCreateCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
 
-  message.config({
-    top: 100,
-    duration: 2,
-    maxCount: 3,
-    rtl: true,
-    prefixCls: "my-message",
-  });
   useEffect(() => {
     if (!localStorage.getItem("isCreateCart") && createCart) {
       createGuestCart();
@@ -145,10 +138,10 @@ export const CartProvider = ({ children }) => {
 
         const inventory = variant?.inventory || product.inventory;
         if (newQuantity > inventory) {
-          messageApi.warning(
-            `Không thể thêm. Chỉ còn ${inventory} sản phẩm ${
-              product.nameProduct
-            }${variant ? ` (${variant.name})` : ""} trong kho.`
+          message.warning(
+            `Cannot add. Only ${inventory} ${product.nameProduct}${
+              variant ? ` (${variant.name})` : ""
+            } available.`
           );
           updatedItems[existingItemIndex].quantity = inventory;
         } else {
@@ -158,7 +151,7 @@ export const CartProvider = ({ children }) => {
       } else {
         const inventory = variant?.inventory || product.inventory;
         if (quantity > inventory) {
-          messageApi.warning(
+          message.warning(
             `Cannot add ${quantity}. Only ${inventory} available.`
           );
           quantity = inventory;
@@ -184,7 +177,7 @@ export const CartProvider = ({ children }) => {
         ];
       }
     });
-    messageApi.success(`Added into cart!`);
+    message.success(`Added into cart!`);
   };
 
   const updateItemQuantity = (itemKey, newQuantity) => {
@@ -197,7 +190,7 @@ export const CartProvider = ({ children }) => {
 
           if (newQuantity < 1) return { ...item, quantity: 1 };
           if (inventory !== undefined && newQuantity > inventory) {
-            messageApi.warning(`Only ${inventory} available.`);
+            message.warning(`Only ${inventory} available.`);
             return { ...item, quantity: inventory };
           }
           return { ...item, quantity: newQuantity };
@@ -227,7 +220,7 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) =>
       prevItems.filter((item) => item.key !== itemKey)
     );
-    messageApi.info("Deleted!.");
+    message.info("Deleted!");
   };
 
   const clearCart = async () => {
@@ -238,6 +231,7 @@ export const CartProvider = ({ children }) => {
         });
       } else {
         const guestId = userInfo.id;
+        console.log(userInfo);
         await axios.delete(`${API_URL}/guests/cart/${guestId}`);
       }
       setCartItems([]);
@@ -276,6 +270,10 @@ export const CartProvider = ({ children }) => {
     return totalBeforeShipping > 0 ? totalBeforeShipping + shippingCost : 0;
   }, [subtotal, discountAmount, taxes, shippingCost, loyaltyPoints]);
 
+  useEffect (() => {
+    setShippingCost(subtotal > 1000000 ? 0 : subtotal * 0.05);
+  }, [total])
+
   const applyDiscountCode = async (code) => {
     try {
       const normalizedCode = code.toUpperCase();
@@ -299,7 +297,7 @@ export const CartProvider = ({ children }) => {
 
   const removeDiscountCode = () => {
     setDiscountInfo(null);
-    messageApi.info("Deleted!");
+    message.info("Deleted");
   };
 
   const cartItemCount = useMemo(() => {
@@ -351,7 +349,7 @@ export const CartProvider = ({ children }) => {
       } else {
         response = await axios.post(`${API_URL}/guests/orders`, orderData);
       }
-      messageApi.success("Order placed successfully.");
+      message.success("Order placed successfully.");
 
       const earnedPoints = response.data.loyaltyPointsEarned || 0;
       const usedPoints = response.data.loyaltyPointsUsed || 0;
@@ -375,7 +373,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const [messageApi, contextHolder] = message.useMessage();
   return (
     <CartContext.Provider
       value={{
@@ -400,7 +397,6 @@ export const CartProvider = ({ children }) => {
         getCartForOrder,
       }}
     >
-      {contextHolder}
       {children}
     </CartContext.Provider>
   );

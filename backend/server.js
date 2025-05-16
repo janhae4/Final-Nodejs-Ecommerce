@@ -16,6 +16,7 @@ const chatbotRoutes = require("./routes/chatbotRoute");
 const authRoutes = require("./routes/authRoute");
 const adminRoutes = require("./routes/adminRoute");
 const userRoutes = require("./routes/userRoute");
+const guestRoutes = require("./routes/guestRoute");
 
 const app = express();
 const port = 3000;
@@ -44,6 +45,8 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(bodyParser.json());
+
+app.use("/api/guests", guestRoutes)
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);

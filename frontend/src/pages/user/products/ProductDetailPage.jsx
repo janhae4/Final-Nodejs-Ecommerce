@@ -40,10 +40,12 @@ import {
   LeftOutlined,
   RightOutlined,
   InfoCircleOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import TextArea from "antd/es/input/TextArea";
+import { useCart } from "../../../context/CartContext";
 
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -51,7 +53,7 @@ const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
 dayjs.extend(relativeTime);
 const ProductDetailPage = () => {
-  console.log(useParams());
+  const { addItemToCart } = useCart();
   const { slug: productId } = useParams();
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -64,11 +66,21 @@ const ProductDetailPage = () => {
   const [form] = Form.useForm();
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-
+  const API_URL = import.meta.env.VITE_API_URL
   const handleSubmit = async () => {
     await form.validateFields();
     console.log(form.getFieldsValue());
   };
+
+  const handleAddCart = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/products/${productId}`);
+      addItemToCart(res.data.product, selectedVariant);
+    } catch (err) {
+      console.error(err);
+      message.error("Cannot add product to cart!");
+    }
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -115,17 +127,7 @@ const ProductDetailPage = () => {
   const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
 
   return (
-    <Layout className="site-content px-6 pb-6">
-      <Breadcrumb className="my-4">
-        <Breadcrumb.Item>
-          <HomeOutlined /> Home
-        </Breadcrumb.Item>
-        <Breadcrumb.Item>
-          <AppstoreOutlined /> Products
-        </Breadcrumb.Item>
-        <Breadcrumb.Item>{product.nameProduct}</Breadcrumb.Item>
-      </Breadcrumb>
-
+    <Layout className="site-content px-6 pb-6 mt-5">
       <Card
         variant="borderless"
         className="card-shadow shadow-none rounded-2xl"
@@ -316,10 +318,54 @@ const ProductDetailPage = () => {
                             </Text>
                           </span>
                         </Title>
+
+                        <Title level={4}>Product Variants</Title>
+
+                        <Select
+                          className="w-full"
+                          placeholder="Select variant"
+                          value={selectedVariant}
+                          onChange={setSelectedVariant}
+                          optionLabelProp="label"
+                        >
+                          {product.variants.map((v) => (
+                            <Option key={v._id} value={v._id} label={v.name}>
+                              <div className="flex justify-between">
+                                <span>{v.name}</span>
+                                <span>
+                                  <Text
+                                    className={
+                                      v.inventory > 0
+                                        ? "text-green-500"
+                                        : "text-red-500"
+                                    }
+                                  >
+                                    {v.inventory > 0
+                                      ? `${v.inventory} in stock`
+                                      : "Out of stock"}
+                                  </Text>
+                                  <Text strong className="ml-2">
+                                    {v.price.toLocaleString()} VNĐ
+                                  </Text>
+                                </span>
+                              </div>
+                            </Option>
+                          ))}
+                        </Select>
+                      </Col>
+
+                      <Col span={24}>
+                        <Button
+                          className="w-full mx-auto bg-red-500 hover:bg-red-600 py-4 px-3 text-white font-semibold"
+                          onClick={() => handleAddCart()}
+                        >
+                          <ShoppingCartOutlined className="font-bold" /> Add to
+                          Cart
+                        </Button>
                       </Col>
 
                       {/* Product Description Button */}
-                      <Col span={24} className="mt-4">
+                      <Col span={24}>
                         <Button
                           type="primary"
                           icon={<InfoCircleOutlined />}
@@ -354,48 +400,6 @@ const ProductDetailPage = () => {
                         </div>
                       </Col>
                     </Row>
-                  </Card>
-                </Col>
-
-                {/* Variants */}
-                <Col span={24}>
-                  <Card
-                    variant="borderless"
-                    className="detail-section shadow-none rounded-lg"
-                  >
-                    <Title level={4}>Product Variants</Title>
-
-                    <Select
-                      className="w-full"
-                      placeholder="Select variant"
-                      value={selectedVariant}
-                      onChange={setSelectedVariant}
-                      optionLabelProp="label"
-                    >
-                      {product.variants.map((v) => (
-                        <Option key={v._id} value={v._id} label={v.name}>
-                          <div className="flex justify-between">
-                            <span>{v.name}</span>
-                            <span>
-                              <Text
-                                className={
-                                  v.inventory > 0
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                                }
-                              >
-                                {v.inventory > 0
-                                  ? `${v.inventory} in stock`
-                                  : "Out of stock"}
-                              </Text>
-                              <Text strong className="ml-2">
-                                {v.price.toLocaleString()} VNĐ
-                              </Text>
-                            </span>
-                          </div>
-                        </Option>
-                      ))}
-                    </Select>
                   </Card>
                 </Col>
               </Row>

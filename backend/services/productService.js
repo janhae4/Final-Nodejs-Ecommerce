@@ -1,6 +1,6 @@
 const Product = require("../models/Product");
 const elasticSearch = require("./elasticService");
-const User = require('../models/User');
+const User = require("../models/User");
 
 exports.getAllProducts = async () => {
   try {
@@ -49,7 +49,6 @@ exports.createProduct = async ({
 
     const savedProduct = await product.save();
     await elasticSearch.indexProduct(savedProduct);
-    console.log("Product saved successfully:", savedProduct);
     return savedProduct;
   } catch (err) {
     throw new Error("Error creating product: " + err.message);
@@ -57,23 +56,23 @@ exports.createProduct = async ({
 };
 
 exports.getProductBySlug = async (slug) => {
-    try {
-        const product = await Product.findOne({ slug: slug });
-        if (!product) throw new Error('Product not found');
-        return product;
-    } catch (err) {
-        throw new Error('Error fetching product with slug: ' + err.message);
-    }
+  try {
+    const product = await Product.findOne({ slug: slug });
+    if (!product) throw new Error("Product not found");
+    return product;
+  } catch (err) {
+    throw new Error("Error fetching product with slug: " + err.message);
+  }
 };
 
 exports.getProductBySlug = async (slug) => {
-    try {
-        const product = await Product.findOne({ slug: slug });
-        if (!product) throw new Error('Product not found');
-        return product;
-    } catch (err) {
-        throw new Error('Error fetching product with slug: ' + err.message);
-    }
+  try {
+    const product = await Product.findOne({ slug: slug });
+    if (!product) throw new Error("Product not found");
+    return product;
+  } catch (err) {
+    throw new Error("Error fetching product with slug: " + err.message);
+  }
 };
 
 exports.getProductByIdWithVariants = async (productId) => {
@@ -125,7 +124,8 @@ exports.findProductsByCategory = async (category) => {
 exports.searchProducts = async ({
   nameProduct,
   category,
-  brand, minPrice,
+  brand,
+  minPrice,
   maxPrice,
   page = 1,
   sortBy = "createdAt",
@@ -136,17 +136,17 @@ exports.searchProducts = async ({
 
     if (nameProduct) query.nameProduct = { $regex: nameProduct, $options: "i" };
     if (category) query.category = category;
-        if (brand) query.brand = { $regex: brand, $options: 'i' };
+    if (brand) query.brand = { $regex: brand, $options: "i" };
     if (minPrice !== undefined || maxPrice !== undefined) {
       query.price = {};
       if (minPrice !== undefined) query.price.$gte = minPrice;
       if (maxPrice !== undefined) query.price.$lte = maxPrice;
     }
 
-        const totalProducts = await Product.countDocuments(query);
-        const limit = 12;
-        const totalPages = Math.ceil(totalProducts / limit);
-        const skip = (page - 1) * limit;
+    const totalProducts = await Product.countDocuments(query);
+    const limit = 12;
+    const totalPages = Math.ceil(totalProducts / limit);
+    const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
       .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
@@ -161,6 +161,9 @@ exports.searchProducts = async ({
 
 exports.searchProductsByElasticSearch = async ({
   keyword,
+  nameProduct,
+  category,
+  brand,
   minPrice,
   maxPrice,
   page = 1,
@@ -170,6 +173,7 @@ exports.searchProductsByElasticSearch = async ({
 }) => {
   try {
     const mustQueries = [];
+    const filterQueries = [];
 
     if (keyword) {
       mustQueries.push({
@@ -178,7 +182,7 @@ exports.searchProductsByElasticSearch = async ({
             {
               multi_match: {
                 query: keyword,
-                fields: ["nameProduct^5", "brand^2", "shortDescription"],
+                fields: ["nameProduct^5", "shortDescription"],
                 type: "phrase_prefix",
               },
             },
@@ -202,56 +206,94 @@ exports.searchProductsByElasticSearch = async ({
       if (minPrice !== undefined) rangeQuery.gte = minPrice;
       if (maxPrice !== undefined) rangeQuery.lte = maxPrice;
 
-      mustQueries.push({
+      filterQueries.push({
         range: {
           price: rangeQuery,
         },
       });
     }
 
+    if (nameProduct) {
+      mustQueries.push({
+        match: {
+          nameProduct: {
+            query: nameProduct,
+            operator: "and",
+          },
+        },
+      });
+    }
+
+    if (brand) {
+      if (Array.isArray(brand)) {
+        filterQueries.push({
+          terms: {
+            brand: brand,
+          },
+        });
+      } else {
+        filterQueries.push({
+          term: {
+            brand: brand,
+          },
+        });
+      }
+    }
+
+    if (category) {
+      if (Array.isArray(category)) {
+        filterQueries.push({
+          terms: {
+            category: category,
+          },
+        });
+      } else {
+        filterQueries.push({
+          term: {
+            category: category,
+          },
+        });
+      }
+    }
     const esQuery = {
       bool: {
         must: mustQueries,
+        filter: filterQueries,
       },
     };
 
-    const products = await elasticSearch.searchProducts(
+    const res = await elasticSearch.searchProducts(
       esQuery,
       page,
       limit,
-      sortBy,
+      sortBy === "nameProduct" ? "nameProduct.keyword" : sortBy,
       sortOrder
     );
 
-    const totalProducts = products.length;
-    const totalPages = Math.ceil(totalProducts / limit);
-
-    return { products, totalProducts, totalPages, currentPage: page };
+    return res;
   } catch (err) {
     throw new Error("Error searching products: " + err.message);
   }
 };
 
-
 exports.getAllCategories = async () => {
-    const categories = await Product.distinct('category');
-    return categories;
+  const categories = await Product.distinct("category");
+  return categories;
 };
 
 exports.getAllBrands = async () => {
-    const brands = await Product.distinct('brand');
-    return brands;
+  const brands = await Product.distinct("brand");
+  return brands;
 };
 
-
 exports.getAllCategories = async () => {
-    const categories = await Product.distinct('category');
-    return categories;
+  const categories = await Product.distinct("category");
+  return categories;
 };
 
 exports.getAllBrands = async () => {
-    const brands = await Product.distinct('brand');
-    return brands;
+  const brands = await Product.distinct("brand");
+  return brands;
 };
 
 exports.updateProduct = async (productId, updateData) => {
@@ -289,65 +331,70 @@ exports.deleteProduct = async (productId) => {
   }
 };
 
-exports.addCommentToProduct = async (productId, userId, content, rating, io) => {
-    const product = await Product.findById(productId);
-    if (!product) throw new Error("Product not found");
+exports.addCommentToProduct = async (
+  productId,
+  userId,
+  content,
+  rating,
+  io
+) => {
+  const product = await Product.findById(productId);
+  if (!product) throw new Error("Product not found");
 
-    const alreadyCommented = product.comments.some(
-        (c) => c.user && c.user._id.toString() === userId.toString()
-    );
-    if (alreadyCommented) {
-        throw new Error("You have already rated this product");
-    }
+  const alreadyCommented = product.comments.some(
+    (c) => c.user && c.user._id.toString() === userId.toString()
+  );
+  if (alreadyCommented) {
+    throw new Error("You have already rated this product");
+  }
 
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
-    const newComment = {
-        user: userId,
-        userFullName: user.fullName,
-        content,
-        rating,
-        createdAt: new Date()
-    };
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  const newComment = {
+    user: userId,
+    userFullName: user.fullName,
+    content,
+    rating,
+    createdAt: new Date(),
+  };
 
-    product.comments.push(newComment);
+  product.comments.push(newComment);
 
-    // Update rating
-    const totalRating = product.ratingAverage * product.ratingCount + rating;
-    product.ratingCount += 1;
-    product.ratingAverage = totalRating / product.ratingCount;
+  // Update rating
+  const totalRating = product.ratingAverage * product.ratingCount + rating;
+  product.ratingCount += 1;
+  product.ratingAverage = totalRating / product.ratingCount;
 
-    await product.save();
+  await product.save();
 
-    // Emit socket if nessesary
-    if (io) {
-        io.emit("newComment", {
-            productId,
-            comment: newComment
-        });
-    }
+  // Emit socket if nessesary
+  if (io) {
+    io.emit("newComment", {
+      productId,
+      comment: newComment,
+    });
+  }
 
-    return product;
+  return product;
 };
 
 exports.getCommentsByProductId = async (productId) => {
-    const product = await Product.findById(productId);
-    if (!product) {
-        throw new Error('Product not found');
-    }
-    return product.comments;
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+  return product.comments;
 };
 
-
 exports.getProductsByRating = async (minRating) => {
-    const query = {};
+  const query = {};
 
-    if (minRating) {
-        query.ratingAverage = { $gte: parseFloat(minRating) };
-    }
+  if (minRating) {
+    query.ratingAverage = { $gte: parseFloat(minRating) };
+  }
 
-    const products = await Product.find(query);
-    return products;
+  const products = await Product.find(query);
+  return products;
 };
 
 exports.updateComment = async (productId, commentId, newContent) => {
@@ -443,7 +490,7 @@ exports.increaseUsed = async (productId, variantId, quantity) => {
 
     const variant = product.variants.id(variantId);
     if (!variant) throw new Error("Variant not found");
-    
+
     variant.used += quantity;
     product.soldQuantity += quantity;
     await product.save();

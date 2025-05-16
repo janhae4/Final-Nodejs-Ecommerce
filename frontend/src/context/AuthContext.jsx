@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [userInfo, setUserInfo] = useState({});
-  const [messageApi, contextHolder] = message.useMessage();
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -28,14 +27,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify({ id }));
   };
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const user = await getUserInfo();
-  //     setUserInfo(user);
-  //     setAddresses(user.addresses || []);
-  //   };
-  //   init();
-  // }, [userInfo.id, isLoggedIn]);
+  useEffect(() => {
+    const init = async () => {
+      const user = await getUserInfo();
+      setUserInfo(user);
+      setAddresses(user.addresses || []);
+    };
+    init();
+  }, [userInfo.id, isLoggedIn]);
 
   useEffect(() => {
     console.log("Addresses changed:", addresses);
@@ -67,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       }
       localStorage.setItem("user", JSON.stringify({ id: user._id }));
       localStorage.removeItem("isCreateCart");
-      messageApi.success("Login successful!");
+      message.success("Login successfully");
 
       if (user.role === "admin") {
         navigate("/admin");
@@ -77,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      messageApi.error("Login failed, please try again!");
+      message.error("Login failed, please try again");
     }
   };
 
@@ -108,7 +107,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Add address failed:", error);
-      messageApi.error("Failed to add address.");
+      message.error("Failed to add address.");
     }
   };
 
@@ -131,9 +130,9 @@ export const AuthProvider = ({ children }) => {
         );
       }
       setAddresses(response.data.addresses);
-      messageApi.success("Address updated successfully.");
+      message.success("Address updated successfully.");
     } catch (error) {
-      messageApi.error("Failed to update address.");
+      message.error("Failed to update address.");
     }
   };
 
@@ -151,9 +150,9 @@ export const AuthProvider = ({ children }) => {
           { withCredentials: true };
       }
       setAddresses(response.data.addresses);
-      messageApi.success("Address deleted successfully.");
+      message.success("Address deleted successfully.");
     } catch (error) {
-      messageApi.error("Failed to delete address.");
+      message.error("Failed to delete address.");
     }
   };
 
@@ -246,7 +245,6 @@ export const AuthProvider = ({ children }) => {
         logout,
       }}
     >
-      {contextHolder}
       {children}
     </AuthContext.Provider>
   );
