@@ -4,8 +4,9 @@ exports.findUserById = async (id) => await User.findById(id);
 exports.findyUserByEmail = async (email) => await User.find({ email });
 exports.createUser = async (user) => await User.create(user);
 exports.createUserForGuest = async (user) => {
-  const { email } = user.userInfo;
+  const { email } = user;
   const u = await User.findOne({ email });
   if (u) return u;
-  return await authService.registerUser(user);
+  const {address, ...userInfo} = user
+  return await authService.registerUser({userInfo, address});
 };

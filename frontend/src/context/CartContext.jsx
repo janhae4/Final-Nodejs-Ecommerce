@@ -126,11 +126,15 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const debounceTimer = setTimeout(updateCartInRedis, 500);
+    let debounceTimer    
+    if(createCart) {
+      debounceTimer = setTimeout(updateCartInRedis, 500);
+    }
     return () => clearTimeout(debounceTimer);
   }, [cartItems, loading]);
 
   const addItemToCart = (product, variant = null, quantity = 1) => {
+    console.log(product)
     setCreateCart(true);
     setCartItems((prevItems) => {
       const itemKey = variant ? `${product._id}-${variant._id}` : product._id;

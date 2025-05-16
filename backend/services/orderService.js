@@ -9,14 +9,11 @@ const generateOrderCode = () => {
   return `ORDER${timestamp}${random}`;
 };
 
-exports.createOrder = async (guestId=null, orderData) => {
-  const user = await userSerivce.createUserForGuest({
-    userInfo: orderData.userInfo,
-    address: orderData.shippingAddress,
-  });
-
+exports.createOrder = async (orderData) => {
+  const user = await userSerivce.createUserForGuest(orderData.userInfo);
   const productSession = await Product.startSession();
   const orderSession = await Order.startSession();
+  console.log(orderData);
   try {
     orderSession.startTransaction();
     productSession.startTransaction();
@@ -28,7 +25,7 @@ exports.createOrder = async (guestId=null, orderData) => {
         fullName: user.fullName,
         email: user.email,
       },
-      shippingAddress: orderData.shippingAddress.fullAddress,
+      shippingAddress: orderData.shippingAddress,
       orderCode: generateOrderCode(),
       loyaltyPointsEarned: Math.floor((orderData.totalAmount || 0) * 0.1),
     });

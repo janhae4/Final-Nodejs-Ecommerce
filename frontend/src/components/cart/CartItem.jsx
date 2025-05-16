@@ -60,7 +60,7 @@ const CartItem = ({ item }) => {
         </Text>
       </Col>
 
-      <Col xs={9} sm={5} md={5} clas sName="text-right">
+      <Col xs={9} sm={5} md={5} className="text-right">
         <Select
           value={item?.variantId}
           onChange={handleChangeVariant}
