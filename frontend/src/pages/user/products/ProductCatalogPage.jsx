@@ -47,6 +47,7 @@ const ProductCatalogPage = () => {
         queryParams.append("minPrice", filters.minPrice);
       if (filters.maxPrice !== undefined)
         queryParams.append("maxPrice", filters.maxPrice);
+      if (filters.minRating !== undefined) queryParams.append("minRating", filters.minRating);
 
       switch (sortOption) {
         case "price_asc":
@@ -75,7 +76,7 @@ const ProductCatalogPage = () => {
       queryParams.append("limit", pageSize);
 
       const { data } = await axios.get(
-        `${API_URL}/products/search/?${queryParams.toString()}`
+        `${API_URL}/products/search?${queryParams.toString()}`
       );
 
       if (data.status) {

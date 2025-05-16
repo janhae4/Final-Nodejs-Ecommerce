@@ -46,6 +46,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import TextArea from "antd/es/input/TextArea";
 import { useCart } from "../../../context/CartContext";
+import ReviewsSection from "../../../components/products/ReviewSections";
 
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -121,7 +122,7 @@ const ProductDetailPage = () => {
 
   const avgRating = product.comments?.length
     ? product.comments.reduce((acc, c) => acc + c.rating, 0) /
-      product.comments.length
+    product.comments.length
     : 0;
 
   const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
@@ -204,11 +205,10 @@ const ProductDetailPage = () => {
                     {product.images.map((img, idx) => (
                       <div
                         key={idx}
-                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${
-                          idx === selectedImageIndex
+                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${idx === selectedImageIndex
                             ? "border-2 border-blue-500 shadow-md scale-110"
                             : "border border-gray-200 hover:scale-105"
-                        }`}
+                          }`}
                         onClick={() => {
                           setSelectedImageIndex(idx);
                           carouselRef.current.goTo(idx);
@@ -379,18 +379,16 @@ const ProductDetailPage = () => {
 
                         {/* Description Panel with Animation */}
                         <div
-                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${
-                            showDescription
+                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${showDescription
                               ? "max-h-96 opacity-100"
                               : "max-h-0 opacity-0"
-                          }`}
+                            }`}
                         >
                           <div
-                            className={`p-4 transform transition-all duration-500 ${
-                              showDescription
+                            className={`p-4 transform transition-all duration-500 ${showDescription
                                 ? "translate-y-0"
                                 : "-translate-y-4"
-                            }`}
+                              }`}
                           >
                             <Paragraph className="text-base whitespace-pre-line">
                               {product.shortDescription ||
@@ -411,85 +409,16 @@ const ProductDetailPage = () => {
           <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
 
           {/* New comment form */}
-          <Card className="bg-gray-50 rounded-lg mb-6">
-            <Form form={form} onFinish={handleSubmit}>
-              <Form.Item
-                name="comment"
-                rules={[
-                  { required: true, message: "Please write your comment" },
-                ]}
-              >
-                <TextArea
-                  rows={4}
-                  placeholder="Share your experience with this product..."
-                  className="rounded-lg"
-                />
-              </Form.Item>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Your rating:</span>
-                  <Rate value={rating} onChange={setRating} />
-                </div>
-                <Form.Item className="mb-0">
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={submitting}
-                    className="rounded-lg px-6"
-                  >
-                    Post Review
-                  </Button>
-                </Form.Item>
-              </div>
-            </Form>
-          </Card>
+          <div className="mt-12">
+            <ReviewsSection
+              productId={product._id}
+            />
+          </div>
 
           <Divider className="my-4" />
 
           {/* Comments list */}
-          <div className="space-y-4">
-            {product.comments && product.comments.length > 0 ? (
-              product.comments.map((comment, index) => (
-                <Card
-                  key={index}
-                  className="rounded-xl bg-white border border-gray-100 hover:border-blue-100 transition-all"
-                >
-                  <Comment
-                    author={
-                      <span className="font-medium text-gray-900">
-                        {comment.userFullName}
-                      </span>
-                    }
-                    content={
-                      <div className="mt-2">
-                        <Rate
-                          disabled
-                          value={comment.rating}
-                          className="text-sm"
-                        />
-                        <p className="mt-2 text-gray-700">{comment.content}</p>
-                      </div>
-                    }
-                    datetime={
-                      <Tooltip
-                        title={dayjs(comment.createdAt).format(
-                          "YYYY-MM-DD HH:mm:ss"
-                        )}
-                      >
-                        <span className="text-gray-500 text-sm">
-                          {dayjs(comment.createdAt).fromNow()}
-                        </span>
-                      </Tooltip>
-                    }
-                  />
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No reviews yet. Be the first to share your experience!
-              </div>
-            )}
-          </div>
+        
         </Card>
       </Card>
       {/* Description - Removed since it's now in General Info */}

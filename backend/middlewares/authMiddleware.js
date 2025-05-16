@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); 
+const User = require('../models/User');
 
 exports.authMiddleware = async (req, res, next) => {
-  const token = req.cookies.token; // lấy token từ cookie
-  //console.log("Cookies:", req.cookies);
-  if (!token) {
-    return res.status(401).json({ message: "No token" });
+  let token = req.cookies.token || null; // lấy token từ cookie
+  console.log("Cookies:", req.cookies);
+
+  if (!token && req.headers.authorization?.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
   }
 
   try {
@@ -17,7 +18,7 @@ exports.authMiddleware = async (req, res, next) => {
     }
     req.user = user;
 
-    next(); 
+    next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });
   }

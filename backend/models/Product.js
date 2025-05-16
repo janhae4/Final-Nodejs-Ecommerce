@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 const {productConnection} = require("../database/dbConnection");
 const { use } = require("../routes/orderRoute");
 const User = require("./User");
@@ -11,10 +12,10 @@ const variantSchema = new mongoose.Schema({
 });
 
 const commentSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   userFullName: { type: String, required: true },
   content: { type: String, required: true },
-  rating: { type: Number, required: true, min: 1, max: 5 },
+  rating: { type: Number, min: 1, max: 5 },
   createdAt: { type: Date, default: Date.now },
 });
 

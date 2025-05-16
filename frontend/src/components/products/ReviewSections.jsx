@@ -3,19 +3,20 @@ import { List, Typography, message, Divider } from 'antd';
 import ReviewItem from './ReviewItem';
 import ReviewForm from './ReviewForm';
 import StarRatingDisplay from '../StartRatingDisplay';
+import { useAuth } from "../../context/AuthContext";
 import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-const ReviewsSection = ({productId}) => {
+const ReviewsSection = ({ productId }) => {
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [numReviews, setNumReviews] = useState(0);
   const [formLoading, setFormLoading] = useState(false);
+  const { isLoggedIn, userInfo, logout, login } = useAuth();
 
-  const isLoggedIn = true; // TODO: Replace with actual auth
   const user = { _id: 'userId123', fullName: 'Current User' }; // TODO: Replace with actual user data
-
+  console.log('User: ', userInfo._id);
   console.log('Product ID:', productId);
   // --- Fetch Product Reviews on mount ---
   useEffect(() => {
@@ -38,8 +39,25 @@ const ReviewsSection = ({productId}) => {
     fetchReviews();
   }, [productId]);
 
+  // Send comments without rating, no token needed
+  const handleCommentSubmit = async (comment) => {
+    setFormLoading(true);
+    try {
+      await axios.post(
+        `http://localhost:3000/api/products/${productId}/comments_anonymous`,
+        { content: comment }
+      );
+      message.success('Comment submitted!');
+    } catch (error) {
+      console.error('Comment submit error:', error);
+      message.error('Failed to submit comment.');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   // --- Handle new review submission ---
-  const handleRatingSubmit = async (commentText, ratingValue) => {
+  const handleRatingSubmit = async (comment, rating) => {
     if (!isLoggedIn) {
       message.error('You must be logged in to submit a review.');
       return;
@@ -48,15 +66,20 @@ const ReviewsSection = ({productId}) => {
     setFormLoading(true);
     try {
       const res = await axios.post(`http://localhost:3000/api/products/${productId}/comments`, {
-        content: commentText,
-        rating: ratingValue,
-        userId: user._id, // Đổi thành userId đúng key theo backend
-      });
+        content: comment,
+        rating: rating,
+      },
+        { withCredentials: true }
+      );
 
-      const newReview = res.data.comment; // Đổi từ comments -> comment
+      // console.log('Response data:', res.data);
+
+      const newReview = res.data.product.comments;
+      const latestReview = newReview[newReview.length - 1]; 
+      console.log('New review:', latestReview);
 
       // Cập nhật UI
-      setReviews(prev => [newReview, ...prev]);
+      setReviews(prev => [latestReview, ...prev]);
 
       // Optionally re-fetch full product if ratingAverage not trả về
       const updatedProduct = await axios.get(`http://localhost:3000/api/products/${productId}`);
@@ -87,6 +110,7 @@ const ReviewsSection = ({productId}) => {
       <Divider />
 
       <ReviewForm
+        onSubmitComment={handleCommentSubmit}
         onSubmitRating={handleRatingSubmit}
         isLoggedIn={isLoggedIn}
         loading={formLoading}
@@ -98,16 +122,18 @@ const ReviewsSection = ({productId}) => {
         <List
           header={<Text strong>{`${reviews.length} Review(s)`}</Text>}
           itemLayout="horizontal"
-          dataSource={reviews}
+          dataSource={reviews?.filter(Boolean)}
           renderItem={review => (
-            <ReviewItem
-              review={{
-                author: review.userFullName || 'Anonymous',
-                content: review.content,
-                rating: review.rating,
-                datetime: review.createdAt,
-              }}
-            />
+            <div key={review._id || review.id || review.createdAt}>
+              <ReviewItem
+                review={{
+                  author: review.userFullName || 'Anonymous',
+                  content: review.content,
+                  rating: review.rating,
+                  datetime: review.createdAt,
+                }}
+              />
+            </div>
           )}
           className="bg-white p-4 rounded-lg shadow"
         />

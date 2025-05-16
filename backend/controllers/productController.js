@@ -165,7 +165,7 @@ exports.searchByCategory = async (req, res, next) => {
 // GET/products/search?nameProduct=abc&minPrice=100&maxPrice=1000&category=xyz&brand=abcBrand&page=1&sortBy=price&sortOrder=asc
 exports.searchProducts = async (req, res) => {
   try {
-    const { nameProduct, category, brand, minPrice, maxPrice, page, sortBy, sortOrder } = req.query;
+    const { nameProduct, category, brand, minPrice, maxPrice, minRating, page, sortBy, sortOrder } = req.query;
 
     const result = await ProductService.searchProducts({
       nameProduct,
@@ -173,6 +173,7 @@ exports.searchProducts = async (req, res) => {
       brand,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      minRating: minRating ? parseFloat(minRating) : undefined,
       page: page ? parseInt(page) : 1,
       sortBy,
       sortOrder,
@@ -285,10 +286,18 @@ exports.deleteProduct = async (req, res) => {
 exports.addProductComment = async (req, res) => {
   const { productId } = req.params;
   const { content, rating } = req.body;
-  const userId = req.user._id;
+  // Kiểm tra nếu chưa đăng nhập (không có req.user)
+  const isGuest = !req.user;
+  const io = req.app.get('io');
 
   try {
-    const io = req.app.get('io');
+    // Nếu là guest mà lại gửi kèm rating => từ chối
+    if (isGuest && rating) {
+      return res.status(401).json({ message: 'Guests are not allowed to rate. Please log in to rate a product.' });
+    }
+
+    const userId = isGuest ? null : req.user._id;
+
     const product = await ProductService.addCommentToProduct(
       productId,
       userId,
@@ -299,7 +308,7 @@ exports.addProductComment = async (req, res) => {
 
     res.status(200).json({ message: "Comment added", product });
   } catch (err) {
-    console.error(err);
+    console.error('Error add comment:' + err);
     res.status(400).json({ message: err.message });
   }
 };
