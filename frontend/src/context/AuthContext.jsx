@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [userInfo, setUserInfo] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -142,6 +143,7 @@ export const AuthProvider = ({ children }) => {
 
   const getUserInfo = async () => {
     try {
+      setIsLoading(true);
       const id = JSON.parse(localStorage.getItem("user") || [])?.id;
       let response;
       if (!id?.includes("guest")) {
@@ -159,6 +161,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching user info:", error);
       return {};
+    }finally {
+      setIsLoading(false); // 🔴 kết thúc loading
     }
   };
 
@@ -230,6 +234,7 @@ export const AuthProvider = ({ children }) => {
         setAddresses,
         addInfoToUser,
         addInfo,
+        isLoading,
         updateInfo,
         changePassword,
         addAddress,
@@ -240,6 +245,7 @@ export const AuthProvider = ({ children }) => {
         addOrderToUser,
         login,
         logout,
+
       }}
     >
       {children}
