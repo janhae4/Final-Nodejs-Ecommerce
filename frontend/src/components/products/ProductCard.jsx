@@ -36,7 +36,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
         className={`shadow-lg rounded-lg overflow-hidden ${cardStyles}`}
         cover={
           viewMode === "grid" && (
-            <Link to={`/products/detail/${product.id}`}>
+            <Link to={`/products/detail/${product.slug}`}>
               <img
                 alt={product.name}
                 src={
@@ -52,7 +52,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
         <div className={viewMode === "list" ? "flex" : ""}>
           {viewMode === "list" && (
             <div className={imageContainerStyles}>
-              <Link to={`/products/detail/${product.id}`}>
+              <Link to={`/products/detail/${product.slug}`}>
                 <img
                   alt={product?.name}
                   src={
@@ -65,7 +65,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
             </div>
           )}
           <div className={contentStyles}>
-            <Link to={`/products/detail/${product.link}`}>
+            <Link to={`/products/detail/${product.slug}`}>
               <Title level={5} className="mb-1 truncate" title={product.nameProduct}>
                 {product.nameProduct}
               </Title>

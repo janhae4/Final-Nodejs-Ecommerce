@@ -67,6 +67,8 @@ const ProductDetailPage = () => {
   const [form] = Form.useForm();
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
   const API_URL = import.meta.env.VITE_API_URL
   const handleSubmit = async () => {
     await form.validateFields();
@@ -76,19 +78,20 @@ const ProductDetailPage = () => {
   const handleAddCart = async () => {
     try {
       const res = await axios.get(`${API_URL}/products/${slug}`);
-      addItemToCart(res.data.product, selectedVariant);
+      addItemToCart(res.data.product, selectedVariant, quantity);
+      message.success("Added to cart!");
     } catch (err) {
       console.error(err);
       message.error("Cannot add product to cart!");
     }
-  }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:3000/api/products/${slug}`
+          `http://localhost:3000/api/products/slug/${slug}`
         );
         setProduct(res.data.product);
         setSelectedVariant(res.data.product.variants[0]?._id);
@@ -354,6 +357,17 @@ const ProductDetailPage = () => {
                             </Option>
                           ))}
                         </Select>
+
+                        <div className="mt-4">
+                          <Title level={4}>Quantity</Title>
+                          <input
+                            type="number"
+                            min={1}
+                            value={quantity}
+                            onChange={(e) => setQuantity(Number(e.target.value))}
+                            className="w-24 px-3 py-1 border border-gray-300 rounded-md"
+                          />
+                        </div>
                       </Col>
 
                       <Col span={24}>

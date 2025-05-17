@@ -134,15 +134,16 @@ exports.searchProducts = async ({
             if (minPrice !== undefined) query.price.$gte = minPrice;
             if (maxPrice !== undefined) query.price.$lte = maxPrice;
         }
-        if (minRating) {
+        if (minRating !== undefined) {
             query.ratingAverage = { $gte: parseFloat(minRating) };
-        }
+          }
 
         const totalProducts = await Product.countDocuments(query);
-        const limit = 12;
+        const limit = 10000;
         const totalPages = Math.ceil(totalProducts / limit);
         const skip = (page - 1) * limit;
 
+        console.log("Final query:", query);
         const products = await Product.find(query)
             .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
             .skip(skip)
@@ -161,6 +162,7 @@ exports.searchProductsByElasticSearch = async ({
     brand,
     minPrice,
     maxPrice,
+    minRating,
     page = 1,
     limit = 10,
     sortBy = "createdAt",
@@ -207,6 +209,16 @@ exports.searchProductsByElasticSearch = async ({
                 },
             });
         }
+
+        // if (minRating !== undefined) {
+        //     filterQueries.push({
+        //         range: {
+        //             ratingAverage: {
+        //                 gte: minRating,
+        //             },
+        //         },
+        //     });
+        // }
 
         if (nameProduct) {
             mustQueries.push({

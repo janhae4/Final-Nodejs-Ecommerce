@@ -183,17 +183,7 @@ exports.searchByCategory = async (req, res, next) => {
 // GET/products/search?nameProduct=abc&minPrice=100&maxPrice=1000&category=xyz&brand=abcBrand&page=1&sortBy=price&sortOrder=asc
 exports.searchProducts = async (req, res) => {
   try {
-    const {
-      nameProduct,
-      category,
-      brand,
-      minPrice,
-      maxPrice,
-      minRating,
-      page,
-      sortBy,
-      sortOrder,
-    } = req.query;
+    const { nameProduct, category, brand, minPrice, maxPrice, minRating, page, sortBy, sortOrder } = req.query;
 
     const result = await ProductService.searchProducts({
       nameProduct,
@@ -209,18 +199,14 @@ exports.searchProducts = async (req, res) => {
 
     res.status(200).json({
       status: true,
-      message: "Products fetched successfully",
+      message: 'Products fetched successfully',
       products: result.products,
       totalProducts: result.totalProducts,
       totalPages: result.totalPages,
-      currentPage: result.currentPage,
+      currentPage: result.currentPage
     });
   } catch (err) {
-    res.status(500).json({
-      status: false,
-      message: "Error searching products",
-      error: err.message,
-    });
+    res.status(500).json({ status: false, message: 'Error searching products', error: err.message });
   }
 };
 
@@ -552,6 +538,7 @@ exports.searchProductsByElasticSearch = async (req, res) => {
       category,
       minPrice,
       maxPrice,
+      minRating,
       page = 1,
       limit = 20,
       sortBy = "createdAt",
@@ -564,6 +551,7 @@ exports.searchProductsByElasticSearch = async (req, res) => {
       brand,
       minPrice: Number(minPrice),
       maxPrice: Number(maxPrice),
+      minRating: Number(minRating),
       page: Number(page),
       limit: Number(limit),
       sortBy,

@@ -25,7 +25,7 @@ const ProductCatalogPage = () => {
   const [totalProducts, setTotalProducts] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(4);
+  const [pageSize, setPageSize] = useState(8);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("relevance");

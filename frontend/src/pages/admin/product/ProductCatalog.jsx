@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Input, Select, Pagination, Row, Col, Card, Tag, Button } from 'antd';
+import { Table, Input, Select, Pagination, Row, Col, Card, Tag, Button, Grid } from 'antd';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
 const { Option } = Select;
+const { useBreakpoint } = Grid;
 
 const ProductCatalog = () => {
   const [products, setProducts] = useState([]);
@@ -16,6 +17,7 @@ const ProductCatalog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
   const navigate = useNavigate();
+  const screens = useBreakpoint();
 
   const fetchProducts = async () => {
     try {
@@ -42,7 +44,12 @@ const ProductCatalog = () => {
     if (type === 'brand') setSelectedBrand(value);
     if (type === 'category') setSelectedCategory(value);
     if (type === 'tag') setSelectedTag(value);
-    applyFilters(searchKeyword, type === 'brand' ? value : selectedBrand, type === 'category' ? value : selectedCategory, type === 'tag' ? value : selectedTag);
+    applyFilters(
+      searchKeyword,
+      type === 'brand' ? value : selectedBrand,
+      type === 'category' ? value : selectedCategory,
+      type === 'tag' ? value : selectedTag
+    );
   };
 
   const applyFilters = (keyword, brand, category, tag) => {
@@ -69,17 +76,23 @@ const ProductCatalog = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      {/* Add Button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <Button type="primary" onClick={() => navigate('/admin/products/create')} style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}> 
-          +Add Product
+        <Button
+          type="primary"
+          onClick={() => navigate('/admin/products/create')}
+          style={{ backgroundColor: 'green', borderColor: 'green', color: 'white' }}
+        >
+          + Add Product
         </Button>
       </div>
-      {/* Search and Filter */}
+
+      {/* Search and Filters */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Search placeholder="Find product..." onSearch={handleSearch} allowClear />
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Filter by Brand"
             style={{ width: '100%' }}
@@ -91,7 +104,7 @@ const ProductCatalog = () => {
             ))}
           </Select>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Filter by Category"
             style={{ width: '100%' }}
@@ -103,7 +116,7 @@ const ProductCatalog = () => {
             ))}
           </Select>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Filter by Tag"
             style={{ width: '100%' }}
@@ -117,11 +130,11 @@ const ProductCatalog = () => {
         </Col>
       </Row>
 
-      {/* Show products */}
+      {/* Product List */}
       <Row gutter={[16, 16]}>
         {paginatedProducts.length > 0 ? (
           paginatedProducts.map(product => (
-            <Col key={product._id} span={6}>
+            <Col key={product._id} xs={24} sm={12} md={8} lg={6}>
               <Card
                 hoverable
                 style={{
@@ -148,25 +161,10 @@ const ProductCatalog = () => {
                   description={
                     <div style={{ height: 130, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div><strong>Price:</strong> {product.price.toLocaleString()} VNĐ</div>
-                      <div
-                        style={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
+                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         <strong>Description:</strong> {product.shortDescription}
                       </div>
-                      <div
-                        style={{
-                          height: 48,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '4px',
-                        }}
-                      >
+                      <div style={{ height: 48, overflow: 'hidden', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {product.tags.map(tag => (
                           <Tag color="blue" key={tag}>{tag}</Tag>
                         ))}
@@ -181,7 +179,6 @@ const ProductCatalog = () => {
           <div style={{ margin: 'auto' }}>There are no products.</div>
         )}
       </Row>
-
 
       {/* Pagination */}
       <div style={{ marginTop: 20, textAlign: 'center' }}>
