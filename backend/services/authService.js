@@ -128,8 +128,9 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   }
 
   const isMatch = await bcrypt.compare(oldPassword, user.password);
-  consoe.log(oldPassword, newPassword, oldPassword === newPassword);
   if (!isMatch) throw new Error("Old password is incorrect");
+
+  
   return await user.save();
 };
 

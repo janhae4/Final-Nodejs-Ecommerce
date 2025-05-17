@@ -6,6 +6,7 @@ const PasswordChangeForm = ({
   loading,
   isDefaultPassword = false,
 }) => {
+
   return (
     <Form onFinish={onFinish} layout="vertical">
       {!isDefaultPassword && (

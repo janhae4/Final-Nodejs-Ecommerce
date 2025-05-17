@@ -38,8 +38,8 @@ exports.changePassword = async (userId, currentPassword, newPassword) => {
     throw new Error("Current password is incorrect");
   }
   user.isDefaultPassword = false;
-  await user.save();
-  return { message: "Password changed successfully" };
+  user.set('password', newPassword)
+  return await user.save();
 };
 exports.getAddresses = async (userId) => {
   const user = await User.findById(userId).select("addresses");
