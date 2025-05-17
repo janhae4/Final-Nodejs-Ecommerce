@@ -89,36 +89,29 @@ const CheckoutPage = () => {
         address: userInfo.addresses[0]._id,
       });
     }
-  })
+  });
   const handleSubmit = async () => {
-    try {
-      await shippingForm.validateFields();
+    await shippingForm.validateFields();
 
-      const province = provinces[selectedProvince];
-      const district = districts[selectedDistrict];
-      const ward = wards[selectedWard];
+    const province = provinces[selectedProvince];
+    const district = districts[selectedDistrict];
+    const ward = wards[selectedWard];
 
-      addressForm.setFieldsValue({
-        street: street,
-        ward: ward.name_with_type,
-        wardCode: selectedWard,
-        district: district.name_with_type,
-        districtCode: selectedDistrict,
-        province: province.name_with_type,
-        provinceCode: selectedProvince,
-        fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
-        userId: userInfo?._id || userInfo?.id,
-        fullName: shippingForm.getFieldValue("fullName"),
-        email: shippingForm.getFieldValue("email"),
-      });
+    addressForm.setFieldsValue({
+      street: street,
+      ward: ward?.name_with_type,
+      wardCode: selectedWard,
+      district: district?.name_with_type,
+      districtCode: selectedDistrict,
+      province: province?.name_with_type,
+      provinceCode: selectedProvince,
+      fullAddress: `${street}, ${ward?.name_with_type}, ${district?.name_with_type}, ${province?.name_with_type}`,
+      userId: userInfo?._id || userInfo?.id,
+      fullName: shippingForm.getFieldValue("fullName"),
+      email: shippingForm.getFieldValue("email"),
+    });
 
-      console.log("Address form data:", addressForm.getFieldsValue());
-    } catch (error) {
-      console.error("Error submitting address:", error);
-      message.error("Failed to save address");
-    } finally {
-      setLoadingAddresses(false);
-    }
+    console.log("Address form data:", addressForm.getFieldsValue());
   };
 
   const renderAddressSelector = () => {
@@ -269,11 +262,12 @@ const CheckoutPage = () => {
             userId: userInfo._id || userInfo.id,
             fullName: fullName,
             email: email,
-            address: addressForm.getFieldsValue(true)
+            address: addressForm.getFieldsValue(true),
           },
           products: cartItems,
           totalAmount: Number(total),
-          shippingAddress: addressForm.getFieldValue("fullAddress") || shippingAddress,
+          shippingAddress:
+            addressForm.getFieldValue("fullAddress") || shippingAddress,
           paymentMethod: paymentForm.getFieldValue("paymentMethod"),
           discountInfo: discountInfo && {
             discountId: discountInfo._id,

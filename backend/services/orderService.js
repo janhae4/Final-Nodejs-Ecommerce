@@ -11,9 +11,8 @@ const generateOrderCode = () => {
 
 exports.createOrder = async (orderData) => {
   const user = await userSerivce.createUserForGuest(orderData.userInfo);
-  const productSession = await Product.startSession();
   const orderSession = await Order.startSession();
-  console.log(orderData);
+  const productSession = await Product.startSession();
   try {
     orderSession.startTransaction();
     productSession.startTransaction();

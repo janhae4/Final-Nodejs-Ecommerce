@@ -159,6 +159,7 @@ exports.searchProductsByElasticSearch = async ({
   nameProduct,
   category,
   brand,
+  rating,
   minPrice,
   maxPrice,
   page = 1,
@@ -250,6 +251,17 @@ exports.searchProductsByElasticSearch = async ({
         });
       }
     }
+
+    if (rating) {
+      filterQueries.push({
+        range: {
+          rating: {
+            gte: rating,
+          },
+        },
+      });
+    }
+
     const esQuery = {
       bool: {
         must: mustQueries,
@@ -513,7 +525,7 @@ exports.getTopProducts = async () => {
     const topProducts = await Product.find()
       .sort({ soldQuantity: -1 })
       .limit(4)
-      .select('nameProduct soldQuantity');
+      .select("nameProduct soldQuantity");
     return topProducts;
   } catch (err) {
     throw new Error("Error fetching top products: " + err.message);
@@ -534,5 +546,3 @@ exports.getProductDitributionByCategory = async () => {
     );
   }
 };
-
-

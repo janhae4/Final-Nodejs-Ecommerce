@@ -550,6 +550,7 @@ exports.searchProductsByElasticSearch = async (req, res) => {
       keyword,
       brand,
       category,
+      rating,
       minPrice,
       maxPrice,
       page = 1,
@@ -561,6 +562,7 @@ exports.searchProductsByElasticSearch = async (req, res) => {
     const result = await ProductService.searchProductsByElasticSearch({
       keyword,
       category,
+      rating,
       brand,
       minPrice: Number(minPrice),
       maxPrice: Number(maxPrice),

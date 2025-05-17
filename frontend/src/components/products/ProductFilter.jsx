@@ -39,10 +39,10 @@ const ProductFilter = ({ onFilterChange, initialFilters }) => {
       ...values,
       minPrice: values.priceRange?.[0],
       maxPrice: values.priceRange?.[1],
-      minRating: values.rating,
+      rating: values.rating,
     };
+    console.log(filtersToApply);
     delete filtersToApply.priceRange;
-    delete filtersToApply.rating;
     onFilterChange(filtersToApply);
   };
 

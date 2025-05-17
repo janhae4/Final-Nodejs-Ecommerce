@@ -10,14 +10,14 @@ router.get('/search/', ProductController.searchProductsByElasticSearch);
 router.get('/searchByName', ProductController.searchProductByName);
 router.get('/searchByBrand', ProductController.searchProductByBrand);
 router.get('/searchByCategory', ProductController.searchByCategory);
-router.get('/:slug', ProductController.getProductBySlug);
 router.get('/searchByPrice', ProductController.searchByPrice);
 //Get product by rating
 router.get('/search/by-rating', ProductController.getProductsByRating);
 router.get("/categories", ProductController.getCategories);
 router.get("/brands", ProductController.getBrands);
-router.get('/:id', ProductController.getProductByIdWithVariants);
 router.post('/create', upload.array('images'), ProductController.createProduct);
+router.get('/:slug', ProductController.getProductBySlug);
+router.get('/:id', ProductController.getProductByIdWithVariants);
 router.get('/', ProductController.searchProducts);
 router.get("/variants/:id", ProductController.getProductVariants);
 router.get('/slug/:slug', ProductController.getProductBySlug);

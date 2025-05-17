@@ -19,6 +19,7 @@ const { Text, Title } = Typography;
 const CartItem = ({ item }) => {
   const { updateItemQuantity, removeItemFromCart, updateVariant } = useCart();
   const itemKey = item.productId + (item.variant ? `-${item.variant.id}` : "");
+  console.log(item)
 
   const basePrice = item.price || 0;
   const variantPriceModifier = item.variant?.priceModifier || 0;
@@ -45,7 +46,7 @@ const CartItem = ({ item }) => {
         />
       </Col>
       <Col xs={16} sm={7} md={7}>
-        <Link to={`/products/${item.productId}`}>
+        <Link to={`/products/detail/${item.slug}`}>
           <Title level={5} className="mb-1 hover:text-blue-500">
             {item.productName}
           </Title>
@@ -68,7 +69,7 @@ const CartItem = ({ item }) => {
         <Select
           value={item?.variantId}
           onChange={handleChangeVariant}
-          className="w-full"
+          className="w-auto"
           defaultValue={(item?.variants && item?.variants[0]?._id) || ""}
         >
           {item?.variants.map((v) => (

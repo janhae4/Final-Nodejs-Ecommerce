@@ -11,13 +11,15 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [userInfo, setUserInfo] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof userInfo?.id === "string") {
       setIsLoggedIn(!userInfo?.id.includes("guest"));
+    } else if (typeof userInfo?.id === "object") {
+      logout();
     }
   }, [userInfo?.id]);
 
@@ -154,14 +156,14 @@ export const AuthProvider = ({ children }) => {
       } else if (id.includes("guest")) {
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
-      console.log(response.data)
+      console.log(response.data);
       setUserInfo({ id, ...response?.data });
       setAddresses(response?.data?.addresses);
       return { id, ...response?.data };
     } catch (error) {
       console.error("Error fetching user info:", error);
       return {};
-    }finally {
+    } finally {
       setIsLoading(false); // 🔴 kết thúc loading
     }
   };
@@ -245,7 +247,6 @@ export const AuthProvider = ({ children }) => {
         addOrderToUser,
         login,
         logout,
-
       }}
     >
       {children}

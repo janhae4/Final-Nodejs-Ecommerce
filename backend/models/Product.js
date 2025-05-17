@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 const {productConnection} = require("../database/dbConnection");
-const { use } = require("../routes/orderRoute");
-const User = require("./User");
 
 const variantSchema = new mongoose.Schema({
   name: { type: String, required: true },

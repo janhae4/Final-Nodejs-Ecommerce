@@ -38,8 +38,9 @@ export const CartProvider = ({ children }) => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (!localStorage.getItem("isCreateCart") && createCart) {
+    if (!localStorage.getItem("isCreateCart")) {
       createGuestCart();
+      setCreateCart(true);
       localStorage.setItem("isCreateCart", true);
     }
   }, [createCart]);
@@ -125,13 +126,15 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     let debounceTimer;
     if (createCart) {
-      debounceTimer = setTimeout(updateCartInRedis, 500);
+      console.log(213)
+      debounceTimer = setTimeout(updateCartInRedis, 400);
     }
     return () => clearTimeout(debounceTimer);
   }, [cartItems, loading]);
 
+
+
   const addItemToCart = (product, variant = null, quantity = 1) => {
-    console.log(product);
     setCreateCart(true);
     setCartItems((prevItems) => {
       const itemKey = variant ? `${product._id}-${variant._id}` : product._id;
@@ -181,6 +184,7 @@ export const CartProvider = ({ children }) => {
             ),
             quantity: quantity,
             image: product.images[0],
+            slug: product.slug,
           },
         ];
       }

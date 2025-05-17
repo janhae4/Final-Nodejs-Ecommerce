@@ -4,12 +4,6 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const rabbitService = require("./rabbitService");
 
-const redisService = require("./redisService");
-const orderService = require("./orderService");
-const emailService = require("./emailService");
-const { publishToExchange } = require("../database/rabbitmqConnection");
-const AUTH_EVENT_EXCHANGE = "auth_events_exchange";
-const ORDER_EVENT_EXCHANGE = "order_events_exchange";
 const generateRandomPassword = () => {
   const characters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

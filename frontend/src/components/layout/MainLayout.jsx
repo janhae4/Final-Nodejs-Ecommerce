@@ -68,7 +68,9 @@ const MainLayout = () => {
 
   const getSearchResults = async (query) => {
     try {
-      const res = await axios.get(`${API_URL}/products/search/?keyword=${query}`);
+      const res = await axios.get(
+        `${API_URL}/products/search/?keyword=${query}`
+      );
       console.log(res.data);
       setSearchResults(res.data.products);
     } catch (err) {
@@ -105,16 +107,6 @@ const MainLayout = () => {
   const userMenu = [
     {
       key: "1",
-      label: <Link to="/auth/profile">My profile</Link>,
-      icon: <UserOutlined />,
-    },
-    {
-      key: "2",
-      label: <Link to="/auth/order">My order</Link>,
-      icon: <ShoppingCartOutlined />,
-    },
-    {
-      key: "3",
       label: (
         <Link to="/" onClick={logout}>
           Logout
@@ -210,6 +202,14 @@ const MainLayout = () => {
                 text="Cart"
                 cartItemCount={cartItemCount}
               />
+
+              {isLoggedIn && (
+                <NavbarComponent
+                  path="auth/profile"
+                  icon={UserOutlined}
+                  text="Profile"
+                />
+              )}
 
               {isLoggedIn && userInfo?.fullName ? (
                 <Dropdown menu={{ items: userMenu }}>

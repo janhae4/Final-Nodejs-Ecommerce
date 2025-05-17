@@ -43,6 +43,7 @@ const ProductCatalogPage = () => {
       if (filters.category) queryParams.append("category", filters.category);
       if (filters.brand?.length)
         filters.brand.forEach((b) => queryParams.append("brand", b));
+      if (filters.rating) queryParams.append("rating", filters.rating);
       if (filters.minPrice !== undefined)
         queryParams.append("minPrice", filters.minPrice);
       if (filters.maxPrice !== undefined)
