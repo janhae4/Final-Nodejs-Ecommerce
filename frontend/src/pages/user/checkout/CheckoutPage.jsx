@@ -82,14 +82,14 @@ const CheckoutPage = () => {
     : [];
 
   useEffect(() => {
-    if (userInfo) {
+    if (userInfo.id) {
       shippingForm.setFieldsValue({
-        fullName: userInfo.fullName,
-        email: userInfo.email,
-        address: userInfo.addresses[0]._id,
+        fullName: userInfo?.fullName,
+        email: userInfo?.email,
+        address: userInfo?.addresses?.[0]?._id,
       });
     }
-  });
+  }, []);
   const handleSubmit = async () => {
     await shippingForm.validateFields();
 
