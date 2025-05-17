@@ -12,6 +12,7 @@ const ModalOderDiscount = ({
   useEffect(() => {
     const fetchOrders = async (code) => {
       try {
+        console.log(code)
         const response = await axios.get(`${API_URL}/orders/code/${code}`);
         setOrders(response.data);
       } catch (error) {

@@ -71,6 +71,7 @@ const ProfilePage = () => {
     setFormLoading(true);
     try {
       await changePassword(values);
+      
     } catch (err) {
       setFormLoading(false);
     } finally {

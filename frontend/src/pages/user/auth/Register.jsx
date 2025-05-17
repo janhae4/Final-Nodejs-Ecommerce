@@ -21,15 +21,15 @@ const { Title, Paragraph } = Typography;
 const RegisterPage = () => {
   const { register } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
 
   const handleRegister = async (values) => {
+    await 
     setLoading(true);
     try {
       // Send registration request to backend
       await axios.post("http://localhost:3000/api/auth/register", values);
-      messageApi.success(
+      message.success(
         "Registration successful! Please check your email to verify your account."
       );
 
@@ -39,7 +39,7 @@ const RegisterPage = () => {
 
     } catch (error) {
       console.error("Registration error:", error);
-      messageApi.error(
+      message.error(
         error.response.data.message || "Registration failed, please try again!"
       );
     } finally {
@@ -49,13 +49,12 @@ const RegisterPage = () => {
 
   const handleSocialRegister = async (response) => {
     console.log(`Register with ${response}`);
-    messageApi.info(`Attempting registration with ${response}...`);
+    message.info(`Attempting registration with ${response}...`);
     window.location.href = `http://localhost:3000/api/auth/${response}`;
   };
 
   return (
     <Layout className="flex items-center justify-center p-5 max-h-fit">
-      {contextHolder}
       <div className="p-8 bg-white shadow-lg rounded-lg w-full max-w-xl ">
         <Title level={2} className="text-center">
           Create Account

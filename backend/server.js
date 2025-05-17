@@ -10,6 +10,8 @@ const inventoryConsumer = require("./consumers/inventoryConsumer");
 const loyaltyConsumer = require("./consumers/loyaltyConsumer");
 const redisConsumer = require("./consumers/redisConsumer");
 const emailConsumer = require("./consumers/emailConsumer");
+const discountConsumer = require("./consumers/discountConsumer");
+
 //Routes
 const orderRoutes = require("./routes/orderRoute");
 const discountCodeRoutes = require("./routes/discountRoute");
@@ -77,6 +79,7 @@ async function start() {
       loyaltyConsumer.start();
       emailConsumer.start();
       redisConsumer.start();
+      discountConsumer.start();
 
       server.listen(PORT, () => {
         console.log(`Server running on port ${port}`);

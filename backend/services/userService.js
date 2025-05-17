@@ -29,17 +29,19 @@ exports.updateProfile = async (userId, updateData) => {
 exports.changePassword = async (userId, currentPassword, newPassword) => {
   const user = await User.findById(userId);
   if (!user) throw new Error("User not found");
-  
-  if (currentPassword === newPassword) {
-    throw new Error("New password cannot be the same as the old password");
+
+  if (!user.isDefaultPassword) {
+    if (currentPassword === newPassword) {
+      throw new Error("New password cannot be the same as the old password");
+    }
+
+    if (!(await bcrypt.compare(currentPassword, user.password))) {
+      throw new Error("Current password is incorrect");
+    }
   }
-  
-  if (!await bcrypt.compare(currentPassword, user.password)) {
-    throw new Error("Current password is incorrect");
-  }
-  
+
   user.isDefaultPassword = false;
-  user.set('password', newPassword)
+  user.set("password", newPassword);
   return await user.save();
 };
 exports.getAddresses = async (userId) => {
@@ -112,7 +114,9 @@ exports.setDefaultAddress = async (userId, addressId) => {
   return address;
 };
 
-
 exports.getTotalUsers = async () => await User.countDocuments();
 
-exports.getNewUsers = async () => await User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } });
+exports.getNewUsers = async () =>
+  await User.countDocuments({
+    createdAt: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+  });

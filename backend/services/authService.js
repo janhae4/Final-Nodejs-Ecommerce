@@ -18,7 +18,6 @@ const generateRandomPassword = () => {
 exports.registerUser = async (data) => {
   try {
     const { userInfo, address } = data;
-    console.log("registerUser", data);
     const existingUser = await User.findOne({ email: userInfo.email });
     if (existingUser) throw new Error("Email already exists");
 

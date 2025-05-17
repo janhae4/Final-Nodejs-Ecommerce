@@ -145,8 +145,8 @@ exports.deleteOrderById = async (req, res) => {
 
 exports.getOrderByDiscountCode = async (req, res) => {
   try {
-    const discountCode = req.params.discountCode;
-    const orders = await orderService.getOrderByDiscountCode(discountCode);
+    const code = req.params.code;
+    const orders = await orderService.getOrderByDiscountCode(code);
     res.json(orders);
   } catch (error) {
     if (error.message.includes("not found")) {

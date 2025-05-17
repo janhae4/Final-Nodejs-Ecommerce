@@ -6,9 +6,15 @@ const PasswordChangeForm = ({
   loading,
   isDefaultPassword = false,
 }) => {
+  const [form] = Form.useForm();
+
+  const handleFinish = async (values) => {
+    await onFinish(values);
+    form.resetFields();
+  };
 
   return (
-    <Form onFinish={onFinish} layout="vertical">
+    <Form form={form} onFinish={handleFinish} layout="vertical">
       {!isDefaultPassword && (
         <Form.Item
           name="oldPassword"

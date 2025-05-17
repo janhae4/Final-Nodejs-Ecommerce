@@ -20,7 +20,6 @@ import { Link, useNavigate } from "react-router-dom";
 import CartSummary from "../../../components/cart/CartSummary";
 import { useCart } from "../../../context/CartContext";
 import { useAuth } from "../../../context/AuthContext";
-import AddressForm from "../../../components/checkout/AddressForm";
 import AddressSelector from "../../../components/checkout/AddressSelector";
 import provinces from "hanhchinhvn/dist/tinh_tp.json";
 import districts from "hanhchinhvn/dist/quan_huyen.json";
@@ -36,7 +35,6 @@ const paymentMethods = [
 ];
 
 const CheckoutPage = () => {
-  const [messageApi, contextHolder] = message.useMessage();
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingForm] = Form.useForm();
   const [addressForm] = Form.useForm();
@@ -55,7 +53,7 @@ const CheckoutPage = () => {
   // Load cart and address data
   useEffect(() => {
     if (cartItemCount === 0 && currentStep < 2) {
-      messageApi.info("Your cart is empty. Add items to proceed to checkout.");
+      message.info("Your cart is empty. Add items to proceed to checkout.");
       navigate("/cart");
     }
   }, [isLoggedIn, cartItemCount, currentStep, navigate]);
@@ -97,6 +95,8 @@ const CheckoutPage = () => {
     const district = districts[selectedDistrict];
     const ward = wards[selectedWard];
 
+    console.log(province, district, ward);
+
     addressForm.setFieldsValue({
       street: street,
       ward: ward?.name_with_type,
@@ -110,8 +110,8 @@ const CheckoutPage = () => {
       fullName: shippingForm.getFieldValue("fullName"),
       email: shippingForm.getFieldValue("email"),
     });
-
-    console.log("Address form data:", addressForm.getFieldsValue());
+    
+    console.log("Address form data:", addressForm.getFieldValue("fullAddress"));
   };
 
   const renderAddressSelector = () => {
@@ -236,7 +236,7 @@ const CheckoutPage = () => {
 
   const handleNext = async () => {
     if (currentStep === 0) {
-      handleSubmit();
+      await handleSubmit();
       setEmail(shippingForm.getFieldValue("email"));
       setFullName(shippingForm.getFieldValue("fullName"));
       setCurrentStep(currentStep + 1);
@@ -249,7 +249,7 @@ const CheckoutPage = () => {
         let shippingAddress;
 
         if (addressMode === "select") {
-          const selectedAddress = addresses.find(
+          const selectedAddress = addresses?.find(
             (addr) => addr.id === shippingValues.address
           );
           shippingAddress = selectedAddress;
@@ -277,7 +277,8 @@ const CheckoutPage = () => {
           },
           date: new Date().toLocaleDateString(),
         };
-
+        
+        console.log(mockOrder);
         const ordersData = await placeOrder(mockOrder);
 
         setOrderDetails(ordersData);
@@ -285,8 +286,8 @@ const CheckoutPage = () => {
         console.log(23, ordersData);
       } catch (error) {
         console.log("Validation Failed:", error);
-        messageApi.error(
-          error.response.data?.message || error.response.message
+        message.error(
+          error.response?.data?.message || error.response?.message || "Error"
         );
         setOrderProcessing(false);
       } finally {
@@ -423,7 +424,6 @@ const CheckoutPage = () => {
 
   return (
     <Layout className="bg-gray-50 min-h-screen">
-      {contextHolder}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Title level={2} className="text-center mb-8">
           Checkout

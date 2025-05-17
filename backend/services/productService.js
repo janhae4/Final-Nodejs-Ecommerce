@@ -352,15 +352,15 @@ exports.addCommentToProduct = async (productId, userId, content, rating) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error("Product not found");
 
-  // Nếu là user đã login thì kiểm tra duplicate comment
-  if (userId) {
-    const alreadyCommented = product.comments.some(
-      (c) => c.user && c.user.toString() === userId.toString()
-    );
-    if (alreadyCommented) {
-      throw new Error("You have already rated this product");
-    }
-  }
+  // // Nếu là user đã login thì kiểm tra duplicate comment
+  // if (userId) {
+  //   const alreadyCommented = product.comments.some(
+  //     (c) => c.user && c.user.toString() === userId.toString()
+  //   );
+  //   if (alreadyCommented) {
+  //     throw new Error("You have already rated this product");
+  //   }
+  // }
 
   let userFullName = "Anonymous";
   if (userId) {
@@ -369,8 +369,7 @@ exports.addCommentToProduct = async (productId, userId, content, rating) => {
     userFullName = user.fullName;
   }
 
-  const isBuy =
-    !(await orderService.findProductOrderUser(userId, productId)) == null;
+  const isBuy = (await orderService.findProductOrderUser(userId, productId)).length > 0;
 
   const newComment = {
     user: userId,

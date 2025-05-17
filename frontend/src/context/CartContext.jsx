@@ -363,6 +363,7 @@ export const CartProvider = ({ children }) => {
         response = await axios.post(`${API_URL}/guests/orders`, orderData);
       }
       message.success("Order placed successfully.");
+      setDiscountInfo(null);
       clearCart();
       return response.data;
     } catch (error) {

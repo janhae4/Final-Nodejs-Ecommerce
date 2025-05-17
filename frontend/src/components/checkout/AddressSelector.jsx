@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Form, Select, Button, Divider, Col, Row, Space } from "antd";
+import { useState } from "react";
+import { Form, Select, Button, Col, Row, Space } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useAuth } from "../../context/AuthContext";
-import AddressForm from "./AddressForm";
 
 const { Option } = Select;
 
@@ -11,7 +10,6 @@ const AddressSelector = ({
   addresses,
   loading,
   onSelect,
-  onAddNew,
   onEdit,
   onDelete,
 }) => {
@@ -21,9 +19,6 @@ const AddressSelector = ({
     onEdit(address);
   };
 
-  const handleCancelEdit = () => {
-    setEditingAddress(null);
-  };
 
   return (
     <Row gutter={[16, 16]} align="middle">

@@ -74,6 +74,7 @@ exports.createOrder = async (orderData) => {
         price: p.price,
       })),
       totalAmount: saved_order.totalAmount,
+      shippingAddress: saved_order.shippingAddress,
       loyaltyPointsEarned: saved_order.loyaltyPointsEarned,
       loyaltyPointsUsed: saved_order.loyaltyPointsUsed,
       discountInfo: saved_order.discountInfo,
@@ -315,6 +316,7 @@ exports.getOrderByUser = async (userId) => {
 exports.getOrderByDiscountCode = async (discountCode) => {
   try {
     const orders = await Order.find({ "discountInfo.code": discountCode });
+    console.log(discountCode);
     if (!orders) {
       throw new Error("Orders not found");
     }

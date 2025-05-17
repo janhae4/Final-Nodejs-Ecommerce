@@ -364,6 +364,7 @@ exports.addProductComment = async (req, res) => {
       rating: newComment.rating,
       userFullName: newComment.userFullName || "Anonymous",
       createdAt: newComment.createdAt,
+      isBuy: newComment.isBuy
     });
 
     res.status(200).json({ message: "Comment added", data: newComment });

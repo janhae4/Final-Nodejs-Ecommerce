@@ -29,35 +29,40 @@ const RegisterForm = ({ onFinish, setLoading, loading }) => {
     : [];
 
   const handleSubmit = async () => {
-    setLoading(true);
-    await form.validateFields();
+    try {
+      await form.validateFields();
+      setLoading(true);
 
-    const province = provinces[selectedProvince];
-    const district = districts[selectedDistrict];
-    const ward = wards[selectedWard];
-    const fieldsValue = form.getFieldsValue();
-    const fullAddress = {
-      address: {
-        street: street,
-        ward: ward.name_with_type,
-        wardCode: selectedWard,
-        district: district.name_with_type,
-        districtCode: selectedDistrict,
-        province: province.name_with_type,
-        provinceCode: selectedProvince,
-        fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
-        // _id: Date.now(),
-      },
-      userInfo: {
-        userId: userInfo._id || userInfo.id,
-        fullName: fieldsValue.fullName,
-        email: fieldsValue.email,
-      },
-    };
-    console.log(fullAddress);
-    await onFinish(fullAddress);
-    setLoading(false);
+      const province = provinces[selectedProvince];
+      const district = districts[selectedDistrict];
+      const ward = wards[selectedWard];
+      const fieldsValue = form.getFieldsValue();
+      const fullAddress = {
+        address: {
+          street: street,
+          ward: ward.name_with_type,
+          wardCode: selectedWard,
+          district: district.name_with_type,
+          districtCode: selectedDistrict,
+          province: province.name_with_type,
+          provinceCode: selectedProvince,
+          fullAddress: `${street}, ${ward.name_with_type}, ${district.name_with_type}, ${province.name_with_type}`,
+          // _id: Date.now(),
+        },
+        userInfo: {
+          userId: userInfo._id || userInfo.id,
+          fullName: fieldsValue.fullName,
+          email: fieldsValue.email,
+        },
+      };
+      await onFinish(fullAddress);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error submitting address:", error);
+      message.error("Failed to save address");
+    }
   };
+
   return (
     <Form name="register" form={form} onFinish={onFinish} layout="vertical">
       <Form.Item
