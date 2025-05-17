@@ -19,6 +19,7 @@ const authRoutes = require("./routes/authRoute");
 const adminRoutes = require("./routes/adminRoute");
 const userRoutes = require("./routes/userRoute");
 const guestRoutes = require("./routes/guestRoute");
+const dashboardRoutes = require("./routes/dashboardRoute");
 
 const app = express();
 const port = 3000;
@@ -59,6 +60,8 @@ app.use("/api/discount-codes", discountCodeRoutes);
 app.use("/api/products", productRoutes);
 
 app.use("/api/chatbot", chatbotRoutes);
+
+app.use("/api/dashboard", dashboardRoutes);
 
 const http = require("http");
 const server = http.createServer(app);

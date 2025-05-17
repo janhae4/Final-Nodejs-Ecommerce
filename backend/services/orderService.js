@@ -337,9 +337,12 @@ exports.updateOrderUserId = async (oldUserId, newUserId) => {
   }
 };
 
-exports.findProductOrderUser= async (userId, productId) => {
+exports.findProductOrderUser = async (userId, productId) => {
   try {
-    const orders = await Order.find({ "userInfo.userId": userId, "products.productId": productId });
+    const orders = await Order.find({
+      "userInfo.userId": userId,
+      "products.productId": productId,
+    });
     if (!orders) {
       throw new Error("Orders not found");
     }
@@ -347,4 +350,164 @@ exports.findProductOrderUser= async (userId, productId) => {
   } catch (error) {
     throw new Error("Error fetching orders by user: " + error.message);
   }
-}
+};
+
+exports.getTotalOrders = async () => await Order.countDocuments();
+exports.getRevenue = async () => {
+  const result = await Order.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalAmount: { $sum: "$totalAmount" },
+      },
+    },
+  ]);
+
+  return result[0]?.totalAmount || 0;
+};
+
+exports.getPerformanceTrendByInterval = async (interval, dateRange) => {
+  const matchStage = {};
+
+  if (interval === "custom" && dateRange?.length === 2) {
+    matchStage.purchaseDate = {
+      $gte: new Date(dateRange[0]),
+      $lte: new Date(dateRange[1]),
+    };
+  }
+
+  let groupStage;
+  switch (interval) {
+    case "annual":
+      groupStage = {
+        _id: { year: { $year: "$purchaseDate" } },
+      };
+      break;
+    case "quarterly":
+      groupStage = {
+        _id: {
+          year: { $year: "$purchaseDate" },
+          quarter: {
+            $ceil: { $divide: [{ $month: "$purchaseDate" }, 3] },
+          },
+        },
+      };
+      break;
+    case "monthly":
+      groupStage = {
+        _id: {
+          year: { $year: "$purchaseDate" },
+          month: { $month: "$purchaseDate" },
+        },
+      };
+      break;
+    case "weekly":
+      groupStage = {
+        _id: {
+          year: { $year: "$purchaseDate" },
+          week: { $isoWeek: "$purchaseDate" },
+        },
+      };
+      break;
+    case "custom":
+      groupStage = {
+        _id: {
+          day: { $dateToString: { format: "%Y-%m-%d", date: "$purchaseDate" } },
+        },
+      };
+      break;
+    default:
+      throw new Error("Invalid interval");
+  }
+
+  // Phân phối theo category
+  const categoryDistribution = await Order.aggregate([
+    { $match: matchStage },
+    { $unwind: "$products" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "products.productId",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    { $unwind: "$productInfo" },
+    {
+      $group: {
+        _id: "$productInfo.category",
+        totalQuantity: { $sum: "$products.quantity" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        name: "$_id",
+        value: "$totalQuantity",
+      },
+    },
+  ]);
+
+  // Thống kê theo thời gian
+  const advancedStats = await Order.aggregate([
+    { $match: matchStage },
+    { $unwind: "$products" },
+    {
+      $group: {
+        ...groupStage,
+        revenue: { $sum: "$totalAmount" },
+        product: { $sum: "$products.quantity" },
+        productStats: {
+          $push: {
+            productId: "$products.productId",
+            quantity: "$products.quantity",
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        profit: { $multiply: ["$revenue", 0.1] },
+      },
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.month": 1,
+        "_id.quarter": 1,
+        "_id.week": 1,
+      },
+    },
+  ]);
+
+  // Gắn nhãn cho mỗi entry trong advancedStats
+  const labeledAdvancedStats = advancedStats.map((entry) => {
+    const { year, month, quarter, week, day } = entry._id;
+    let name = "";
+
+    switch (interval) {
+      case "annual":
+        name = `${year}`;
+        break;
+      case "quarterly":
+        name = `Q${quarter} ${year}`;
+        break;
+      case "monthly":
+        name = `${month}/${year}`;
+        break;
+      case "weekly":
+        name = `W${week} ${year}`;
+        break;
+      case "custom":
+        name = day;
+        break;
+    }
+
+    return { ...entry, name };
+  });
+
+  return {
+    advancedStats: labeledAdvancedStats,
+    categoryDistribution,
+  };
+};

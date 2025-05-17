@@ -110,3 +110,8 @@ exports.setDefaultAddress = async (userId, addressId) => {
 
   return address;
 };
+
+
+exports.getTotalUsers = async () => await User.countDocuments();
+
+exports.getNewUsers = async () => await User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } });
