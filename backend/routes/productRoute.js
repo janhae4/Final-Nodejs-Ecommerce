@@ -17,6 +17,7 @@ router.get("/categories", ProductController.getCategories);
 router.get("/brands", ProductController.getBrands);
 router.post('/create', upload.array('images'), ProductController.createProduct);
 router.get('/:slug', ProductController.getProductBySlug);
+router.get('/id/:id', ProductController.getProductById);
 router.get('/:id', ProductController.getProductByIdWithVariants);
 router.get('/', ProductController.searchProducts);
 router.get("/variants/:id", ProductController.getProductVariants);

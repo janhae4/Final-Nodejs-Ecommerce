@@ -31,7 +31,7 @@ const ReviewsSection = ({ slug }) => {
     const fetchReviews = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:3000/api/products/${slug}/comments`
+          `http://localhost:3000/api/products/id/${slug}`
         );
         const product = res.data;
         console.log("Product after fetch comment:", product);
@@ -52,6 +52,7 @@ const ReviewsSection = ({ slug }) => {
 
     socket.on(`new-comment-${slug}`, (newReview) => {
       setReviews((prev) => [newReview, ...prev]);
+      console.log("REIVEW MOI NE:", newReview);
       setNumReviews((prev) => prev + 1);
       setAvgRating((prev) => prev + (newReview.rating - prev) / prev);
     });
@@ -69,11 +70,6 @@ const ReviewsSection = ({ slug }) => {
         `http://localhost:3000/api/products/${slug}/comments_anonymous`,
         { content: comment }
       );
-
-      const newReview = res.data.data;
-
-      // Cập nhật UI
-      setReviews((prev) => [newReview, ...prev]);
       message.success("Comment submitted!");
     } catch (error) {
       console.error("Comment submit error:", error);
@@ -83,6 +79,10 @@ const ReviewsSection = ({ slug }) => {
     }
   };
 
+  useEffect(() => {
+    console.log("REIVEW NE:", reviews);
+  }, [reviews]);
+
   const handleRatingSubmit = async (comment, rating) => {
     if (!isLoggedIn) {
       message.error("You must be logged in to submit a review.");
@@ -91,7 +91,7 @@ const ReviewsSection = ({ slug }) => {
 
     setFormLoading(true);
     try {
-      const res = await axios.post(
+      await axios.post(
         `http://localhost:3000/api/products/${slug}/comments`,
         {
           content: comment,
@@ -100,20 +100,11 @@ const ReviewsSection = ({ slug }) => {
         { withCredentials: true }
       );
 
-      // console.log('Response data:', res.data);
-
-      const newReview = res.data.product.comments;
-      const latestReview = newReview[newReview.length - 1];
-      console.log("New review:", latestReview);
-
-      // Cập nhật UI
-      setReviews((prev) => [latestReview, ...prev]);
-
       // Optionally re-fetch full product if ratingAverage not trả về
       const updatedProduct = await axios.get(
-        `http://localhost:3000/api/products/${slug}`
+        `http://localhost:3000/api/products/id/${slug}`
       );
-      setAvgRating(updatedProduct.data.product.ratingAverage || 0);
+      setAvgRating(updatedProduct.data.ratingAverage || 0);
       message.success("Review submitted!");
     } catch (error) {
       console.error("Review submit error:", error);
@@ -153,41 +144,43 @@ const ReviewsSection = ({ slug }) => {
       <Divider />
 
       {reviews.length > 0 ? (
-        reviews.map((review) => (
-          <Comment
-            key={review._id}
-            author={
-              <Space align="center">
-                <Text strong>{review.userFullName}</Text>
-                {review.isBuy && (
-                  <Tooltip title="Bought this product">
-                    <CheckCircleOutlined
-                      style={{ color: "#52c41a", fontSize: "16px" }}
-                    />
-                  </Tooltip>
-                )}
-              </Space>
-            }
-            avatar={
-              <Avatar
-                src={review.userAvatar || "https://i.pravatar.cc/300"}
-                alt={review.userFullName}
-                size="large"
-              />
-            }
-            content={
-              <>
-                <StarRatingDisplay rating={review.rating} size="large" />
-                <p className="mt-4">{review.content}</p>
-              </>
-            }
-            datetime={
-              <Text type="secondary" className="text-xs ml-5">
-                {dayjs(review.createdAt).fromNow()}
-              </Text>
-            }
-          />
-        ))
+        reviews
+          .filter((review) => review !== null)
+          .map((review) => (
+            <Comment
+              key={Math.random()}
+              author={
+                <Space align="center">
+                  <Text strong>{review?.userFullName}</Text>
+                  {review?.isBuy && (
+                    <Tooltip title="Bought this product">
+                      <CheckCircleOutlined
+                        style={{ color: "#52c41a", fontSize: "16px" }}
+                      />
+                    </Tooltip>
+                  )}
+                </Space>
+              }
+              avatar={
+                <Avatar
+                  src={review?.userAvatar || "https://i.pravatar.cc/300"}
+                  alt={review?.userFullName}
+                  size="large"
+                />
+              }
+              content={
+                <>
+                  <StarRatingDisplay rating={review?.rating} size="large" />
+                  <p className="mt-4">{review?.content}</p>
+                </>
+              }
+              datetime={
+                <Text type="secondary" className="text-xs ml-5">
+                  {dayjs(review?.createdAt).fromNow()}
+                </Text>
+              }
+            />
+          ))
       ) : (
         <Text className="block text-center py-4">
           Be the first to review this product!

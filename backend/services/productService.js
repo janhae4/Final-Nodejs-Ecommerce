@@ -12,6 +12,16 @@ exports.getAllProducts = async () => {
   }
 };
 
+exports.getProductById = async (productId) => {
+  try {
+    const product = await Product.findById(productId);
+    if (!product) throw new Error("Product not found");
+    return product;
+  } catch (err) {
+    throw new Error("Error fetching product: " + err.message);
+  }
+};
+
 exports.createProduct = async ({
   nameProduct,
   price,
@@ -378,10 +388,9 @@ exports.addCommentToProduct = async (productId, userId, content, rating) => {
     product.ratingAverage = totalRating / product.ratingCount;
   }
 
-  product.comments.push(newComment);
-  await product.save();
-
-  return newComment;
+  product.comments.unshift(newComment);
+  const savedProduct = await product.save();
+  return savedProduct.comments[0];
 };
 
 exports.getCommentsByProductId = async (productId) => {

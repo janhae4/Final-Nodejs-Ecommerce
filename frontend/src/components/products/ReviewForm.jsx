@@ -7,13 +7,13 @@ const ReviewForm = ({ onSubmitComment, onSubmitRating, isLoggedIn, loading }) =>
 
   const handleCommentSubmit = (values) => {
     console.log('Comment submitted:', values.comment);
-    onSubmitComment(values.comment); // Only comment if not logged in
+    onSubmitComment(values.comment); 
     form.resetFields(['comment']);
   };
 
   const handleRatingSubmit = (values) => {
     console.log('Comment submitted 2:', values.comment);
-    onSubmitRating(values.comment, values.rating); // Comment and rating if logged in
+    onSubmitRating(values.comment, values.rating); 
     form.resetFields();
   };
 

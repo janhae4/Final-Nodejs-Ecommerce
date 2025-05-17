@@ -65,8 +65,7 @@ app.use("/api/dashboard", dashboardRoutes);
 
 const http = require("http");
 const server = http.createServer(app);
-const io = init(server);
-
+init(server);
 async function start() {
   if (require.main === module) {
     const PORT = process.env.PORT || 3000;

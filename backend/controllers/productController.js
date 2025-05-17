@@ -355,12 +355,14 @@ exports.addProductComment = async (req, res) => {
       rating
     );
 
+    console.log(newComment)
+
     const io = getIO();
     io.emit(`new-comment-${productId}`, {
       _id: newComment._id,
       content: newComment.content,
       rating: newComment.rating,
-      userFullName: newComment.user?.name || "Anonymous",
+      userFullName: newComment.userFullName || "Anonymous",
       createdAt: newComment.createdAt,
     });
 
@@ -573,6 +575,16 @@ exports.searchProductsByElasticSearch = async (req, res) => {
     });
 
     res.status(200).json({ status: true, ...result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await ProductService.getProductById(productId);
+    res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
