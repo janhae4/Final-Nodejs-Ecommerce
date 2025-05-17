@@ -135,8 +135,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    setAddresses(userInfo.addresses);
-  }, [userInfo.id]);
+    if (userInfo && userInfo.addresses) {
+      setAddresses(userInfo.addresses);
+    }
+  }, [userInfo?.id]);
 
   const getUserInfo = async () => {
     try {

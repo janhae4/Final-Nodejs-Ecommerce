@@ -34,9 +34,10 @@ exports.changePassword = async (userId, currentPassword, newPassword) => {
     throw new Error("New password cannot be the same as the old password");
   }
   
-  if (! await bcrypt.compare(currentPassword, user.password)) {
+  if (!await bcrypt.compare(currentPassword, user.password)) {
     throw new Error("Current password is incorrect");
   }
+  
   user.isDefaultPassword = false;
   user.set('password', newPassword)
   return await user.save();

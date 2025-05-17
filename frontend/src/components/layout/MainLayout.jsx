@@ -211,7 +211,7 @@ const MainLayout = () => {
                 cartItemCount={cartItemCount}
               />
 
-              {isLoggedIn && userInfo.fullName ? (
+              {isLoggedIn && userInfo?.fullName ? (
                 <Dropdown menu={{ items: userMenu }}>
                   <a
                     onClick={(e) => e.preventDefault()}
