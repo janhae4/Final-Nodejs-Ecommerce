@@ -97,7 +97,7 @@ export const CartProvider = ({ children }) => {
     if (shouldFetchCart && userInfo?.id) {
       fetchCart();
     }
-  }, [userInfo.id, isLoggedIn, shouldFetchCart]);
+  }, [userInfo?.id, isLoggedIn, shouldFetchCart]);
 
   const updateCartInRedis = async () => {
     if (loading) return;
