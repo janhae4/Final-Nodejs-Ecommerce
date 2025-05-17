@@ -44,10 +44,10 @@ const ProductDetail = () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:3000/api/products/${productId}`
+          `http://localhost:3000/api/products/id/${productId}`
         );
-        setProduct(res.data.product);
-        setSelectedVariant(res.data.product.variants[0]?._id);
+        setProduct(res.data);
+        setSelectedVariant(res.data.variants[0]?._id);
       } catch (error) {
         console.error("Error loading product:", error);
         message.error("Cannot load product!");
