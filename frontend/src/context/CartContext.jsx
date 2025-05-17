@@ -125,7 +125,8 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     let debounceTimer;
-    if (createCart) {
+    console.log(213, createCart)
+    if (JSON.parse(localStorage.getItem("isCreateCart"))) {
       console.log(213)
       debounceTimer = setTimeout(updateCartInRedis, 400);
     }

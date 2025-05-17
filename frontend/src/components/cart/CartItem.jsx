@@ -69,7 +69,7 @@ const CartItem = ({ item }) => {
         <Select
           value={item?.variantId}
           onChange={handleChangeVariant}
-          className="w-auto"
+          className="w-full"
           defaultValue={(item?.variants && item?.variants[0]?._id) || ""}
         >
           {item?.variants.map((v) => (
