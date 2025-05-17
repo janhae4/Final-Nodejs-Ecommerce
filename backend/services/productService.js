@@ -149,7 +149,7 @@ exports.searchProducts = async ({
     }
 
     const totalProducts = await Product.countDocuments(query);
-    const limit = 12;
+    const limit = 10000;
     const totalPages = Math.ceil(totalProducts / limit);
     const skip = (page - 1) * limit;
 

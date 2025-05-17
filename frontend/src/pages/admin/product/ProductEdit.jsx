@@ -29,8 +29,8 @@ const EditProduct = () => {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:3000/api/products/${id}`);
-                const product = res.data.product;
+                const res = await axios.get(`http://localhost:3000/api/products/id/${id}`);
+                const product = res.data;
 
                 // Load form fields
                 form.setFieldsValue({
