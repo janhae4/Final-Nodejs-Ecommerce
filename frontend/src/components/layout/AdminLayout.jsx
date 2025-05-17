@@ -6,13 +6,11 @@ import {
   Menu,
   Avatar,
   Dropdown,
-  Badge,
   Typography,
   Button,
   Drawer,
   Input,
   Space,
-  Breadcrumb,
   theme,
 } from "antd";
 import {
@@ -22,22 +20,13 @@ import {
   TagOutlined,
   UserOutlined,
   ShoppingCartOutlined,
-  InboxOutlined,
-  SettingOutlined,
   LogoutOutlined,
-  BellOutlined,
   SearchOutlined,
-  AppstoreOutlined,
-  LineChartOutlined,
-  GiftOutlined,
   ShopOutlined,
-  FileTextOutlined,
-  PlusOutlined,
-  EditOutlined,
 } from "@ant-design/icons";
 
 const { Header, Sider, Content, Footer } = Layout;
-const { Title, Text } = Typography;
+const {  Text } = Typography;
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -47,21 +36,8 @@ const AdminLayout = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { token } = theme.useToken();
 
-  // Mock notifications
-  const notifications = [
-    { id: 1, title: "New order received", read: false, time: "5 minutes ago" },
-    {
-      id: 2,
-      title: "System update completed",
-      read: true,
-      time: "2 hours ago",
-    },
-    { id: 3, title: "New user registered", read: false, time: "1 day ago" },
-  ];
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -93,19 +69,6 @@ const AdminLayout = () => {
   // User menu dropdown items
   const userMenuItems = [
     {
-      key: "profile",
-      icon: <UserOutlined />,
-      label: "Profile",
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Settings",
-    },
-    {
-      type: "divider",
-    },
-    {
       key: "logout",
       icon: <LogoutOutlined />,
       label: "Logout",
@@ -113,56 +76,13 @@ const AdminLayout = () => {
     },
   ];
 
-  // Notification dropdown content
-  const notificationContent = (
-    <div className="bg-white shadow-lg rounded-lg max-w-xs w-72">
-      <div className="px-4 py-3 border-b border-gray-200">
-        <Text strong>Notifications</Text>
-        <Text className="text-gray-500 ml-2">
-          ({notifications.filter((n) => !n.read).length} unread)
-        </Text>
-      </div>
-      <div className="max-h-64 overflow-y-auto">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-              !notification.read ? "bg-blue-50" : ""
-            }`}
-          >
-            <div className="flex items-start">
-              <div
-                className={`h-2 w-2 mt-2 rounded-full mr-2 ${
-                  !notification.read ? "bg-blue-500" : "bg-gray-300"
-                }`}
-              ></div>
-              <div>
-                <Text strong className="block">
-                  {notification.title}
-                </Text>
-                <Text className="text-gray-500 text-xs">
-                  {notification.time}
-                </Text>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="px-4 py-2 text-center border-t border-gray-100">
-        <Button type="link" className="text-sm">
-          View all notifications
-        </Button>
-      </div>
-    </div>
-  );
-
   // Side menu items
   const menuItems = [
     {
       key: "dashboard",
       icon: <DashboardOutlined />,
       label: "Dashboard",
-      path: "/admin/dashboard",
+      path: "/admin/",
     },
     {
       key: "discount",
@@ -187,12 +107,6 @@ const AdminLayout = () => {
       icon: <ShoppingCartOutlined />,
       label: "Orders",
       path: "/admin/orders",
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Settings",
-      path: "/admin/settings",
     },
   ];
 
@@ -237,19 +151,18 @@ const AdminLayout = () => {
   };
 
   // Handle user dropdown menu
-const { logout } = useAuth();
+  const { logout } = useAuth();
 
-const handleUserMenuClick = ({ key }) => {
-  if (key === "logout") {
-    logout();            // Reset trạng thái và xóa phiên
-    navigate("/");  // Chuyển về trang đăng nhập
-  } else if (key === "profile") {
-    navigate("/admin/profile");
-  } else if (key === "settings") {
-    navigate("/admin/settings");
-  }
-};
-
+  const handleUserMenuClick = ({ key }) => {
+    if (key === "logout") {
+      logout(); // Reset trạng thái và xóa phiên
+      navigate("/"); // Chuyển về trang đăng nhập
+    } else if (key === "profile") {
+      navigate("/admin/profile");
+    } else if (key === "settings") {
+      navigate("/admin/settings");
+    }
+  };
 
   return (
     <Layout className="min-h-screen">
@@ -269,7 +182,7 @@ const handleUserMenuClick = ({ key }) => {
           }}
         >
           <div className="h-16 flex items-center justify-center p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-            <Link to="/admin/dashboard" className="flex items-center">
+            <Link to="/admin/" className="flex items-center">
               <div className="flex-shrink-0 text-xl font-bold text-blue-600">
                 {collapsed ? "AD" : "Admin Panel"}
               </div>
@@ -307,7 +220,7 @@ const handleUserMenuClick = ({ key }) => {
                   }
                   onClick={() => setCollapsed(!collapsed)}
                   className="w-16 h-16 flex items-center justify-center"
-                  style={{ color: "white", fontSize: "1.2rem" }}
+                  style={{ color: "black", fontSize: "1.2rem" }}
                 />
               ) : (
                 <Button
@@ -315,7 +228,7 @@ const handleUserMenuClick = ({ key }) => {
                   icon={<MenuUnfoldOutlined />}
                   onClick={() => setMobileDrawerVisible(true)}
                   className="w-16 h-16 flex items-center justify-center"
-                  style={{ color: "white", fontSize: "1.2rem" }}
+                  style={{ color: "black", fontSize: "1.2rem" }}
                 />
               )}
               <div className="block md:hidden">
@@ -332,23 +245,6 @@ const handleUserMenuClick = ({ key }) => {
                   placeholder="Search..."
                   className="rounded-full border-gray-200"
                 />
-              </div>
-              <div>
-                <Dropdown
-                  overlay={notificationContent}
-                  trigger={["click"]}
-                  placement="bottomRight"
-                >
-                  <Badge
-                    count={notifications.filter((n) => !n.read).length}
-                    className="cursor-pointer"
-                  >
-                    <Avatar
-                      icon={<BellOutlined />}
-                      className="bg-gray-200 text-gray-600"
-                    />
-                  </Badge>
-                </Dropdown>
               </div>
               <div>
                 <Dropdown

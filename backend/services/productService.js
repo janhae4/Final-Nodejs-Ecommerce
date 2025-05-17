@@ -554,3 +554,14 @@ exports.getProductDitributionByCategory = async () => {
     );
   }
 };
+
+
+exports.getCategoryById = async (categoryId) => {
+  try {
+    const category = await Product.findById(categoryId).select("category");
+    if (!category) throw new Error("Category not found");
+    return category;
+  } catch (err) {
+    throw new Error("Error fetching category: " + err.message);
+  }
+};

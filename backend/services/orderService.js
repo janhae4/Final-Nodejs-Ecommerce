@@ -421,7 +421,6 @@ exports.getPerformanceTrendByInterval = async (interval, dateRange) => {
       throw new Error("Invalid interval");
   }
 
-  // Phân phối theo category
   const categoryDistribution = await Order.aggregate([
     { $match: matchStage },
     { $unwind: "$products" },
@@ -449,7 +448,6 @@ exports.getPerformanceTrendByInterval = async (interval, dateRange) => {
     },
   ]);
 
-  // Thống kê theo thời gian
   const advancedStats = await Order.aggregate([
     { $match: matchStage },
     { $unwind: "$products" },
@@ -481,8 +479,47 @@ exports.getPerformanceTrendByInterval = async (interval, dateRange) => {
     },
   ]);
 
-  // Gắn nhãn cho mỗi entry trong advancedStats
-  const labeledAdvancedStats = advancedStats.map((entry) => {
+
+  console.log(advancedStats)
+
+  const totalProductStats = {};
+  const entryData = []
+  for (const { productStats, ...data } of advancedStats) {
+    entryData.push(data)
+    for (const { productId, quantity } of productStats) {
+      totalProductStats[productId] = (totalProductStats[productId] || 0) + quantity;
+    }
+  }
+  console.log(totalProductStats)
+
+  const productIds = Object.keys(totalProductStats);
+  const categories = await Promise.all(
+    productIds.map(async (id) => {
+      const product = await Product.findById(id).select("category -_id");
+      return product ? { productId: id, category: product.category } : null;
+    })
+  );
+  const validCategories = categories.filter(Boolean);
+
+  const categoryMap = {};
+  for (const { productId, category } of validCategories) {
+    const quantity = totalProductStats[productId];
+    const categoryName =
+      typeof category === "object" ? category.category : category;
+
+    if (!categoryMap[categoryName]) {
+      categoryMap[categoryName] = 0;
+    }
+    categoryMap[categoryName] += quantity;
+  }
+
+  const result = Object.entries(categoryMap).map(([category, quantity]) => ({
+    category,
+    quantity,
+  }));
+  console.log(result)
+
+  const labeledAdvancedStats = entryData.map((entry) => {
     const { year, month, quarter, week, day } = entry._id;
     let name = "";
 
@@ -504,11 +541,11 @@ exports.getPerformanceTrendByInterval = async (interval, dateRange) => {
         break;
     }
 
-    return { ...entry, name };
+    return { name, ...entry };
   });
 
   return {
     advancedStats: labeledAdvancedStats,
-    categoryDistribution,
+    categoryDistribution: result,
   };
 };
