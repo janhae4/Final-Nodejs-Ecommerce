@@ -65,7 +65,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
             </div>
           )}
           <div className={contentStyles}>
-            <Link to={`/products/detail/${product.link}`}>
+            <Link to={`/products/detail/${product.slug}`}>
               <Title level={5} className="mb-1 truncate" title={product.nameProduct}>
                 {product.nameProduct}
               </Title>

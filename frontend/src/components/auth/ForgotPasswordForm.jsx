@@ -38,7 +38,7 @@ const ForgotPasswordForm = () => {
           { type: "email", message: "Please enter a valid email!" },
         ]}
       >
-        <Input placeholder="example@domain.com" />
+        <Input placeholder="example@domain.com" className="p-4" />
       </Form.Item>
 
       <Form.Item>

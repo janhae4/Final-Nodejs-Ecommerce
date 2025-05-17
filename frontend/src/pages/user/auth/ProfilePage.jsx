@@ -49,7 +49,9 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("1");
 
   useEffect(() => {
+    console.log(userInfo, true);
     if (userInfo?.id) {
+      console.log(userInfo);
       setLoading(false);
     }
   }, [userInfo?.id]);

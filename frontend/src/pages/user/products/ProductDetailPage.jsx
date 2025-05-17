@@ -22,6 +22,7 @@ import {
   Layout,
   Tooltip,
   Form,
+  InputNumber,
 } from "antd";
 import { Button, Modal } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -57,9 +58,13 @@ const ProductDetailPage = () => {
   const { addItemToCart } = useCart();
   const { slug } = useParams();
   const [product, setProduct] = useState(null);
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(
+    product?.variants[0]?._id
+  );
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [maxQuantity, setMaxQuantity] = useState(1000);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const carouselRef = useRef();
@@ -67,7 +72,21 @@ const ProductDetailPage = () => {
   const [form] = Form.useForm();
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    if (product) {
+      setMaxQuantity(
+        product.variants.find((v) => v._id === selectedVariant).inventory
+      );
+      console.log(maxQuantity);
+    }
+  }, [selectedVariant, product]);
+
+  useEffect(() => {
+    console.log(selectedQuantity, maxQuantity)
+  }, [selectedQuantity])
+
   const handleSubmit = async () => {
     await form.validateFields();
     console.log(form.getFieldsValue());
@@ -75,13 +94,17 @@ const ProductDetailPage = () => {
 
   const handleAddCart = async () => {
     try {
+      if (selectedQuantity > maxQuantity) {
+        message.error("Out of stock!");
+        return;
+      }
       const res = await axios.get(`${API_URL}/products/${slug}`);
-      addItemToCart(res.data.product, selectedVariant);
+      addItemToCart(res.data.product, selectedVariant, selectedQuantity);
     } catch (err) {
       console.error(err);
       message.error("Cannot add product to cart!");
     }
-  }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -120,11 +143,15 @@ const ProductDetailPage = () => {
       </div>
     );
 
-  const ratedComments = product.comments?.filter(c => c.rating !== undefined && c.rating !== null);
+  const ratedComments = product.comments?.filter(
+    (c) => c.rating !== undefined && c.rating !== null
+  );
 
-  const avgRating = ratedComments && ratedComments.length > 0
-    ? ratedComments.reduce((acc, c) => acc + c.rating, 0) / ratedComments.length
-    : 0;
+  const avgRating =
+    ratedComments && ratedComments.length > 0
+      ? ratedComments.reduce((acc, c) => acc + c.rating, 0) /
+        ratedComments.length
+      : 0;
 
   const numRatedComments = ratedComments ? ratedComments.length : 0;
 
@@ -208,10 +235,11 @@ const ProductDetailPage = () => {
                     {product.images.map((img, idx) => (
                       <div
                         key={idx}
-                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${idx === selectedImageIndex
-                          ? "border-2 border-blue-500 shadow-md scale-110"
-                          : "border border-gray-200 hover:scale-105"
-                          }`}
+                        className={`p-0.5 cursor-pointer rounded bg-white transition-all duration-300 transform ${
+                          idx === selectedImageIndex
+                            ? "border-2 border-blue-500 shadow-md scale-110"
+                            : "border border-gray-200 hover:scale-105"
+                        }`}
                         onClick={() => {
                           setSelectedImageIndex(idx);
                           carouselRef.current.goTo(idx);
@@ -316,7 +344,8 @@ const ProductDetailPage = () => {
                               className="text-base"
                             />
                             <Text className="ml-2">
-                              {avgRating.toFixed(1)}/5 ({numRatedComments} reviews)
+                              {avgRating.toFixed(1)}/5 ({numRatedComments}{" "}
+                              reviews)
                             </Text>
                           </span>
                         </Title>
@@ -327,7 +356,13 @@ const ProductDetailPage = () => {
                           className="w-full"
                           placeholder="Select variant"
                           value={selectedVariant}
-                          onChange={setSelectedVariant}
+                          onChange={(e) => {
+                            setSelectedVariant(e);
+                            setMaxQuantity(
+                              product.variants.find((v) => v._id === e)
+                                .inventory
+                            );
+                          }}
                           optionLabelProp="label"
                         >
                           {product.variants.map((v) => (
@@ -355,6 +390,20 @@ const ProductDetailPage = () => {
                           ))}
                         </Select>
                       </Col>
+                      <Col span={24}>
+                        <Title level={4}>Product Quantity</Title>
+                        {selectedQuantity > maxQuantity && (
+                          <Text type="danger">
+                            Quantity exceeds available stock
+                          </Text>
+                        )}
+                        <InputNumber
+                          min={1}
+                          value={selectedQuantity}
+                          onChange={setSelectedQuantity}
+                          className="w-full"
+                        />
+                      </Col>
 
                       <Col span={24}>
                         <Button
@@ -381,16 +430,18 @@ const ProductDetailPage = () => {
 
                         {/* Description Panel with Animation */}
                         <div
-                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${showDescription
-                            ? "max-h-96 opacity-100"
-                            : "max-h-0 opacity-0"
-                            }`}
+                          className={`description-panel overflow-hidden transition-all duration-500 ease-in-out bg-gray-50 rounded-lg mt-4 ${
+                            showDescription
+                              ? "max-h-96 opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
                         >
                           <div
-                            className={`p-4 transform transition-all duration-500 ${showDescription
-                              ? "translate-y-0"
-                              : "-translate-y-4"
-                              }`}
+                            className={`p-4 transform transition-all duration-500 ${
+                              showDescription
+                                ? "translate-y-0"
+                                : "-translate-y-4"
+                            }`}
                           >
                             <Paragraph className="text-base whitespace-pre-line">
                               {product.shortDescription ||
@@ -411,15 +462,12 @@ const ProductDetailPage = () => {
           <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
           {/* New comment form */}
           <div className="mt-12">
-            <ReviewsSection
-              slug={product._id}
-            />
+            <ReviewsSection slug={product._id} />
           </div>
 
           <Divider className="my-4" />
 
           {/* Comments list */}
-
         </Card>
       </Card>
       {/* Description - Removed since it's now in General Info */}

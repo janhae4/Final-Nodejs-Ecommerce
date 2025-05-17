@@ -12,7 +12,7 @@ function SocialLoginSuccess() {
       localStorage.setItem(
         "user",
         JSON.stringify({
-          id: user.googleId,
+          id: user._id,
         })
       );
       window.history.replaceState({}, document.title, "/");

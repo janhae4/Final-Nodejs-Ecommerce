@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       } else if (id.includes("guest")) {
         response = await axios.get(`${API_URL}/guests/info/${id}`);
       }
-      console.log(response)
+      console.log(response.data)
       setUserInfo({ id, ...response?.data });
       setAddresses(response?.data?.addresses);
       return { id, ...response?.data };

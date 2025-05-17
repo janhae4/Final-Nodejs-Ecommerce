@@ -6,7 +6,7 @@ const { Title, Text } = Typography;
 
 const ForgotPasswordPage = () => {
   return (
-    <div className="max-w-md mx-auto mt-24 p-6 bg-white shadow-lg rounded-lg">
+    <div className="w-lg mb-10 mx-auto mt-24 p-6 bg-white shadow-lg rounded-lg">
       <Title level={3} className="text-center mb-4">
         Forgot Password
       </Title>

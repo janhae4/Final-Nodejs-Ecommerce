@@ -77,7 +77,7 @@ exports.forgotPassword = async (email) => {
 
   const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
   await rabbitService.publishUserForgotPassword(
-    { user: { email: savedUser.email, fullName: savedUser.fullName } },
+    { email: savedUser.email, fullName: savedUser.fullName },
     resetLink
   );
 
@@ -110,7 +110,7 @@ exports.resetPassword = async (token, password) => {
     return { message: "Password reset successful" };
   } catch (err) {
     console.error(err);
-    throw new Error("Server error");
+    throw new Error(err.message);
   }
 };
 
@@ -123,22 +123,14 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
     throw new Error("User does not have a password set");
   }
 
+  if (oldPassword === newPassword) {
+    throw new Error("New password cannot be the same as the old password");
+  }
+
   const isMatch = await bcrypt.compare(oldPassword, user.password);
+  consoe.log(oldPassword, newPassword, oldPassword === newPassword);
   if (!isMatch) throw new Error("Old password is incorrect");
-
-  user.password = await bcrypt.hash(newPassword, 10);
-  const savedUser = await user.save();
-
-  const passwordChangedEvent = {
-    user: {
-      userId: user.id.toString(),
-      email: user.email,
-      fullName: user.fullName,
-    },
-    password: newPassword,
-  };
-  await rabbitService.publishUserRecoveryPassword(passwordChangedEvent);
-  return savedUser.toObject();
+  return await user.save();
 };
 
 ///////////////////////////////////

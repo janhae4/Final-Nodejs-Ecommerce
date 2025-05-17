@@ -29,13 +29,14 @@ exports.updateProfile = async (userId, updateData) => {
 exports.changePassword = async (userId, currentPassword, newPassword) => {
   const user = await User.findById(userId);
   if (!user) throw new Error("User not found");
-
-  if (!user.isDefaultPassword) {
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) throw new Error("Current password is incorrect");
+  
+  if (currentPassword === newPassword) {
+    throw new Error("New password cannot be the same as the old password");
   }
-
-  user.password = await bcrypt.hash(newPassword, 10);
+  
+  if (! await bcrypt.compare(currentPassword, user.password)) {
+    throw new Error("Current password is incorrect");
+  }
   user.isDefaultPassword = false;
   await user.save();
   return { message: "Password changed successfully" };
