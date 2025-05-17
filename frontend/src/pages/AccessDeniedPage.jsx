@@ -12,8 +12,8 @@ export default function AccessDeniedPage() {
         title="403"
         subTitle="Bạn không đủ thẩm quyền để truy cập trang này."
         extra={
-          <Button type="primary" onClick={() => navigate("/auth/login")}>
-            Đăng nhập lại
+          <Button type="primary" onClick={() => navigate("/")}>
+            Về trang chủ
           </Button>
         }
         className="bg-white p-6 rounded-lg shadow-lg"

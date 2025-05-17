@@ -11,7 +11,7 @@ export default function ProtectedRoute({ adminOnly = false, children }) {
 
   if (!userInfo) {
     // Chưa đăng nhập → về trang chủ
-    return <Navigate to="/access-denied" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (adminOnly && userInfo.role !== "admin") {
