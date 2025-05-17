@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
   const { userInfo, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>Loading...</div>; // Chỉ hiển thị trong khi đang gọi API / lấy cookie
+    return null; // Chỉ hiển thị trong khi đang gọi API / lấy cookie
   }
 
   // Nếu chưa đăng nhập hoặc không phải admin → từ chối truy cập
