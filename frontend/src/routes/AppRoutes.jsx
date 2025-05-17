@@ -26,11 +26,22 @@ import RegisterPage from "../pages/user/auth/Register";
 import ForgotPasswordPage from "../pages/user/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/user/auth/ResetPasswordPage";
 import AdminProfilePage from "../pages/admin/user/AdminProfilePage";
+import ProtectedRoute from "../components/admin/ProtectedRoute";
+import AccessDeniedPage from "../pages/AccessDeniedPage"; 
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+
       {/* Admin layout */}
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Dashboard />} />
         <Route path="discounts" element={<DiscountCodeAdmin />} />
         <Route path="orders" element={<OrderAdmin />} />
@@ -46,10 +57,7 @@ export default function AppRoutes() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/products" element={<ProductCatalogPage />} />
-        <Route
-          path="/products/detail/:slug"
-          element={<ProductDetailPage />}
-        />
+        <Route path="/products/detail/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/myorder" element={<OrderPage />} />
