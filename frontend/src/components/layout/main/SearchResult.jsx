@@ -1,6 +1,7 @@
 import { Avatar, Button, List, Spin, Typography } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
 import { Divider } from "antd";
+import { Link } from "react-router-dom";
 const { Text } = Typography;
 
 const SearchResultRender = ({
@@ -34,6 +35,7 @@ const SearchResultRender = ({
                 itemLayout="horizontal"
                 dataSource={searchResults}
                 renderItem={(item) => (
+                  <Link to={`/products/detail/${item.slug}`}>
                   <List.Item
                     className="cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
                     onClick={() => {
@@ -49,6 +51,7 @@ const SearchResultRender = ({
                       description={`$${item.price}`}
                     />
                   </List.Item>
+                  </Link>
                 )}
               />
             ) : (
