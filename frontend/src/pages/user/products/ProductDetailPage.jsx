@@ -155,7 +155,7 @@ const ProductDetailPage = () => {
 
   const numRatedComments = ratedComments ? ratedComments.length : 0;
 
-  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
+  const totalStock = product.variants?.reduce((acc, v) => acc +( v.inventory - v.used), 0);
 
   return (
     <Layout className="site-content px-6 pb-6 mt-5">
@@ -372,13 +372,13 @@ const ProductDetailPage = () => {
                                 <span>
                                   <Text
                                     className={
-                                      v.inventory > 0
+                                      v.inventory > v.used
                                         ? "text-green-500"
                                         : "text-red-500"
                                     }
                                   >
-                                    {v.inventory > 0
-                                      ? `${v.inventory} in stock`
+                                    {v.inventory > v.used
+                                      ? `${v.inventory - v.used} in stock`
                                       : "Out of stock"}
                                   </Text>
                                   <Text strong className="ml-2">

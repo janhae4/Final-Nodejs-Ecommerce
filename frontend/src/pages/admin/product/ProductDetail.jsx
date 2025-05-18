@@ -67,7 +67,7 @@ const ProductDetail = () => {
       product.comments.length
     : 0;
 
-  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
+  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory - v.used, 0);
 
   return (
     <div style={{ padding: 20 }}>
@@ -137,7 +137,6 @@ const ProductDetail = () => {
                   ))}
                 </Image.PreviewGroup>
 
-                {/* Thumbnail image group */}
                 <div
                   style={{
                     display: "flex",
@@ -221,7 +220,7 @@ const ProductDetail = () => {
               >
                 {product.variants.map((v) => (
                   <Option key={v._id} value={v._id}>
-                    {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} in
+                    {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory - v.used} in
                     stock)
                   </Option>
                 ))}

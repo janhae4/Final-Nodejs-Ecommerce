@@ -72,15 +72,14 @@ async function start() {
   if (require.main === module) {
     const PORT = process.env.PORT || 3000;
     try {
-      await connectRabbitMQ();
-      console.log("RabbitMQ connected");
-
-      inventoryConsumer.start();
-      loyaltyConsumer.start();
-      emailConsumer.start();
-      redisConsumer.start();
-      discountConsumer.start();
-
+      await Promise.all([
+        connectRabbitMQ(),
+        inventoryConsumer.start(),
+        loyaltyConsumer.start(),
+        emailConsumer.start(),
+        redisConsumer.start(),
+        discountConsumer.start(),
+      ]);
       server.listen(PORT, () => {
         console.log(`Server running on port ${port}`);
         console.log(`Socket.IO running on port ${port}`);

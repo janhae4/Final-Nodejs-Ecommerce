@@ -14,7 +14,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
 
   const hadleAddItemtoCart = async (product) => {
     console.log(product)
-    const res = await axios.get(`http://localhost:3000/api/products/${product.id}`);
+    const res = await axios.get(`http://localhost:3000/api/products/${product.slug}`);
     addItemToCart(res.data.product);
   }
 
@@ -120,7 +120,7 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
               block
               className="mt-2"
             >
-              Add to Cart
+              Add to cart
             </Button>
           </div>
         </div>
