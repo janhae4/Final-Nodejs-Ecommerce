@@ -160,7 +160,13 @@ const ProductCatalog = () => {
                   title={product.nameProduct}
                   description={
                     <div style={{ height: 130, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div><strong>Price:</strong> {product.price.toLocaleString()} VNĐ</div>
+                      <div>
+                        <strong>Price:</strong>{" "}
+                        {product.price.toLocaleString("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        })}
+                      </div>
                       <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         <strong>Description:</strong> {product.shortDescription}
                       </div>

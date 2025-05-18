@@ -48,7 +48,10 @@ const SearchResultRender = ({
                         <Avatar shape="square" size={50} src={item.image} />
                       }
                       title={item.nameProduct}
-                      description={`$${item.price}`}
+                      description={`${Number(item.price).toLocaleString("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      })}`}
                     />
                   </List.Item>
                   </Link>
