@@ -34,7 +34,7 @@ const CartItem = ({ item, setShowCheckoutButton=null }) => {
     }
   }, [item]);
 
-  const itemKey = item.productId;
+  const itemKey = `${item.productId}-${item.variantId}`;
   console.log("ITEM", item, itemKey);
 
   const unitPrice = item.price;

@@ -70,8 +70,6 @@ const ProductDetailPage = () => {
   const carouselRef = useRef();
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const [rating, setRating] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -92,6 +90,10 @@ const ProductDetailPage = () => {
     console.log(form.getFieldsValue());
   };
 
+  useEffect(() => { 
+    console.log(selectedVariant)
+  }, [selectedVariant])
+
   const handleAddCart = async () => {
     try {
       if (selectedQuantity > maxQuantity) {
@@ -99,7 +101,10 @@ const ProductDetailPage = () => {
         return;
       }
       const res = await axios.get(`${API_URL}/products/${slug}`);
-      addItemToCart(res.data.product, selectedVariant, selectedQuantity);
+      const productVariant = res.data.product.variants.find(
+        (v) => v._id === selectedVariant
+      )
+      addItemToCart(res.data.product, productVariant, selectedQuantity);
     } catch (err) {
       console.error(err);
       message.error("Cannot add product to cart!");
@@ -357,6 +362,7 @@ const ProductDetailPage = () => {
                           placeholder="Select variant"
                           value={selectedVariant}
                           onChange={(e) => {
+                            console.log(e)
                             setSelectedVariant(e);
                             setMaxQuantity(
                               product.variants.find((v) => v._id === e)
@@ -367,7 +373,7 @@ const ProductDetailPage = () => {
                         >
                           {product.variants.map((v) => (
                             <Option key={v._id} value={v._id} label={v.name}>
-                              <div className="flex justify-between">
+                              <div className="flex-col md:flex-row flex justify-between">
                                 <span>{v.name}</span>
                                 <span>
                                   <Text

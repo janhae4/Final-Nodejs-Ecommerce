@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./backend
+    image: final-nodejs-backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+    command: ["node", "server.js"]
+    networks:
+      - mynetwork
+
+  frontend:
+    build: ./frontend
+    image: final-nodejs-frontend
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
