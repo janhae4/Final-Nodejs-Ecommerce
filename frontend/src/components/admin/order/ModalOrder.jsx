@@ -279,36 +279,6 @@ const ModalOrder = ({
   const tableFooter = () => (
     <Space direction="vertical" style={{ width: "100%" }}>
       <Row justify="space-between">
-        <Col>
-          {showProductSelector ? (
-            <Select
-              placeholder="Select a product"
-              style={{ width: 250 }}
-              key={"default"}
-              value={selectedProduct}
-              onChange={handleProductSelect}
-              onSearch={handleSearch}
-              onBlur={() => setShowProductSelector(false)}
-              optionFilterProp="children"
-              autoFocus
-              showSearch
-            >
-              {availableProducts.map((product) => (
-                <Option key={product._id} value={product._id}>
-                  {product.nameProduct}
-                </Option>
-              ))}
-            </Select>
-          ) : (
-            <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              onClick={handleAddProduct}
-            >
-              Add Product
-            </Button>
-          )}
-        </Col>
        <Col>
           <Text strong>Total: {calculateTotal().toLocaleString("vi-VN", {
             style: "currency",
