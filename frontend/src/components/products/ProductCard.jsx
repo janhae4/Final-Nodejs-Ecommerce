@@ -84,8 +84,12 @@ const ProductCard = ({ product, viewMode = "grid" }) => {
 
             <div className="mb-2">
               <Text strong className="block text-base text-blue-600 mb-1">
-                {new Intl.NumberFormat("vi-VN").format(product.price)} VNĐ
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(product.price)}
               </Text>
+
               {product.tags && product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 max-h-12 overflow-hidden">
                   {product.tags.slice(0, 1).map((tag, index) => (

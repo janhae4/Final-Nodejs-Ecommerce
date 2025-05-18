@@ -303,7 +303,10 @@ const ProductDetailPage = () => {
                       <Col span={12}>
                         <Statistic
                           title="Base Price"
-                          value={`${product.price.toLocaleString()} VNĐ`}
+                          value={`${product.price.toLocaleString("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          })}`}
                           valueStyle={{
                             color: "#cf1322",
                             fontSize: "16px",
