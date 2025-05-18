@@ -180,8 +180,13 @@ const ProductDetail = () => {
           <div style={{ width: '100%', maxWidth: 500 }}>
             <p><strong>Brand:</strong> {product.brand}</p>
             <p><strong>Category:</strong> {product.category}</p>
-            <p><strong>Price:</strong> {product.price.toLocaleString()} VNĐ</p>
-
+            <p>
+              <strong>Price:</strong>{" "}
+              {product.price.toLocaleString("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              })}
+            </p>
             <div>
               <strong>Tags:</strong>
               <div style={{ marginTop: 5 }}>
@@ -204,7 +209,7 @@ const ProductDetail = () => {
               >
                 {product.variants.map(v => (
                   <Option key={v._id} value={v._id}>
-                    {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} in stock)
+                    {v.name} - {v.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })} ({v.inventory} in stock)
                   </Option>
                 ))}
               </Select>
