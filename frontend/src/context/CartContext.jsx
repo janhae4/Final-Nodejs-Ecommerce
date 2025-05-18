@@ -139,8 +139,9 @@ export const CartProvider = ({ children }) => {
     // console.log(product);
     // console.log(variant);
     setCreateCart(true);
+    console.log("ADDED CART", product, variant);
     setCartItems((prevItems) => {
-      const itemKey = variant ? `${product._id}-${variant._id}` : product._id;
+      const itemKey = variant ? `${product._id}-${variant._id}` : `${product._id}-${product.variants[0]._id}`;
 
       const existingItemIndex = prevItems.findIndex(
         (item) => item.key === itemKey

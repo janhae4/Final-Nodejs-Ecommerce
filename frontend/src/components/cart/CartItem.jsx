@@ -1,5 +1,5 @@
 // src/components/cart/CartItem.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Row,
   Col,
@@ -9,6 +9,7 @@ import {
   Typography,
   Tag,
   Select,
+  message,
 } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
@@ -16,14 +17,27 @@ import { useCart } from "../../context/CartContext";
 
 const { Text, Title } = Typography;
 
-const CartItem = ({ item }) => {
+const CartItem = ({ item, setShowCheckoutButton=null }) => {
   const { updateItemQuantity, removeItemFromCart, updateVariant } = useCart();
-  const itemKey = item.key;
-  console.log(item)
+  useEffect(() => {
+    const variant = item.variants.find((v) => v._id === item.variantId);
+    if (variant.inventory - variant.used < item.quantity) {
+      message.warning(`Only ${variant.inventory - variant.used} available.`);
+      if (setShowCheckoutButton) {
+        setShowCheckoutButton(false);
+      }
+    }
+    else {
+      if (setShowCheckoutButton) {
+        setShowCheckoutButton(true);
+      }
+    }
+  }, [item]);
 
-  const basePrice = item.price || 0;
-  const variantPriceModifier = item.variant?.priceModifier || 0;
-  const unitPrice = basePrice + variantPriceModifier;
+  const itemKey = `${item.productId}-${item.variantId}`;
+  console.log("ITEM", item, itemKey);
+
+  const unitPrice = item.price;
   const itemSubtotal = unitPrice * item.quantity;
 
   const handleChangeVariant = (value) => {

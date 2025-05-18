@@ -12,8 +12,8 @@ import {
   Spin,
   message,
   Collapse,
-} from "antd";
-import { Button } from "antd";
+  Button,
+} from 'antd';
 import { useNavigate } from "react-router-dom";
 
 const { Panel } = Collapse;
@@ -21,12 +21,20 @@ const { Option } = Select;
 
 const ProductDetail = () => {
   const { productId } = useParams();
-  const [product, setProduct] = useState(null);
-  const [selectedVariant, setSelectedVariant] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+
+    const [product, setProduct] = useState(null);
+    const [selectedVariant, setSelectedVariant] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
   const handleDelete = async () => {
     try {
@@ -64,28 +72,25 @@ const ProductDetail = () => {
 
   const avgRating = product.comments?.length
     ? product.comments.reduce((acc, c) => acc + c.rating, 0) /
-      product.comments.length
+    product.comments.length
     : 0;
 
-  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory, 0);
+  const totalStock = product.variants?.reduce((acc, v) => acc + v.inventory - v.used, 0);
+
 
   return (
     <div style={{ padding: 20 }}>
       <Card
         title={
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span>{product.nameProduct}</span>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <Button
-                type="primary"
-                onClick={() => navigate(`/admin/products/edit/${productId}`)}
-              >
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: 10
+          }}>
+            <span style={{ fontSize: 20 }}>{product.nameProduct}</span>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Button type="primary" onClick={() => navigate(`/admin/products/edit/${productId}`)}>
                 Edit Product
               </Button>
               <Button danger onClick={handleDelete}>
@@ -95,35 +100,35 @@ const ProductDetail = () => {
           </div>
         }
       >
-        <div style={{ display: "flex", gap: "30px" }}>
-          <div
-            style={{
-              maxWidth: 500,
-              width: "100%",
-              textAlign: "center",
-              flexWrap: "wrap",
-              justifyContent: "center",
-            }}
-          >
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 30
+        }}>
+          {/* Image Section */}
+          <div style={{
+            width: '100%',
+            maxWidth: 500,
+            textAlign: 'center'
+          }}>
             {product.images.length > 0 ? (
               <>
-                {/* Main image */}
                 <Image
                   src={product.images[selectedImageIndex]}
-                  width={300}
-                  height={300}
                   style={{
-                    objectFit: "contain",
+                    width: '100%',
+                    maxWidth: 300,
+                    height: 'auto',
+                    objectFit: 'contain',
                     marginBottom: 16,
-                    cursor: "pointer",
-                    borderRadius: 8,
+                    cursor: 'pointer',
+                    borderRadius: 8
                   }}
                   alt={`main-${selectedImageIndex}`}
                   preview={false}
                   onClick={() => setPreviewVisible(true)}
                 />
 
-                {/* Preview group (hidden) */}
                 <Image.PreviewGroup
                   preview={{
                     visible: previewVisible,
@@ -133,32 +138,24 @@ const ProductDetail = () => {
                   }}
                 >
                   {product.images.map((img, idx) => (
-                    <Image key={idx} src={img} style={{ display: "none" }} />
+                    <Image key={idx} src={img} style={{ display: 'none' }} />
                   ))}
                 </Image.PreviewGroup>
 
-                {/* Thumbnail image group */}
-                <div
-                  style={{
-                    display: "flex",
-                    overflowX: "auto",
-                    paddingBottom: 10,
-                    gap: 10,
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <div style={{
+                  display: 'flex',
+                  overflowX: 'auto',
+                  paddingBottom: 10,
+                  gap: 10
+                }}>
                   {product.images.map((img, idx) => (
                     <div
                       key={idx}
                       style={{
-                        display: "inline-block",
-                        border:
-                          idx === selectedImageIndex
-                            ? "2px solid green"
-                            : "1px solid #ccc",
+                        border: idx === selectedImageIndex ? '2px solid green' : '1px solid #ccc',
                         padding: 2,
-                        cursor: "pointer",
-                        borderRadius: 4,
+                        cursor: 'pointer',
+                        borderRadius: 4
                       }}
                       onClick={() => setSelectedImageIndex(idx)}
                     >
@@ -166,10 +163,7 @@ const ProductDetail = () => {
                         src={img}
                         width={60}
                         height={60}
-                        style={{
-                          objectFit: "cover",
-                          borderRadius: 4,
-                        }}
+                        style={{ objectFit: 'cover', borderRadius: 4 }}
                         preview={false}
                         alt={`thumb-${idx}`}
                       />
@@ -178,32 +172,21 @@ const ProductDetail = () => {
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", color: "#aaa", padding: 20 }}>
-                <p>No product images</p>
-              </div>
+              <p style={{ color: '#aaa', padding: 20 }}>No product images</p>
             )}
           </div>
 
           {/* Product Info */}
-          <div style={{ maxWidth: 500 }}>
-            <p>
-              <strong>Brand:</strong> {product.brand}
-            </p>
-            <p>
-              <strong>Category:</strong> {product.category}
-            </p>
-            <p>
-              <strong>Price:</strong> {product.price.toLocaleString()} VNĐ
-            </p>
+          <div style={{ width: '100%', maxWidth: 500 }}>
+            <p><strong>Brand:</strong> {product.brand}</p>
+            <p><strong>Category:</strong> {product.category}</p>
+            <p><strong>Price:</strong> {product.price.toLocaleString()} VNĐ</p>
 
-            {/* Tags */}
             <div>
               <strong>Tags:</strong>
               <div style={{ marginTop: 5 }}>
                 {product.tags.map((tag, index) => (
-                  <Tag color="blue" key={index}>
-                    {tag}
-                  </Tag>
+                  <Tag color="blue" key={index}>{tag}</Tag>
                 ))}
               </div>
             </div>
@@ -215,14 +198,13 @@ const ProductDetail = () => {
             <div style={{ marginTop: 10 }}>
               <strong>Select variant:</strong>
               <Select
-                style={{ width: "100%", marginTop: 5 }}
+                style={{ width: '100%', marginTop: 5 }}
                 value={selectedVariant}
                 onChange={setSelectedVariant}
               >
-                {product.variants.map((v) => (
+                {product.variants.map(v => (
                   <Option key={v._id} value={v._id}>
-                    {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} in
-                    stock)
+                    {v.name} - {v.price.toLocaleString()} VNĐ ({v.inventory} in stock)
                   </Option>
                 ))}
               </Select>
@@ -237,17 +219,19 @@ const ProductDetail = () => {
         </div>
 
         <Divider />
+
         <Collapse ghost>
           <Panel
             header={<strong style={{ fontSize: 20 }}>Description</strong>}
             key="1"
-            style={{ fontFamily: "inherit", fontSize: 16 }}
+            style={{ fontSize: 16 }}
           >
-            <div style={{ whiteSpace: "pre-line" }}>
+            <div style={{ whiteSpace: 'pre-line' }}>
               {product.shortDescription}
             </div>
           </Panel>
         </Collapse>
+
         <Divider />
 
         <div>

@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import Meta from "antd/es/card/Meta";
 import { Link } from "react-router-dom";
-const { Title, Paragraph, Text } = Typography;
+const { Text } = Typography;
 const ProductCard = ({
   action,
   product,
@@ -88,12 +88,10 @@ const ProductCard = ({
           description={
             <div className="mt-2">
               <div className="flex items-center mb-1">
-                <StarFilled className="text-yellow-400 mr-1" />
-                <Text className="text-gray-600">
-                  {product.ratingAverage}{" "}
-                  <span className="text-gray-400">
-                    ({Math.floor(product.ratingAverage * 20)})
-                  </span>
+                <StarFilled style={ product.ratingAverage > 0 ? { color: "#FFD700" } : { color: "" }}  />
+                <Text className="text-gray-600 ml-2">
+                  {product.ratingAverage.toFixed(1)}
+                  <span className="text-gray-400 ml-2">({product.ratingCount})</span>
                 </Text>
               </div>
               <Text strong className="text-brand-primary text-lg">

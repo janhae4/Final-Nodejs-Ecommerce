@@ -1,6 +1,7 @@
 require("dotenv").config();
+require("./config/passport");
+
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const { init } = require("./database/socketConnection");
@@ -29,28 +30,22 @@ const passport = require("passport");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
-// Cấu hình CORS cho phép gửi cookie
+app.use((req, res, next) => {
+  console.log('Received:', req.url);
+  next();
+});
+
 const corsOptions = {
-  origin: "http://localhost:5173", // Địa chỉ frontend của bạn
+  origin: process.env.FRONTEND_URL || "http://localhost:80",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: true, // Quan trọng để gửi cookie
+  credentials: true, 
 };
 
 app.use(cors(corsOptions));
-
-app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
-require("./config/passport");
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  })
-);
 app.use(cookieParser());
 app.use(express.json());
-app.use(bodyParser.json());
-
 app.use("/api/guests", guestRoutes);
 
 app.use("/api/auth", authRoutes);
@@ -72,15 +67,14 @@ async function start() {
   if (require.main === module) {
     const PORT = process.env.PORT || 3000;
     try {
-      await connectRabbitMQ();
-      console.log("RabbitMQ connected");
-
-      inventoryConsumer.start();
-      loyaltyConsumer.start();
-      emailConsumer.start();
-      redisConsumer.start();
-      discountConsumer.start();
-
+      await Promise.all([
+        connectRabbitMQ(),
+        inventoryConsumer.start(),
+        loyaltyConsumer.start(),
+        emailConsumer.start(),
+        redisConsumer.start(),
+        discountConsumer.start(),
+      ]);
       server.listen(PORT, () => {
         console.log(`Server running on port ${port}`);
         console.log(`Socket.IO running on port ${port}`);
