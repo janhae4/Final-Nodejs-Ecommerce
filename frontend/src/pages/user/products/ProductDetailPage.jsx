@@ -80,6 +80,7 @@ const ProductDetailPage = () => {
         product.variants.find((v) => v._id === selectedVariant).inventory
       );
       console.log(maxQuantity);
+      console.log(selectedVariant);
     }
   }, [selectedVariant, product]);
 
@@ -99,12 +100,18 @@ const ProductDetailPage = () => {
         return;
       }
       const res = await axios.get(`${API_URL}/products/${slug}`);
-      addItemToCart(res.data.product, selectedVariant, selectedQuantity);
+      const variantObj = res.data.product.variants.find(
+        (v) => String(v._id) === String(selectedVariant)
+      );
+      addItemToCart(res.data.product, variantObj, selectedQuantity);
+
     } catch (err) {
       console.error(err);
       message.error("Cannot add product to cart!");
     }
   };
+  
+
 
   useEffect(() => {
     const fetchProduct = async () => {

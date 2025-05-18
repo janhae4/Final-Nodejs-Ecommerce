@@ -107,7 +107,7 @@ const HomePage = () => {
         description="Powerful laptops for work, gaming, and creativity"
         action={addItemToCart }
       />
-      <ProductSection
+      {/* <ProductSection
         title="High-Quality Monitors"
         products={monitors}
         icon={<DesktopOutlined />}
@@ -126,7 +126,7 @@ const HomePage = () => {
         products={components}
         icon={<HomeOutlined />}
         description="Upgrade your rig with our premium components"
-      />
+      /> */}
 
       {/* Newsletter Section */}
       <div className="bg-gray-100 rounded-lg p-8 text-center mt-12">

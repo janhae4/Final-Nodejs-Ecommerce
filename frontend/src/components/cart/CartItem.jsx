@@ -18,7 +18,7 @@ const { Text, Title } = Typography;
 
 const CartItem = ({ item }) => {
   const { updateItemQuantity, removeItemFromCart, updateVariant } = useCart();
-  const itemKey = item.productId + (item.variant ? `-${item.variant.id}` : "");
+  const itemKey = item.key;
   console.log(item)
 
   const basePrice = item.price || 0;

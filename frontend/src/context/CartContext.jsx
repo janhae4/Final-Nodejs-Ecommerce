@@ -135,7 +135,9 @@ export const CartProvider = ({ children }) => {
 
 
 
-  const addItemToCart = (product, variant = null, quantity = 1) => {
+  const addItemToCart = (product, variant, quantity = 1) => {
+    // console.log(product);
+    // console.log(variant);
     setCreateCart(true);
     setCartItems((prevItems) => {
       const itemKey = variant ? `${product._id}-${variant._id}` : product._id;
