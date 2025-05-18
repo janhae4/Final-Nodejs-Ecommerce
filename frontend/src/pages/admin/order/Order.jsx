@@ -247,12 +247,19 @@ const OrderAdmin = () => {
       sorter: (a, b) => a.orderCode.localeCompare(b.orderCode),
     },
     {
-      title: "Amount",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      render: (value, record) => <Text>${value}</Text>,
-      sorter: (a, b) => a.totalAmount - b.totalAmount,
-    },
+  title: "Amount",
+  dataIndex: "totalAmount",
+  key: "totalAmount",
+  render: (value) => (
+    <Text>
+      {Number(value).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      })}
+    </Text>
+  ),
+  sorter: (a, b) => a.totalAmount - b.totalAmount,
+},
     {
       title: "Shipping address",
       dataIndex: "shippingAddress",

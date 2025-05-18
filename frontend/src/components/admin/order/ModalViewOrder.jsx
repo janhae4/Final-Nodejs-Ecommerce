@@ -29,8 +29,11 @@ const ModalViewOrder = ({ isModalVisible, handleCancel, orderData }) => {
   const [discount, setDiscount] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL;
   const formatCurrency = (value) => {
-    return `$${parseFloat(value).toFixed(2)}`;
-  };
+  return Number(value).toLocaleString("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  });
+};
 
   const getStatusColor = (status) => {
     const statusColors = {
