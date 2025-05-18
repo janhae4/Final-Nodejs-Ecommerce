@@ -77,7 +77,6 @@ async function start() {
       ]);
       server.listen(PORT, () => {
         console.log(`Server running on port ${port}`);
-        console.log(`Socket.IO running on port ${port}`);
       });
     } catch (err) {
       console.error("❌ Failed to start server:", err.message || err);
