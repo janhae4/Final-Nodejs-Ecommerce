@@ -276,19 +276,21 @@ const ModalOrder = ({
     },
   ];
 
-  const tableFooter = () => (
-    <Space direction="vertical" style={{ width: "100%" }}>
-      <Row justify="space-between">
-       <Col>
-          <Text strong>Total: {calculateTotal().toLocaleString("vi-VN", {
+const tableFooter = () => (
+  <Space direction="vertical" style={{ width: "100%" }}>
+    <Row justify="end">
+      <Col>
+        <Text strong>
+          Total:{" "}
+          {calculateTotal().toLocaleString("vi-VN", {
             style: "currency",
             currency: "VND",
-          })}</Text>
-        </Col>
-
-      </Row>
-    </Space>
-  );
+          })}
+        </Text>
+      </Col>
+    </Row>
+  </Space>
+);
 
   return (
     <Modal
