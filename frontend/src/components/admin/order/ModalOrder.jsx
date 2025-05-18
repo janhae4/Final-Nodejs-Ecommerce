@@ -101,7 +101,7 @@ const ModalOrder = ({
         productName: selectedProductData.nameProduct,
         quantity: 1,
         price: selectedProductData.price,
-      }
+      };
       const updatedProducts = [...products, newProduct];
       setProducts(updatedProducts);
       form.setFieldsValue({ products: updatedProducts });
@@ -111,7 +111,9 @@ const ModalOrder = ({
   };
 
   const handleRemoveProduct = (productId) => {
-    const updatedProducts = products.filter((product) => product._id !== productId);
+    const updatedProducts = products.filter(
+      (product) => product._id !== productId
+    );
     setProducts(updatedProducts);
     form.setFieldsValue({ products: updatedProducts });
   };
@@ -119,7 +121,7 @@ const ModalOrder = ({
   const handleProductChange = (key, field, value) => {
     const updatedProducts = products.map((product) => {
       if (product._id === key) {
-        console.log(true, field, value)
+        console.log(true, field, value);
         return { ...product, [field]: value };
       }
       return product;
@@ -153,12 +155,18 @@ const ModalOrder = ({
   }, [products]);
 
   const orderStatusOptions = {
-    "pending": ["confirmed", "cancelled"],
-    "confirmed": ["shipping", "cancelled"],
-    "shipping": ["delivered", "cancelled"],
-    "delivered": [],
-    "cancelled": []
+    pending: ["confirmed", "cancelled"],
+    confirmed: ["shipping", "cancelled"],
+    shipping: ["delivered", "cancelled"],
+    delivered: [],
+    cancelled: [],
   };
+
+  const paymentMethodOptions = [
+    { label: "COD", value: "cod" },
+    { label: "Credit card", value: "credit_card" },
+    { label: "Cash on delivery", value: "cash" },
+  ];
 
   const columns = [
     {
@@ -189,11 +197,12 @@ const ModalOrder = ({
             handleSelectVariant(record._id, value);
           }}
         >
-          {variantsProduct.map((v) => (
-            <Option key={v._id} value={v._id}>
-              {v.name}
-            </Option>
-          ))}
+          { variantsProduct.length > 0 ? variantsProduct.map((variant) => (
+            <Select.Option key={variant._id + variant.name} value={variant._id}>
+              {variant.name}
+            </Select.Option>
+          ))
+           : <Select.Option value={record.variantId}>{record.variantName}</Select.Option>}
         </Select>
       ),
     },
@@ -338,7 +347,7 @@ const ModalOrder = ({
         <Row gutter={16}>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="userId"
+              name={["userInfo", "userId"]}
               label="User ID"
               rules={[{ required: true, message: "Please enter user ID" }]}
             >
@@ -388,15 +397,21 @@ const ModalOrder = ({
         <Row gutter={16}>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="paymentId"
-              label="Payment ID"
+              name="paymentMethod"
+              label="Payment Method"
               rules={[{ required: true, message: "Please enter payment ID" }]}
             >
-              <Input placeholder="Enter payment ID" />
+              <Select>
+                {paymentMethodOptions.map((p) => (
+                  <Option key={p.value} value={p.value}>
+                    {p.label}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="discountCode" label="Discount Code">
+            <Form.Item name={["discountInfo", "code"]} label="Discount Code">
               <Input placeholder="Enter discount code" />
             </Form.Item>
           </Col>

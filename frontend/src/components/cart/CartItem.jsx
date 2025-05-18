@@ -33,16 +33,15 @@ const CartItem = ({ item, setShowCheckoutButton=null }) => {
       }
     }
   }, [item]);
-
-  const itemKey = `${item.productId}-${item.variantId}`;
-  console.log("ITEM", item, itemKey);
-
+  
   const unitPrice = item.price;
   const itemSubtotal = unitPrice * item.quantity;
-
+  
   const handleChangeVariant = (value) => {
+    console.log(123123, value)
     const newVariant = item.variants.find((v) => v._id === value);
-    updateVariant(itemKey, newVariant);
+    console.log(newVariant)
+    updateVariant(item.key, newVariant);
   };
 
   return (
@@ -99,7 +98,7 @@ const CartItem = ({ item, setShowCheckoutButton=null }) => {
           min={1}
           max={item.variant?.stock || 100}
           value={item.quantity}
-          onChange={(value) => updateItemQuantity(itemKey, value)}
+          onChange={(value) => updateItemQuantity(item.key, value)}
           className="w-20"
         />
       </Col>
@@ -116,7 +115,7 @@ const CartItem = ({ item, setShowCheckoutButton=null }) => {
           type="text"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => removeItemFromCart(itemKey)}
+          onClick={() => removeItemFromCart(item.key)}
           aria-label="Remove item"
         />
       </Col>

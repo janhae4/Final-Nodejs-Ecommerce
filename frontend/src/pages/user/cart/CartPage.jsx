@@ -72,7 +72,7 @@ const CartPage = () => {
                   <CartItem
                     key={
                       item.productId +
-                      (item.variant ? `-${item.variant.id}` : "")
+                      (item.variantId ? `-${item.variantId}` : "")
                     }
                     item={item}
                     setShowCheckoutButton={setShowCheckoutButton}
