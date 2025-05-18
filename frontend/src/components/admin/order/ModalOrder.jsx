@@ -241,11 +241,18 @@ const ModalOrder = ({
       render: (text, record) => (
         <InputNumber
           min={0}
-          step={0.01}
+          step={1000}
           value={text}
           onChange={(value) => handleProductChange(record._id, "price", value)}
-          formatter={(value) => `$${value}`}
-          parser={(value) => value.replace("$", "")}
+          formatter={(value) =>
+            `${Number(value).toLocaleString("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            })}`
+          }
+          parser={(value) =>
+            value.replace(/[₫,.\s]/g, "").replace(/\D/g, "")
+          }
         />
       ),
     },
@@ -302,9 +309,13 @@ const ModalOrder = ({
             </Button>
           )}
         </Col>
-        <Col>
-          <Text strong>Total: ${calculateTotal().toFixed(2)}</Text>
+       <Col>
+          <Text strong>Total: {calculateTotal().toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          })}</Text>
         </Col>
+
       </Row>
     </Space>
   );
