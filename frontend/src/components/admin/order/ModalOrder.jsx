@@ -47,6 +47,7 @@ const ModalOrder = ({
   const [maxQuantity, setMaxQuantity] = useState(100);
   const [messageApi, contextHolder] = message.useMessage();
   const [error, setError] = useState("");
+  const [variantsSelected, setVariantsSelected] = useState({});
   const API_URL = import.meta.env.VITE_API_URL;
   const currentStatus = Form.useWatch("status", form);
   useEffect(() => {
@@ -70,22 +71,41 @@ const ModalOrder = ({
     }, 500);
   }, []);
 
-  const handleSearch = (input) => {
-    debounceFetchRef.current(input);
-  };
-
-  const handleAddProduct = () => {
-    setShowProductSelector(true);
-  };
-
   const getVariantsProduct = async (id) => {
     try {
+      console.log(form.getFieldsValue(true));
       const res = await axios.get(`${API_URL}/products/variants/${id}`);
-      setVariantsProduct(res.data);
+      return res.data;
     } catch (err) {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    const getV = async () => {
+      const products = form.getFieldValue("products") || [];
+
+      const variantsArray = await Promise.all(
+        products.map(async (product) => {
+          const variants = await getVariantsProduct(product.productId);
+          console.log(variants);
+          return {
+          _id: `${product.productId}-${Date.now()}`, // unique id
+            productId: product.productId,
+            productName: product.productName,
+            variantId: product.variantId,
+            quantity: product.quantity,
+            price: product.price,
+            variants,
+          };
+        })
+      );
+
+      setVariantsSelected(variantsArray);
+    };
+
+    getV();
+  }, [editingId]);
 
   const handleProductSelect = (productId) => {
     const selectedProductData = availableProducts.find(
@@ -121,20 +141,12 @@ const ModalOrder = ({
   const handleProductChange = (key, field, value) => {
     const updatedProducts = products.map((product) => {
       if (product._id === key) {
-        console.log(true, field, value);
         return { ...product, [field]: value };
       }
       return product;
     });
     setProducts(updatedProducts);
     form.setFieldsValue({ products: updatedProducts });
-  };
-
-  const handleSelectVariant = (id, value) => {
-    const selectedVariant = variantsProduct.find((v) => v._id === value);
-    setMaxQuantity(selectedVariant.inventory);
-    handleProductChange(id, "variantName", selectedVariant.name);
-    handleProductChange(id, "variantId", selectedVariant._id);
   };
 
   const _handleSubmit = (e) => {
@@ -171,8 +183,8 @@ const ModalOrder = ({
   const columns = [
     {
       title: "Product",
-      dataIndex: "_id",
-      key: "_id",
+      dataIndex: "productId",
+      key: "productId",
       render: (text, record) => (
         <div>
           <div className="break-words whitespace-normal max-w-[200px]">
@@ -194,15 +206,26 @@ const ModalOrder = ({
           style={{ width: 250 }}
           value={record.variantId}
           onChange={(value) => {
-            handleSelectVariant(record._id, value);
+            setVariantsSelected((prev) =>
+              prev.map((item) =>
+                item._id === record._id
+                  ? {
+                      ...item,
+                      variantId: value,
+                      // cập nhật giá theo variant mới
+                      price:
+                        item.variants.find((v) => v._id === value)?.price || 0,
+                    }
+                  : item
+              )
+            );
           }}
         >
-          { variantsProduct.length > 0 ? variantsProduct.map((variant) => (
-            <Select.Option key={variant._id + variant.name} value={variant._id}>
+          {record.variants.map((variant) => (
+            <Option key={variant._id} value={variant._id}>
               {variant.name}
-            </Select.Option>
-          ))
-           : <Select.Option value={record.variantId}>{record.variantName}</Select.Option>}
+            </Option>
+          ))}
         </Select>
       ),
     },
@@ -211,23 +234,28 @@ const ModalOrder = ({
       dataIndex: "quantity",
       key: "quantity",
       render: (text, record) => {
-        const selectedVariant = record.variants?.find(
-          (v) => v._id === record.variant
-        );
-        const max = selectedVariant?.inventory || 100;
+        const variant = record.variants.find((v) => v._id === record.variantId);
+        const max = (variant?.inventory || 0) - (variant?.used || 0) || 100;
+
         return (
           <InputNumber
             min={1}
             max={max}
-            value={record?.quantity}
-            onInput={(value) => {
-              if (value > maxQuantity) {
-                messageApi.warning(`Maximum is ${maxQuantity}`);
-                setError(`Maximum is ${maxQuantity}`);
-                return;
+            value={record.quantity}
+            onChange={(value) => {
+              if (value > max) {
+                messageApi.warning(`Maximum is ${max}`);
+                setError(`Maximum is ${max}`);
               } else {
                 setError(null);
-                handleProductChange(record._id, "quantity", value);
+                // Cập nhật lại quantity trong state
+                setVariantsSelected((prev) =>
+                  prev.map((item) =>
+                    item._id === record._id
+                      ? { ...item, quantity: value }
+                      : item
+                  )
+                );
               }
             }}
           />
@@ -250,9 +278,7 @@ const ModalOrder = ({
               currency: "VND",
             })}`
           }
-          parser={(value) =>
-            value.replace(/[₫,.\s]/g, "").replace(/\D/g, "")
-          }
+          parser={(value) => value.replace(/[₫,.\s]/g, "").replace(/\D/g, "")}
         />
       ),
     },
@@ -260,7 +286,7 @@ const ModalOrder = ({
       title: "Subtotal",
       key: "subtotal",
       render: (_, record) => (
-        <Text>${(record.price * record.quantity).toFixed(2)}</Text>
+        <Text>{(record.price * record.quantity).toLocaleString("vi-VN", { style: "currency", currency: "VND" })}</Text>
       ),
     },
     {
@@ -280,42 +306,14 @@ const ModalOrder = ({
     <Space direction="vertical" style={{ width: "100%" }}>
       <Row justify="space-between">
         <Col>
-          {showProductSelector ? (
-            <Select
-              placeholder="Select a product"
-              style={{ width: 250 }}
-              key={"default"}
-              value={selectedProduct}
-              onChange={handleProductSelect}
-              onSearch={handleSearch}
-              onBlur={() => setShowProductSelector(false)}
-              optionFilterProp="children"
-              autoFocus
-              showSearch
-            >
-              {availableProducts.map((product) => (
-                <Option key={product._id} value={product._id}>
-                  {product.nameProduct}
-                </Option>
-              ))}
-            </Select>
-          ) : (
-            <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              onClick={handleAddProduct}
-            >
-              Add Product
-            </Button>
-          )}
+          <Text strong>
+            Total:{" "}
+            {calculateTotal().toLocaleString("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            })}
+          </Text>
         </Col>
-       <Col>
-          <Text strong>Total: {calculateTotal().toLocaleString("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          })}</Text>
-        </Col>
-
       </Row>
     </Space>
   );
@@ -461,8 +459,8 @@ const ModalOrder = ({
 
         <Table
           columns={columns}
-          dataSource={products}
-          rowKey="key"
+          dataSource={variantsSelected}
+          rowKey="_id"
           pagination={false}
           footer={tableFooter}
           scroll={{ x: "max-content" }}
