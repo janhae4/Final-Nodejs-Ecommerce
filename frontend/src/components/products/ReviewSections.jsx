@@ -27,7 +27,7 @@ const ReviewsSection = ({ slug }) => {
   const [numReviews, setNumReviews] = useState(0);
   const [formLoading, setFormLoading] = useState(false);
   const { isLoggedIn, userInfo, logout, login } = useAuth();
-  useEffect(() => {
+  
     const fetchReviews = async () => {
       try {
         const res = await axios.get(
@@ -43,9 +43,9 @@ const ReviewsSection = ({ slug }) => {
         message.error("Failed to load product reviews");
       }
     };
-
+  
+    useEffect(() => {
     fetchReviews();
-
     socket.on("connect", () => {
       console.log("Socket connected");
     });
@@ -71,6 +71,7 @@ const ReviewsSection = ({ slug }) => {
         { content: comment }
       );
       message.success("Comment submitted!");
+      await fetchReviews();
     } catch (error) {
       console.error("Comment submit error:", error);
       message.error("Failed to submit comment.");
@@ -99,13 +100,14 @@ const ReviewsSection = ({ slug }) => {
         },
         { withCredentials: true }
       );
-
+      
       // Optionally re-fetch full product if ratingAverage not trả về
       const updatedProduct = await axios.get(
         `http://localhost:3000/api/products/id/${slug}`
       );
       setAvgRating(updatedProduct.data.ratingAverage || 0);
       message.success("Review submitted!");
+      await fetchReviews();
     } catch (error) {
       console.error("Review submit error:", error);
       message.error("Failed to submit review.");

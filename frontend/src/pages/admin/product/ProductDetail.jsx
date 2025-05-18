@@ -235,13 +235,13 @@ const ProductDetail = () => {
         <Divider />
 
         <div>
-          <h3>Comment:</h3>
+          <h3>Comments</h3>
           <List
             dataSource={product.comments}
             renderItem={(item) => (
               <List.Item>
                 <List.Item.Meta
-                  title={<strong>{item.user}</strong>}
+                  title={<strong>{item.userFullName}</strong>}
                   description={
                     <>
                       <Rate disabled value={item.rating} />
