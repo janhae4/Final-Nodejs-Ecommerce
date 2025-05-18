@@ -12,6 +12,7 @@ exports.init = (httpServer) => {
   });
   io.on("connection", (socket) => {
     console.log("A user connected");
+    socket.emit("connection", { message: "Connected to the server" });
     socket.on("disconnect", () => {
       console.log("A user disconnected");
     });

@@ -36,8 +36,8 @@ const ReviewsSection = ({ slug }) => {
         const product = res.data;
         console.log("Product after fetch comment:", product);
         setReviews(product.comments);
-        setAvgRating(product.ratingAverage || 0);
-        setNumReviews(product.ratingCount || 0);
+        setAvgRating(product?.ratingAverage || 0);
+        setNumReviews(product?.ratingCount || 0);
       } catch (error) {
         console.error("Error fetching product reviews:", error);
         message.error("Failed to load product reviews");
@@ -46,15 +46,18 @@ const ReviewsSection = ({ slug }) => {
 
     fetchReviews();
 
-    socket.on("connect", () => {
+    socket.on("connection", () => {
       console.log("Socket connected");
     });
 
     socket.on(`new-comment-${slug}`, (newReview) => {
       setReviews((prev) => [newReview, ...prev]);
       console.log("REIVEW MOI NE:", newReview);
+      if (!newReview?.rating) {
+        return;
+      }
       setNumReviews((prev) => prev + 1);
-      setAvgRating((prev) => prev + (newReview.rating - prev) / prev);
+      setAvgRating((prev) => prev + (newReview?.rating - prev) / prev);
     });
 
     return () => {

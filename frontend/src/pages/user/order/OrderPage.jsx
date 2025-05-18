@@ -84,7 +84,7 @@ const OrderPage = () => {
   if (orders.length === 0) {
     return (
       <Layout>
-        <div className="container mx-auto p-4 md:p-8 overflow-auto">
+        <div className="container mx-auto p-4 md:p-8 overflow-auto min-h-105">
           <Empty
             description={
               <span>

@@ -8,9 +8,13 @@ services:
       - "3000:3000"
     volumes:
       - ./backend:/app
-    command: ["node", "server.js"]
     networks:
       - mynetwork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/products"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build: ./frontend
@@ -21,6 +25,7 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+        # condition: service_healthy
     networks:
       - mynetwork
 

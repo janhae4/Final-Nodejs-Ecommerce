@@ -31,7 +31,7 @@ import AccessDeniedPage from "../pages/AccessDeniedPage";
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      <Route path="/access-denied" element={<AccessDeniedPage code={403} />} />
 
       {/* Admin layout */}
       <Route
@@ -70,6 +70,8 @@ export default function AppRoutes() {
           <Route path="reset-password" element={<ResetPasswordPage />} />
         </Route>
       </Route>
+
+      <Route path="*" element={<AccessDeniedPage code={404} />} />
     </Routes>
   );
 }
