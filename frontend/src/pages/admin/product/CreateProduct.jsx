@@ -70,9 +70,23 @@ const CreateProduct = () => {
                     <Input />
                 </Form.Item>
 
-                <Form.Item label="Price" name="price" rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
+                <Form.Item
+                  label="Price"
+                  name="price"
+                  rules={[{ required: true, message: "Please enter a price" }]}
+                >
+                  <InputNumber
+                    min={0}
+                    style={{ width: "100%" }}
+                    formatter={(value) =>
+                      `${Number(value).toLocaleString("vi-VN")} ₫`
+                    }
+                    parser={(value) =>
+                      value.replace(/[₫\s,.]/g, "")
+                    }
+                  />
                 </Form.Item>
+
 
                 <Form.Item label="Brand" name="brand">
                     <Input />
